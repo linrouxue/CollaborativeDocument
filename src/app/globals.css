@@ -1,4 +1,5 @@
 @import "tailwindcss";
+/* @import 'ant-design-pro/dist/ant-design-pro.css';  */
 
 :root {
   --background: #ffffff;
@@ -23,4 +24,22 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.global-spin {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 防止页面加载时的闪烁 */
+.ant-layout {
+  min-height: 100vh;
+}
+
+/* 优化过渡效果 */
+.ant-layout-sider,
+.ant-layout-header {
+  transition: all 0.2s;
 }
