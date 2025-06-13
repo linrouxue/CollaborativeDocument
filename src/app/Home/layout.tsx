@@ -1,4 +1,4 @@
-// src/app/layout.tsx
+// src/app/Home/layout.tsx
 import type { Metadata } from 'next';
 import '../globals.css';
 import { ConfigProvider } from 'antd';
@@ -10,20 +10,16 @@ export const metadata: Metadata = {
   description: '基于 Next.js 和 Ant Design 的协同文档系统',
 };
 
-export default function RootLayout({
+export default function HomeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-CN">
-      <body>
-        <AntdRegistry>
-          <ConfigProvider theme={theme}>
-            {children}
-          </ConfigProvider>
-        </AntdRegistry>
-      </body>
-    </html>
+    <AntdRegistry>
+      <ConfigProvider theme={theme}>
+        {children}
+      </ConfigProvider>
+    </AntdRegistry>
   );
 }

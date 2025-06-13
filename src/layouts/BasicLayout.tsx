@@ -7,16 +7,18 @@ import { LogoutOutlined, UserOutlined, HomeOutlined, FileOutlined, AppstoreOutli
 import type { MenuProps } from 'antd';
 import { Dropdown, Spin } from 'antd';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const BasicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mounted, setMounted] = useState(false);
-
+  const router = useRouter();
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const logout = () => {
     console.log('退出登录');
+    router.push('/');
   };
 
   const items: MenuProps['items'] = [
