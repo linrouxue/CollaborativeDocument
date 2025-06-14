@@ -1,11 +1,9 @@
-// 1. 导入 PrismaClient
-import { PrismaClient } from '@/generated/prisma';
+// 1. 导入 lib下的全局单例 prisma 实例
+import { prisma } from '@/lib/prisma';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-// 2. 创建 Prisma 实例（全局复用推荐写法）
-const prisma = new PrismaClient();
 
-// 3. 接口函数
+// 2. 接口函数
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: '只允许 POST 请求' });
@@ -13,13 +11,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { email, password } = req.body;
 
-  // 4. 参数校验
+  // 3. 参数校验
   if (!email || !password) {
     return res.status(400).json({ message: '邮箱和密码不能为空' });
   }
 
   try {
-    // 5. 检查邮箱是否已存在
+    // 4. 检查邮箱是否已存在
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -28,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(409).json({ message: '邮箱已注册' });
     }
 
-    // 6. 创建新用户（密码未加密，仅示例）
+    // 5. 创建新用户（密码未加密，仅示例）
     const newUser = await prisma.user.create({
       data: {
         email,
@@ -36,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-    // 7. 返回成功
+    // 6. 返回成功
     return res.status(201).json({ user: { id: newUser.id, email: newUser.email } });
 
   } catch (error) {
