@@ -90,12 +90,7 @@ export default function ProtectedLayout({
 
   return (
     <ProLayout
-      title={
-        pathname === '/Home' ? '主页' : 
-        pathname === '/Home/docs' ? '文档库' : 
-        pathname === '/Home/knowledge' ? '知识库' : 
-        '协同文档系统'
-      }
+      title="协同文档系统"
       layout="mix"
       fixedHeader
       fixSiderbar
