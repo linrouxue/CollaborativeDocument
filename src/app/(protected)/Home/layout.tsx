@@ -1,25 +1,99 @@
-// src/app/Home/layout.tsx
-import type { Metadata } from 'next';
-import '@/style/globals.css';
-import { ConfigProvider } from 'antd';
-import theme from '@/app/themeConfig';
-import { AntdRegistry } from '@ant-design/nextjs-registry';
+'use client';
 
-export const metadata: Metadata = {
-  title: '协同文档系统',
-  description: '基于 Next.js 和 Ant Design 的协同文档系统',
-};
+import React, { Suspense, useEffect, useState } from 'react';
+import { ProLayout } from '@ant-design/pro-components';
+import { LogoutOutlined, UserOutlined, HomeOutlined, FileOutlined, AppstoreOutlined } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
+import { Dropdown, Spin } from 'antd';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-export default function HomeLayout({
+export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const logout = () => {
+    console.log('退出登录');
+    router.push('/');
+  };
+
+  const items: MenuProps['items'] = [
+    {
+      key: 'profile',
+      label: <Link href="/profile">个人中心</Link>,
+      icon: <UserOutlined />,
+    },
+    {
+      key: 'logout',
+      label: '退出登录',
+      icon: <LogoutOutlined />,
+      onClick: logout,
+    },
+  ];
+
+  if (!mounted) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: '#f0f2f5'
+      }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
-    <AntdRegistry>
-      <ConfigProvider theme={theme}>
+    <ProLayout
+      title="协同文档系统"
+      layout="mix"
+      fixedHeader
+      fixSiderbar
+      loading={false}
+      navTheme="light"
+      contentWidth="Fluid"
+      menu={{
+        request: async () => [
+          {
+            path: '/',
+            name: '主页',
+            icon: <HomeOutlined />,
+          },
+          {
+            path: '/docs',
+            name: '文档库',
+            icon: <FileOutlined />,
+          },
+          {
+            path: '/knowledge',
+            name: '知识库',
+            icon: <AppstoreOutlined />,
+          },
+        ],
+      }}
+      avatarProps={{
+        src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
+        size: 'small',
+        title: '用户',
+        render: (props, dom) => (
+          <Dropdown menu={{ items }} placement="bottomRight">
+            {dom}
+          </Dropdown>
+        ),
+      }}
+    >
+      <Suspense fallback={<Spin size="large" className="global-spin" />}>
         {children}
-      </ConfigProvider>
-    </AntdRegistry>
+      </Suspense>
+    </ProLayout>
   );
 }
