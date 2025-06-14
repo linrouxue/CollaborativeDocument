@@ -1,29 +1,24 @@
 // src/layouts/BasicLayout.tsx
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
-import { ProLayout } from "@ant-design/pro-components";
-import {
-  LogoutOutlined,
-  UserOutlined,
-  HomeOutlined,
-  FileOutlined,
-  AppstoreOutlined,
-  TeamOutlined,
-} from "@ant-design/icons";
-import type { MenuProps } from "antd";
-import { Dropdown, Spin } from "antd";
-import Link from "next/link";
+import React, { Suspense, useEffect, useState } from 'react';
+import { ProLayout } from '@ant-design/pro-components';
+import { LogoutOutlined, UserOutlined, HomeOutlined, FileOutlined, AppstoreOutlined, TeamOutlined } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
+import { Dropdown, Spin } from 'antd';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const BasicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mounted, setMounted] = useState(false);
-
+  const router = useRouter();
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const logout = () => {
-    console.log("退出登录");
+    console.log('退出登录');
+    router.push('/');
   };
 
   const items: MenuProps["items"] = [
