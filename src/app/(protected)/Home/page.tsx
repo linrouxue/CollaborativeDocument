@@ -1,5 +1,5 @@
 // src/app/page.tsx
-import BasicLayout from '@/layouts/BasicLayout';
+import BasicLayout from './knowledges/page'
 
 export default function Home() {
   return (

@@ -1,6 +1,6 @@
 // src/app/layout.tsx
 import type { Metadata } from 'next';
-import './globals.css';
+import '@/style/globals.css';
 import { ConfigProvider } from 'antd';
 import theme from './themeConfig';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
