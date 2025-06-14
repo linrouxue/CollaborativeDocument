@@ -1,11 +1,29 @@
 "use client";
 
 import React, { useState } from "react";
-import { Layout, Tree, Input, Select, Button, theme } from "antd";
+import {
+  Layout,
+  Tree,
+  Input,
+  Select,
+  Button,
+  theme,
+  Dropdown,
+  Menu,
+  Avatar,
+  Space,
+} from "antd";
 import {
   ArrowLeftOutlined,
   MenuOutlined,
   CloseOutlined,
+  UserOutlined,
+  EllipsisOutlined,
+  ShareAltOutlined,
+  HistoryOutlined,
+  DownloadOutlined,
+  BellOutlined,
+  LockOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import type { TreeDataNode } from "antd";
@@ -41,6 +59,39 @@ const knowledgeBaseMap: Record<string, TreeDataNode[]> = {
     },
   ],
 };
+const moreActionsMenu = (
+  <Menu
+    items={[
+      {
+        key: "download",
+        icon: <DownloadOutlined />,
+        label: "下载文档",
+        onClick: () => {
+          alert(`下载文档：${selectedDoc}`);
+          // 实现下载逻辑
+        },
+      },
+      {
+        key: "history",
+        icon: <HistoryOutlined />,
+        label: "查看历史记录",
+        onClick: () => {
+          alert("历史记录功能待实现");
+          // 实现查看历史版本逻辑
+        },
+      },
+      {
+        key: "notifications",
+        icon: <BellOutlined />,
+        label: "通知中心",
+        onClick: () => {
+          alert("打开通知中心");
+          // 实现通知弹窗逻辑
+        },
+      },
+    ]}
+  />
+);
 
 export default function KnowledgeEditorLayout() {
   const router = useRouter();
@@ -55,6 +106,33 @@ export default function KnowledgeEditorLayout() {
     knowledgeBaseMap[selectedBase]
   );
   const [searchValue, setSearchValue] = useState("");
+
+  // 用户信息（示例）
+  const userName = "USER_NAME"; // 这里可以替换为实际的用户名
+
+  // 下拉菜单
+  const menu = (
+    <Menu
+      items={[
+        {
+          key: "switch",
+          label: "切换账号",
+          onClick: () => {
+            alert("点击切换账号");
+            // 这里写切换账号逻辑
+          },
+        },
+        {
+          key: "logout",
+          label: "退出登录",
+          onClick: () => {
+            alert("点击退出登录");
+            // 这里写退出登录逻辑
+          },
+        },
+      ]}
+    />
+  );
 
   // 切换知识库
   const handleBaseChange = (value: string) => {
@@ -148,11 +226,12 @@ export default function KnowledgeEditorLayout() {
             background: colorBgContainer,
             display: "flex",
             alignItems: "center",
-            justifyContent: "left",
+            justifyContent: "space-between",
             padding: "0 16px",
           }}
         >
-          <div className="flex items-center gap-2">
+          {/* 左侧内容：返回 + 路径 */}
+          <div className="flex items-center gap-4">
             <Button
               type="text"
               icon={<ArrowLeftOutlined />}
@@ -160,17 +239,68 @@ export default function KnowledgeEditorLayout() {
             >
               返回首页
             </Button>
+
+            {/* 当前路径信息 */}
+            <span style={{ fontSize: "16px" }}>
+              {selectedBase} / {selectedDoc}
+            </span>
           </div>
 
-          {!sidebarVisible && (
+          {/* 右侧内容：打开目录按钮 + 用户头像 */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {!sidebarVisible && (
+              <Button
+                type="text"
+                icon={<MenuOutlined />}
+                onClick={() => setSidebarVisible(true)}
+              >
+                打开目录
+              </Button>
+            )}
+            {/* 单独的权限切换按钮 */}
             <Button
               type="text"
-              icon={<MenuOutlined />}
-              onClick={() => setSidebarVisible(true)}
+              icon={<LockOutlined />}
+              title="切换权限"
+              onClick={() => {
+                alert("切换权限功能待实现");
+                // TODO: 权限切换逻辑
+              }}
+            />
+
+            {/* 单独的分享按钮 */}
+            <Button
+              type="text"
+              icon={<ShareAltOutlined />}
+              title="分享文档"
+              onClick={() => {
+                alert("分享功能待实现");
+                // TODO: 分享逻辑
+              }}
+            />
+
+            {/* 更多操作（下载、历史记录、通知） */}
+            <Dropdown
+              overlay={moreActionsMenu}
+              placement="bottomRight"
+              trigger={["click"]}
             >
-              打开目录
-            </Button>
-          )}
+              <Button type="text" icon={<EllipsisOutlined />} />
+            </Dropdown>
+            {/* 用户头像+名字+菜单 */}
+            <Dropdown
+              overlay={menu}
+              placement="bottomRight"
+              trigger={["click"]}
+            >
+              <Space style={{ cursor: "pointer" }}>
+                <Avatar icon={<UserOutlined />} />
+                <span style={{ fontSize: 16, userSelect: "none" }}>
+                  {userName}
+                </span>
+              </Space>
+            </Dropdown>
+          </div>
         </Header>
 
         <Content style={{ margin: "16px" }}>
@@ -182,7 +312,6 @@ export default function KnowledgeEditorLayout() {
               borderRadius: borderRadiusLG,
             }}
           >
-            <h2 className="text-xl font-bold mb-4">当前文档：{selectedDoc}</h2>
             <DocEditor docId={selectedDoc} />
           </div>
         </Content>
