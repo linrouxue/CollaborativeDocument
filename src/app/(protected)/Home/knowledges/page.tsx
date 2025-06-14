@@ -3,7 +3,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { ProLayout } from '@ant-design/pro-components';
-import { LogoutOutlined, UserOutlined, HomeOutlined, FileOutlined, AppstoreOutlined, TeamOutlined } from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined, HomeOutlined, FileOutlined, AppstoreOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Dropdown, Spin } from 'antd';
 import Link from 'next/link';
@@ -63,24 +63,19 @@ const BasicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       menu={{
         request: async () => [
           {
-            path: "/",
-            name: "首页",
+            path: '/',
+            name: '主页',
             icon: <HomeOutlined />,
           },
           {
-            path: "/docs",
-            name: "我的文档",
+            path: '/docs',
+            name: '文档库',
             icon: <FileOutlined />,
           },
           {
-            path: "/templates",
-            name: "模板中心",
+            path: '/knowledge',
+            name: '知识库',
             icon: <AppstoreOutlined />,
-          },
-          {
-            path: "/collaboration",
-            name: "协作空间",
-            icon: <TeamOutlined />,
           },
         ],
       }}

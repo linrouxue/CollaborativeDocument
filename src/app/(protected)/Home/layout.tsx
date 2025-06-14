@@ -1,8 +1,8 @@
 // src/app/Home/layout.tsx
 import type { Metadata } from 'next';
-import '../globals.css';
+import '@/style/globals.css';
 import { ConfigProvider } from 'antd';
-import theme from '../themeConfig';
+import theme from '@/app/themeConfig';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 
 export const metadata: Metadata = {
