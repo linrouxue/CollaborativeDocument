@@ -18,7 +18,21 @@ export default function ProtectedLayout({
   const pathname = usePathname();
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // 根据当前路由设置标题
+    const getPageTitle = (path: string) => {
+      switch (path) {
+        case '/Home':
+          return '主页 - 协同文档系统';
+        case '/Home/docs':
+          return '文档库 - 协同文档系统';
+        case '/Home/knowledge':
+          return '知识库 - 协同文档系统';
+        default:
+          return '协同文档系统';
+      }
+    };
+    document.title = getPageTitle(pathname);
+  }, [pathname]);
 
   const logout = () => {
     console.log('退出登录');
@@ -76,7 +90,12 @@ export default function ProtectedLayout({
 
   return (
     <ProLayout
-      title="协同文档系统"
+      title={
+        pathname === '/Home' ? '主页' : 
+        pathname === '/Home/docs' ? '文档库' : 
+        pathname === '/Home/knowledge' ? '知识库' : 
+        '协同文档系统'
+      }
       layout="mix"
       fixedHeader
       fixSiderbar
