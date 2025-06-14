@@ -27,7 +27,10 @@ import {
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import type { TreeDataNode } from "antd";
-import DocEditor from "@/components/DocEditor";
+
+// import DocEditor from "@/components/DocEditor";
+
+import DocEditor from "@/components/RichTextEditor";
 
 const { Sider, Header, Content, Footer } = Layout;
 const { Search } = Input;

@@ -1,17 +1,8 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import {
-  Slate,
-  Editable,
-  withReact,
-  useSlate,
-} from "slate-react";
-import {
-  createEditor,
-  Descendant,
-  Editor,
-} from "slate";
+import { Slate, Editable, withReact, useSlate } from "slate-react";
+import { createEditor, Descendant, Editor } from "slate";
 import {
   BoldOutlined,
   ItalicOutlined,
@@ -31,18 +22,16 @@ const ToolbarButton = ({
   onMouseDown: (e: React.MouseEvent) => void;
   icon: React.ReactNode;
   title: string;
-}) => {
-  return (
-    <button
-      onMouseDown={onMouseDown}
-      className={`p-2 rounded hover:bg-gray-100 ${active ? "bg-gray-100" : ""}`}
-      title={title}
-      type="button"
-    >
-      {icon}
-    </button>
-  );
-};
+}) => (
+  <button
+    onMouseDown={onMouseDown}
+    className={`p-2 rounded hover:bg-gray-100 ${active ? "bg-gray-100" : ""}`}
+    title={title}
+    type="button"
+  >
+    {icon}
+  </button>
+);
 
 // 判断格式是否激活
 const isMarkActive = (editor: Editor, format: string) => {
@@ -62,7 +51,7 @@ const toggleMark = (editor: Editor, format: string) => {
 const Toolbar = () => {
   const editor = useSlate();
   return (
-    <div className="mb-2 flex gap-2">
+    <div className="mb-2 flex gap-2 border-b p-2 bg-white sticky top-0 z-10">
       <ToolbarButton
         active={isMarkActive(editor, "bold")}
         onMouseDown={(e) => {
@@ -119,26 +108,16 @@ const initialValue: Descendant[] = [
   },
 ];
 
-interface RichTextEditorProps {
-  value?: Descendant[];
-  onChange?: (val: Descendant[]) => void;
-  websocketUrl?: string;
-}
-
-const RichTextEditor: React.FC<RichTextEditorProps> = ({
-  value = initialValue,
-  onChange,
-  websocketUrl = "ws://localhost:1234",
-}) => {
+const SlateEditor: React.FC = () => {
   const editor = useMemo(() => withReact(createEditor()), []);
 
-  const [editorValue, setEditorValue] = useState<Descendant[]>(value);
+  const [editorValue, setEditorValue] = useState<Descendant[]>(initialValue);
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(0);
 
   useEffect(() => {
-    const socket = new WebSocket(websocketUrl);
+    const socket = new WebSocket("ws://localhost:1234");
 
     socket.onopen = () => {
       setConnected(true);
@@ -168,7 +147,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   const handleChange = (newValue: Descendant[]) => {
     setEditorValue(newValue);
-    if (onChange) onChange(newValue);
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: "sync", content: newValue }));
     }
@@ -183,23 +161,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, []);
 
   return (
-    <div className="border rounded-lg bg-white p-4 min-h-[400px]">
-      <div className="mb-2 flex gap-4 text-sm text-gray-600">
-        <div>連接狀態: {connected ? "已連接" : "未連接"}</div>
-        <div>在線人數: {onlineUsers}</div>
-      </div>
-      <Slate editor={editor} initialValue={editorValue} onChange={handleChange}>
-        <Toolbar />
-        <Editable
-          renderLeaf={renderLeaf}
-          placeholder="請開始輸入..."
-          spellCheck
-          autoFocus
-          className="min-h-[300px] outline-none"
-        />
-      </Slate>
-    </div>
+    <Slate editor={editor} initialValue={editorValue} onChange={handleChange}>
+      <Toolbar />
+      <Editable
+        renderLeaf={renderLeaf}
+        placeholder="請開始輸入..."
+        spellCheck
+        autoFocus
+        className="min-h-[300px] outline-none p-2 bg-white"
+      />
+    </Slate>
   );
 };
 
-export default RichTextEditor;
+export default SlateEditor;
