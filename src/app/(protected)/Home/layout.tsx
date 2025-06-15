@@ -142,9 +142,16 @@ export default function ProtectedLayout({
     <ProLayout
       title="协同文档系统"
       layout="mix"
+      token={{
+        sider: {
+          colorMenuBackground: 'rgb(245, 246, 247)',
+        },
+        header: {
+          colorBgHeader: 'rgb(245, 246, 247)',
+        },
+      }}
       fixedHeader
       fixSiderbar
-      navTheme="light"
       contentWidth="Fluid"
       route={{
         routes: menu
