@@ -182,7 +182,13 @@ export default function KnowledgeEditorLayout() {
               value={selectedBase}
               onChange={handleBaseChange}
               style={{ width: 180 }}
-              dropdownStyle={{ zIndex: 1500 }}
+              styles={{
+                popup: {
+                  root: {
+                    zIndex: 1500,
+                  },
+                },
+              }}
             >
               {Object.keys(knowledgeBaseMap).map((key) => (
                 <Select.Option key={key} value={key}>
@@ -284,18 +290,14 @@ export default function KnowledgeEditorLayout() {
 
             {/* 更多操作（下载、历史记录、通知） */}
             <Dropdown
-              overlay={moreActionsMenu}
+              menu={moreActionsMenu}
               placement="bottomRight"
               trigger={["click"]}
             >
               <Button type="text" icon={<EllipsisOutlined />} />
             </Dropdown>
             {/* 用户头像+名字+菜单 */}
-            <Dropdown
-              overlay={menu}
-              placement="bottomRight"
-              trigger={["click"]}
-            >
+            <Dropdown menu={menu} placement="bottomRight" trigger={["click"]}>
               <Space style={{ cursor: "pointer" }}>
                 <Avatar icon={<UserOutlined />} />
                 <span style={{ fontSize: 16, userSelect: "none" }}>
