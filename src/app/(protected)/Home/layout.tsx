@@ -1,12 +1,26 @@
-'use client';
+"use client";
 
-import React, { Suspense, useEffect, useState } from 'react';
-import { ProLayout } from '@ant-design/pro-components';
-import { LogoutOutlined, UserOutlined, HomeOutlined, FileOutlined, AppstoreOutlined } from '@ant-design/icons';
-import type { MenuProps } from 'antd';
-import { Dropdown, Spin } from 'antd';
-import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import React, { Suspense, useEffect, useState } from "react";
+import { ProLayout } from "@ant-design/pro-components";
+import {
+  LogoutOutlined,
+  UserOutlined,
+  HomeOutlined,
+  FileOutlined,
+  AppstoreOutlined,
+} from "@ant-design/icons";
+import type { MenuProps } from "antd";
+import { Dropdown, Spin } from "antd";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+// src/app/Home/layout.tsx
+// import type { Metadata } from "next";
+import "@/style/globals.css";
+
+// export const metadata: Metadata = {
+//   title: "协同文档系统",
+//   description: "基于 Next.js 和 Ant Design 的协同文档系统",
+// };
 
 export default function ProtectedLayout({
   children,
@@ -23,31 +37,31 @@ export default function ProtectedLayout({
     // 根据当前路由设置标题
     const getPageTitle = (path: string) => {
       switch (path) {
-        case '/Home':
-          return '主页 - 协同文档系统';
-        case '/Home/knowledge':
-          return '知识库 - 协同文档系统';
+        case "/Home":
+          return "主页 - 协同文档系统";
+        case "/Home/knowledge":
+          return "知识库 - 协同文档系统";
         default:
-          return '协同文档系统';
+          return "协同文档系统";
       }
     };
     document.title = getPageTitle(pathname);
   }, [pathname]);
 
   const logout = () => {
-    console.log('退出登录');
-    router.push('/');
+    console.log("退出登录");
+    router.push("/");
   };
 
-  const items: MenuProps['items'] = [
+  const items: MenuProps["items"] = [
     {
-      key: 'profile',
+      key: "profile",
       label: <Link href="/profile">个人中心</Link>,
       icon: <UserOutlined />,
     },
     {
-      key: 'logout',
-      label: '退出登录',
+      key: "logout",
+      label: "退出登录",
       icon: <LogoutOutlined />,
       onClick: logout,
     },
@@ -55,13 +69,15 @@ export default function ProtectedLayout({
 
   if (!mounted) {
     return (
-      <div style={{ 
-        height: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        background: '#f0f2f5'
-      }}>
+      <div
+        style={{
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f0f2f5",
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -69,53 +85,53 @@ export default function ProtectedLayout({
 
   const menu = [
     {
-      path: '/Home',
-      name: '主页',
+      path: "/Home",
+      name: "主页",
       icon: <HomeOutlined />,
     },
     {
-      path: '/Home/knowledge',
-      name: '知识库',
+      path: "/Home/knowledge",
+      name: "知识库",
       icon: <AppstoreOutlined />,
       routes: [
         {
-          path: '/Home/knowledge/1',
-          name: '知识库1',
+          path: "/Home/knowledge/1",
+          name: "知识库1",
           routes: [
             {
-              path: '/Home/knowledge/1/file1',
-              name: '文件1',
+              path: "/Home/knowledge/1/file1",
+              name: "文件1",
             },
             {
-              path: '/Home/knowledge/1/file2',
-              name: '文件2',
+              path: "/Home/knowledge/1/file2",
+              name: "文件2",
             },
-          ]
+          ],
         },
         {
-          path: '/Home/knowledge/2',
-          name: '知识库2',
+          path: "/Home/knowledge/2",
+          name: "知识库2",
         },
         {
-          path: '/Home/knowledge/3',
-          name: '知识库3'
+          path: "/Home/knowledge/3",
+          name: "知识库3",
         },
-      ]
+      ],
     },
     {
-      path: '/Home/docs',
-      name: '文档库',
+      path: "/Home/docs",
+      name: "文档库",
       icon: <FileOutlined />,
       routes: [
         {
-          path: '/Home/docs/file1',
-          name: '文件1',
+          path: "/Home/docs/file1",
+          name: "文件1",
         },
         {
-          path: '/Home/docs/file2',
-          name: '文件2',
+          path: "/Home/docs/file2",
+          name: "文件2",
         },
-      ]
+      ],
     },
   ];
 
@@ -125,13 +141,13 @@ export default function ProtectedLayout({
         // 阻止事件冒泡，避免触发父级的点击事件
         e.stopPropagation();
         // 如果是文档库，不进行跳转
-        if (item.path && item.path !== '/Home/docs') {
+        if (item.path && item.path !== "/Home/docs") {
           router.push(item.path);
         }
       }}
-      style={{ 
-        cursor: 'pointer',
-        color: pathname === item.path ? '#1890ff' : 'inherit'
+      style={{
+        cursor: "pointer",
+        color: pathname === item.path ? "#1890ff" : "inherit",
       }}
     >
       {dom}
@@ -147,7 +163,7 @@ export default function ProtectedLayout({
       navTheme="light"
       contentWidth="Fluid"
       route={{
-        routes: menu
+        routes: menu,
       }}
       menu={{
         request: async () => menu,
@@ -156,14 +172,14 @@ export default function ProtectedLayout({
         selectedKeys: [pathname],
         openKeys: openKeys,
         onOpenChange: (keys) => setOpenKeys(keys),
-        mode: 'inline'
+        mode: "inline",
       }}
       menuItemRender={renderMenuItem} // 顶级菜单项渲染
       subMenuItemRender={renderMenuItem} // 子菜单渲染
       avatarProps={{
-        src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
-        size: 'small',
-        title: '用户',
+        src: "https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg",
+        size: "small",
+        title: "用户",
         render: (props, dom) => (
           <Dropdown menu={{ items }} placement="bottomRight">
             {dom}
