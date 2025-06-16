@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { createEditor, Descendant, Editor, Transforms } from "slate";
-import { Slate, withReact } from "slate-react";
+import { createEditor, Descendant, Editor, Transforms, Element as SlateElement, BaseEditor } from "slate";
+import { Slate, withReact, ReactEditor } from "slate-react";
+import { HistoryEditor, withHistory } from "slate-history";
 
 import EditorHeaderToolbar from "./EditorHeaderToolbar";
 import EditorFooter from "./EditorFooter";
@@ -11,9 +12,23 @@ import EditorBody from "./EditorBody";
 import * as Y from 'yjs'
 import { WebsocketProvider } from "y-websocket";
 import { YjsEditor, withCursors, withYjs } from "@slate-yjs/core";
-import { withHistory } from "slate-history";
 
+type CustomElement = {
+  type: 'paragraph';
+  children: CustomText[];
+}
 
+type CustomText = {
+  text: string;
+}
+
+declare module 'slate' {
+  interface CustomTypes {
+    Editor: BaseEditor & ReactEditor & HistoryEditor;
+    Element: CustomElement;
+    Text: CustomText;
+  }
+}
 
 const initialValue: Descendant[] = [
   {
@@ -23,7 +38,7 @@ const initialValue: Descendant[] = [
 ];
 
 export const App = () => {
-  return <RichTextEditor websocketUrl="ws://localhost:1234" />;
+  return <RichTextEditor websocketUrl="ws://192.168.2.36:1234" />;
 }
 
 interface RichTextEditorProps {
@@ -42,7 +57,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ websocketUrl, roomName 
     const yDoc = new Y.Doc();
     const yXmlText = yDoc.get("slate", Y.XmlText);
     const yProvider = new WebsocketProvider(
-      websocketUrl || "ws://localhost:1234",
+      websocketUrl || "ws://192.168.2.36:1234",
       roomName,
       yDoc
     );
@@ -111,6 +126,7 @@ const SlateEditor = ({
     const colors = ["#00ff00", "#ff0000", "#0000ff", "#ff9900"];
     return colors[Math.floor(Math.random() * colors.length)];
   }, []);
+
   const editor = useMemo(() => {
     const e = withReact(
       withHistory(
@@ -127,13 +143,31 @@ const SlateEditor = ({
       )
     );
     return e;
-  }, [sharedType]);
+  }, [sharedType,provider.awareness]);
 
-  const decorate = useCallback(([node, path]) => {
-    return editor.decorations || [];
-  }, [editor]);
+  const initialValue: Descendant[] = [
+    {
+      type: "paragraph",
+      children: [{ text: "欢迎使用 Slate 协同编辑器！" }],
+    },
+  ];
+  const [value, setValue] = useState<Descendant[]>(initialValue);
+
+  const decorate = useCallback(
+    ([node, path]: [any, any]) => {
+      if (editor.decorate) {
+        return editor.decorate([node, path]);
+      }
+      return [];
+    },
+    [editor]
+  );
+  
+  
   const renderLeaf = useCallback(({ attributes, children, leaf }) => {
+    console.log("leaf:", leaf);
     if (leaf.cursor) {
+      console.log("发现协同光标", leaf.cursor);
       return (
         <span
           {...attributes}
@@ -158,15 +192,15 @@ const SlateEditor = ({
 
   return (
     <div className="border rounded-lg bg-white p-4 min-h-[400px]">
-      <Slate editor={editor} initialValue={initialValue}>
+      <Slate editor={editor} initialValue={value} onChange={setValue}>
         <EditorHeaderToolbar />
-        {/* TODO:没有考虑大纲的类型 */}
         <EditorBody 
           editor={editor}
           decorate={decorate}
+          value={value}
+          onChange={setValue}
           renderLeaf={renderLeaf}
-          onChange={() => {
-          }} />
+        />
         <EditorFooter connected={connected} onlineUsers={onlineUsers} />
       </Slate>
     </div>

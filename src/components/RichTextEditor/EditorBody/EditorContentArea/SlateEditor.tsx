@@ -16,6 +16,7 @@ interface SlateEditorProps {
   decorate: any;
   renderLeaf: any;
   onChange: (value: any) => void;
+  value: any;
 }
 
 // 工具栏按钮组件
@@ -115,20 +116,22 @@ const initialValue: Descendant[] = [
   },
 ];
 
-const SlateEditor: React.FC<SlateEditorProps> = ({ editor, decorate, renderLeaf, onChange }) => {
+const SlateEditor: React.FC<SlateEditorProps> = ({ editor, decorate, renderLeaf, onChange, value }) => {
 
   return (
-    <Slate editor={editor} initialValue={initialValue} onChange={onChange}>
+    <>
       <Toolbar />
       <Editable
         decorate={decorate}
         renderLeaf={renderLeaf}
         placeholder="請開始輸入..."
+        value={value}
+        onChange={onChange}
         spellCheck
         autoFocus
         className="min-h-[300px] outline-none p-2 bg-white"
       />
-    </Slate>
+    </>
   );
 };
 

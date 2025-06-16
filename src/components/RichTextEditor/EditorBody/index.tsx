@@ -13,6 +13,7 @@ interface EditorBodyProps {
   renderLeaf: any;
   onToggleCollapse?: (collapsed: boolean) => void;
   onChange: (value: any) => void;
+  value: any;
 }
 
 const EditorBody: React.FC<EditorBodyProps> = ({
@@ -21,6 +22,7 @@ const EditorBody: React.FC<EditorBodyProps> = ({
   renderLeaf,
   onToggleCollapse,
   onChange,
+  value,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -41,6 +43,7 @@ const EditorBody: React.FC<EditorBodyProps> = ({
         decorate={decorate}
         renderLeaf={renderLeaf}
         onChange={onChange}
+        value={value}
       />
     </div>
   );
