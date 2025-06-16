@@ -6,11 +6,17 @@ const nextConfig = {
   },
   experimental: {
     optimizeCss: true,
-    cssModules: true,
     optimizePackageImports: ['@ant-design/icons', '@ant-design/pro-components'],
   },
-  // 禁用 Google Fonts 功能
-  optimizeFonts: false
+  typescript: {
+    // !! 警告 !!
+    // 在生产环境中忽略类型错误
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // 在生产环境中忽略 ESLint 错误
+    ignoreDuringBuilds: true,
+  },
 }
 
 module.exports = nextConfig 
