@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { createEditor, Descendant, Editor, Transforms, Element as SlateElement, BaseEditor } from "slate";
+import {
+  createEditor,
+  Descendant,
+  Editor,
+  Transforms,
+  Element as SlateElement,
+  BaseEditor,
+} from "slate";
 import { Slate, withReact, ReactEditor } from "slate-react";
 import { HistoryEditor, withHistory } from "slate-history";
 
@@ -9,20 +16,20 @@ import EditorHeaderToolbar from "./EditorHeaderToolbar";
 import EditorFooter from "./EditorFooter";
 import EditorBody from "./EditorBody";
 
-import * as Y from 'yjs'
+import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { YjsEditor, withCursors, withYjs } from "@slate-yjs/core";
 
 type CustomElement = {
-  type: 'paragraph';
+  type: "paragraph";
   children: CustomText[];
-}
+};
 
 type CustomText = {
   text: string;
-}
+};
 
-declare module 'slate' {
+declare module "slate" {
   interface CustomTypes {
     Editor: BaseEditor & ReactEditor & HistoryEditor;
     Element: CustomElement;
@@ -37,9 +44,9 @@ const initialValue: Descendant[] = [
   },
 ];
 
-export const App = () => {
-  return <RichTextEditor />;
-}
+// export const App = () => {
+//   return <RichTextEditor />;
+// }
 
 interface RichTextEditorProps {
   roomName?: string;
@@ -70,8 +77,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' })
 
     // 在线人数监听
     const awareness = yProvider.awareness;
-    const updateOnlineUsers = () =>
-      setOnlineUsers(awareness.getStates().size);
+    const updateOnlineUsers = () => setOnlineUsers(awareness.getStates().size);
 
     awareness.on("change", updateOnlineUsers);
     updateOnlineUsers();
@@ -88,10 +94,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' })
 
   useEffect(() => {
     if (provider) {
-      console.log('Awareness States:', Array.from(provider.awareness.getStates().values()));
+      console.log(
+        "Awareness States:",
+        Array.from(provider.awareness.getStates().values())
+      );
     }
   }, [provider, onlineUsers]);
-  
+
   if (!connected || !sharedType || !provider) {
     return <div>Loading…</div>;
   }
@@ -121,7 +130,7 @@ const SlateEditor = ({
     const names = ["Alice", "Bob", "Charlie", "David"];
     return names[Math.floor(Math.random() * names.length)];
   }, []);
-  
+
   const randomColor = useMemo(() => {
     const colors = ["#00ff00", "#ff0000", "#0000ff", "#ff9900"];
     return colors[Math.floor(Math.random() * colors.length)];
@@ -130,20 +139,16 @@ const SlateEditor = ({
   const editor = useMemo(() => {
     const e = withReact(
       withHistory(
-        withCursors(
-          withYjs(createEditor(), sharedType),
-          provider.awareness,
-          {
-            data: {
-              name: randomName,
-              color: randomColor,
-            },
-          }
-        )
+        withCursors(withYjs(createEditor(), sharedType), provider.awareness, {
+          data: {
+            name: randomName,
+            color: randomColor,
+          },
+        })
       )
     );
     return e;
-  }, [sharedType,provider.awareness]);
+  }, [sharedType, provider.awareness]);
 
   const initialValue: Descendant[] = [
     {
@@ -162,8 +167,7 @@ const SlateEditor = ({
     },
     [editor]
   );
-  
-  
+
   const renderLeaf = useCallback(({ attributes, children, leaf }) => {
     console.log("leaf:", leaf);
     if (leaf.cursor) {
@@ -194,7 +198,7 @@ const SlateEditor = ({
     <div className="border rounded-lg bg-white p-4 min-h-[400px]">
       <Slate editor={editor} initialValue={value} onChange={setValue}>
         <EditorHeaderToolbar />
-        <EditorBody 
+        <EditorBody
           editor={editor}
           decorate={decorate}
           value={value}
