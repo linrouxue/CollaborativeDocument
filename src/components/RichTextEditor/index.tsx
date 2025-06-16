@@ -38,26 +38,26 @@ const initialValue: Descendant[] = [
 ];
 
 export const App = () => {
-  return <RichTextEditor websocketUrl="ws://192.168.2.36:1234" />;
+  return <RichTextEditor />;
 }
 
 interface RichTextEditorProps {
-  websocketUrl: string;
   roomName?: string;
 }
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ websocketUrl, roomName = 'default' }) => {
+const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' }) => {
   const [connected, setConnected] = useState(false);
   const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
   const [provider, setProvider] = useState<WebsocketProvider | null>(null);
   const [onlineUsers, setOnlineUsers] = useState(1);
+  const websocketUrl = "ws://192.168.2.36:1234";
 
   // 初始化 Yjs 文档与连接
   useEffect(() => {
     const yDoc = new Y.Doc();
     const yXmlText = yDoc.get("slate", Y.XmlText);
     const yProvider = new WebsocketProvider(
-      websocketUrl || "ws://192.168.2.36:1234",
+      websocketUrl,
       roomName,
       yDoc
     );
