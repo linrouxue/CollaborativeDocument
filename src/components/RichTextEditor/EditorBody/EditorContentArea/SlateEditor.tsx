@@ -11,6 +11,13 @@ import {
   RedoOutlined,
 } from "@ant-design/icons";
 
+interface SlateEditorProps {
+  editor: any;
+  decorate: any;
+  renderLeaf: any;
+  onChange: (value: any) => void;
+}
+
 // 工具栏按钮组件
 const ToolbarButton = ({
   active,
@@ -108,62 +115,13 @@ const initialValue: Descendant[] = [
   },
 ];
 
-const SlateEditor: React.FC = () => {
-  const editor = useMemo(() => withReact(createEditor()), []);
-
-  const [editorValue, setEditorValue] = useState<Descendant[]>(initialValue);
-  const [ws, setWs] = useState<WebSocket | null>(null);
-  const [connected, setConnected] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState(0);
-
-  useEffect(() => {
-    const socket = new WebSocket("ws://localhost:1234");
-
-    socket.onopen = () => {
-      setConnected(true);
-      setWs(socket);
-      socket.send(JSON.stringify({ type: "sync", content: editorValue }));
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "sync" && data.content) {
-          setEditorValue(data.content);
-        } else if (data.type === "onlineUsers") {
-          setOnlineUsers(data.count);
-        }
-      } catch (e) {
-        console.error("處理消息錯誤", e);
-      }
-    };
-
-    socket.onclose = () => {
-      setConnected(false);
-    };
-
-    return () => socket.close();
-  }, []);
-
-  const handleChange = (newValue: Descendant[]) => {
-    setEditorValue(newValue);
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "sync", content: newValue }));
-    }
-  };
-
-  const renderLeaf = useCallback((props: any) => {
-    let { children } = props;
-    if (props.leaf.bold) children = <strong>{children}</strong>;
-    if (props.leaf.italic) children = <em>{children}</em>;
-    if (props.leaf.underline) children = <u>{children}</u>;
-    return <span {...props.attributes}>{children}</span>;
-  }, []);
+const SlateEditor: React.FC<SlateEditorProps> = ({ editor, decorate, renderLeaf, onChange }) => {
 
   return (
-    <Slate editor={editor} initialValue={editorValue} onChange={handleChange}>
+    <Slate editor={editor} initialValue={initialValue} onChange={onChange}>
       <Toolbar />
       <Editable
+        decorate={decorate}
         renderLeaf={renderLeaf}
         placeholder="請開始輸入..."
         spellCheck

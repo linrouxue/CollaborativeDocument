@@ -6,13 +6,21 @@ import EditorContentArea from "./EditorContentArea";
 
 interface EditorBodyProps {
   // 编辑器内容，目录数据等可以按需传入
-  editorValue: any; // Slate 的 Descendant[]
+  editor:any
+  // 装饰器
+  decorate: any;
+  // 渲染叶子节点
+  renderLeaf: any;
   onToggleCollapse?: (collapsed: boolean) => void;
+  onChange: (value: any) => void;
 }
 
 const EditorBody: React.FC<EditorBodyProps> = ({
-  editorValue,
+  editor,
+  decorate,
+  renderLeaf,
   onToggleCollapse,
+  onChange,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -26,9 +34,14 @@ const EditorBody: React.FC<EditorBodyProps> = ({
       <EditorSidebar
         collapsed={collapsed}
         toggleCollapsed={toggleSidebar}
-        editorValue={editorValue}
+        // TODO: 需要传入大纲数据
       />
-      <EditorContentArea />
+      <EditorContentArea 
+        editor={editor}
+        decorate={decorate}
+        renderLeaf={renderLeaf}
+        onChange={onChange}
+      />
     </div>
   );
 };

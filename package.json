@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "concurrently \"pnpm next dev\" \"pnpm ws-server\"",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "ws-server": "node src/server/server.cjs --port 1234"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.23.0",
