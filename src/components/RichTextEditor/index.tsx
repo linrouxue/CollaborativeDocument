@@ -50,7 +50,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' })
   const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
   const [provider, setProvider] = useState<WebsocketProvider | null>(null);
   const [onlineUsers, setOnlineUsers] = useState(1);
-  const websocketUrl = "ws://192.168.2.36:1234";
+  const websocketUrl = "ws://localhost:1234";
 
   // 初始化 Yjs 文档与连接
   useEffect(() => {
