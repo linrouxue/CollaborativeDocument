@@ -6,11 +6,8 @@ const nextConfig = {
   },
   experimental: {
     optimizeCss: true,
-    cssModules: true,
     optimizePackageImports: ['@ant-design/icons', '@ant-design/pro-components'],
   },
-  // 禁用 Google Fonts 功能
-  optimizeFonts: false
 }
 
 module.exports = nextConfig 
