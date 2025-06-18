@@ -361,19 +361,15 @@ export default function KnowledgeEditorLayout() {
         <Content style={{ margin: "16px" }}>
           <div
             style={{
-              padding: 24,
-              minHeight: "calc(100vh - 112px)",
+              height: "calc(100vh - 112px)",
               background: colorBgContainer,
               borderRadius: borderRadiusLG,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
             }}
           >
             {selectedDoc ? (
               <DocEditor docId={selectedDoc} />
             ) : (
-              <div style={{ textAlign: "center", color: "#999" }}>
+              <div style={{ textAlign: "center", color: "#999", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <p style={{ fontSize: "16px", marginBottom: "8px" }}>请从左侧选择一个文件开始编辑</p>
                 <p style={{ fontSize: "14px" }}>选择文件后，编辑器将自动加载</p>
               </div>
