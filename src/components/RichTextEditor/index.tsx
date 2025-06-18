@@ -1,28 +1,37 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { createEditor, Descendant, Editor, Transforms, Element as SlateElement, BaseEditor } from "slate";
-import { Slate, withReact, ReactEditor } from "slate-react";
+import {
+  createEditor,
+  Descendant,
+  Editor,
+  Transforms,
+  Element as SlateElement,
+  BaseEditor,
+} from "slate";
+import { Slate, withReact, ReactEditor, Editable } from "slate-react";
 import { HistoryEditor, withHistory } from "slate-history";
 
 import EditorHeaderToolbar from "./EditorHeaderToolbar";
 import EditorFooter from "./EditorFooter";
 import EditorBody from "./EditorBody";
 
-import * as Y from 'yjs'
+import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
-import { YjsEditor, withCursors, withYjs } from "@slate-yjs/core";
+import { YjsEditor, withCursors, withYjs} from "@slate-yjs/core";
+import {getRemoteCursorsOnLeaf,useDecorateRemoteCursors,getRemoteCaretsOnLeaf } from '@slate-yjs/react';
+import { addAlpha } from "@/utils/addAlpha";
 
 type CustomElement = {
-  type: 'paragraph';
+  type: "paragraph";
   children: CustomText[];
-}
+};
 
 type CustomText = {
   text: string;
-}
+};
 
-declare module 'slate' {
+declare module "slate" {
   interface CustomTypes {
     Editor: BaseEditor & ReactEditor & HistoryEditor;
     Element: CustomElement;
@@ -36,10 +45,6 @@ const initialValue: Descendant[] = [
     children: [{ text: "欢迎使用 Slate 协同编辑器！" }],
   },
 ];
-
-export const App = () => {
-  return <RichTextEditor />;
-}
 
 interface RichTextEditorProps {
   roomName?: string;
@@ -70,8 +75,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' })
 
     // 在线人数监听
     const awareness = yProvider.awareness;
-    const updateOnlineUsers = () =>
-      setOnlineUsers(awareness.getStates().size);
+    const updateOnlineUsers = () => setOnlineUsers(awareness.getStates().size);
 
     awareness.on("change", updateOnlineUsers);
     updateOnlineUsers();
@@ -88,10 +92,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' })
 
   useEffect(() => {
     if (provider) {
-      console.log('Awareness States:', Array.from(provider.awareness.getStates().values()));
+      console.log(
+        "Awareness States:",
+        Array.from(provider.awareness.getStates().values())
+      );
     }
   }, [provider, onlineUsers]);
-  
+
   if (!connected || !sharedType || !provider) {
     return <div>Loading…</div>;
   }
@@ -121,7 +128,7 @@ const SlateEditor = ({
     const names = ["Alice", "Bob", "Charlie", "David"];
     return names[Math.floor(Math.random() * names.length)];
   }, []);
-  
+
   const randomColor = useMemo(() => {
     const colors = ["#00ff00", "#ff0000", "#0000ff", "#ff9900"];
     return colors[Math.floor(Math.random() * colors.length)];
@@ -134,16 +141,13 @@ const SlateEditor = ({
           withYjs(createEditor(), sharedType),
           provider.awareness,
           {
-            data: {
-              name: randomName,
-              color: randomColor,
-            },
+            data: { name: randomName, color: randomColor }
           }
         )
       )
     );
     return e;
-  }, [sharedType,provider.awareness]);
+  }, [sharedType, provider]);
 
   const initialValue: Descendant[] = [
     {
@@ -152,34 +156,6 @@ const SlateEditor = ({
     },
   ];
   const [value, setValue] = useState<Descendant[]>(initialValue);
-
-  const decorate = useCallback(
-    ([node, path]: [any, any]) => {
-      if (editor.decorate) {
-        return editor.decorate([node, path]);
-      }
-      return [];
-    },
-    [editor]
-  );
-  
-  
-  const renderLeaf = useCallback(({ attributes, children, leaf }) => {
-    console.log("leaf:", leaf);
-    if (leaf.cursor) {
-      console.log("发现协同光标", leaf.cursor);
-      return (
-        <span
-          {...attributes}
-          style={{ backgroundColor: leaf.cursor.color, opacity: 0.4 }}
-          title={leaf.cursor.name}
-        >
-          {children}
-        </span>
-      );
-    }
-    return <span {...attributes}>{children}</span>;
-  }, []);
   // 连接编辑器
   useEffect(() => {
     YjsEditor.connect(editor);
@@ -194,17 +170,89 @@ const SlateEditor = ({
     <div className="border rounded-lg bg-white p-4 min-h-[400px]">
       <Slate editor={editor} initialValue={value} onChange={setValue}>
         <EditorHeaderToolbar />
-        <EditorBody 
-          editor={editor}
-          decorate={decorate}
-          value={value}
-          onChange={setValue}
-          renderLeaf={renderLeaf}
-        />
+        <RichEditable />
         <EditorFooter connected={connected} onlineUsers={onlineUsers} />
       </Slate>
     </div>
   );
 };
+
+// 新增子组件 RichEditable，放在 <Slate> 里面调用 hooks
+function RichEditable() {
+  const decorate = useDecorateRemoteCursors();
+  const renderLeaf = useCallback((props: any) => {
+    getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
+      if (cursor.data) {
+        props.children = (
+          <span style={{ backgroundColor: addAlpha(cursor.data.color as string, 0.5) }}>
+            {props.children}
+          </span>
+        );
+      }
+    });
+    getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
+      if (caret.data) {
+        props.children = (
+          <span style={{ position: "relative" }}>
+            <span
+              contentEditable={false}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: -1,
+                width: 2,
+                backgroundColor: caret.data.color as string,
+                animation: "blink 1s step-end infinite",
+              }}
+            />
+            <span
+              contentEditable={false}
+              style={{
+                position: "absolute",
+                left: -1,
+                top: 0,
+                fontSize: "0.75rem",
+                color: "#fff",
+                backgroundColor: caret.data.color as string,
+                borderRadius: 4,
+                padding: "0 4px",
+                transform: "translateY(-100%)",
+                zIndex: 10,
+                opacity: 0,
+                transition: "opacity 0.2s",
+                pointerEvents: "none",
+              }}
+              className="caret-name"
+            >
+              {caret.data.name as string}
+            </span>
+            {props.children}
+          </span>
+        );
+      }
+    });
+    return <span {...props.attributes}>{props.children}</span>;
+  }, []);
+
+  return (
+    <>
+      <style jsx global>{`
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        span[style*="position: relative"]:hover .caret-name {
+          opacity: 1 !important;
+        }
+      `}</style>
+      <Editable
+        decorate={decorate}
+        renderLeaf={renderLeaf}
+        style={{ minHeight: 300, padding: 16, border: "1px solid #ccc" }}
+      />
+    </>
+  );
+}
 
 export default RichTextEditor;
