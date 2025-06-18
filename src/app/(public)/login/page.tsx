@@ -192,7 +192,7 @@ export default function Home() {
                   htmlType="submit"
                   block
                 >
-                  {isLogin ? '登錄' : '註冊'}
+                  {isLogin ? '登录' : '注册'}
                 </StyledButton>
               </Form.Item>
               <Button
@@ -201,7 +201,7 @@ export default function Home() {
                 block
                 style={{ color: '#1890ff' }}
               >
-                {isLogin ? '沒有帳號？點擊註冊' : '已有帳號？點擊登錄'}
+                {isLogin ? '没有账号？点击注册' : '已有账号？点击登录'}
               </Button>
             </StyledForm>
           </StyledCard>

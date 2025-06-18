@@ -4,12 +4,99 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://root:feishu666@119.29.229.71:3306/feishu_docx"
+  url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model t_document {
+  id                Int      @id @default(autoincrement())
+  knowledge_base_id Int
+  parent_id         Int
+  user_id           Int
+  title             String   @db.VarChar(200)
+  content           String   @db.LongText
+  create_time       DateTime @db.DateTime(0)
+  update_time       DateTime @db.DateTime(0)
+  del_flag          Int
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model t_document_comment {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  document_id     Int
+  comment_content String   @db.Text
+  parent_id       Int?
+  create_time     DateTime @db.DateTime(0)
+  update_time     DateTime @db.DateTime(0)
+  del_flag        Int
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model t_document_permission {
+  id          Int      @id
+  user_id     Int
+  document_id Int
+  permission  Int
+  create_time DateTime @db.DateTime(0)
+  update_time DateTime @db.DateTime(0)
+  del_flag    Int
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model t_document_version {
+  id          Int      @id @default(autoincrement())
+  document_id Int
+  user_id     Int
+  title       String   @db.VarChar(200)
+  content     String   @db.LongText
+  version     String   @db.VarChar(50)
+  create_time DateTime @db.DateTime(0)
+  del_flag    Int
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model t_knowledge_base {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  img         String?  @db.VarChar(255)
+  create_time DateTime @db.DateTime(0)
+  update_time DateTime @db.DateTime(0)
+  del_flag    Int
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model t_knowledge_base_permission {
+  id                Int       @id
+  knowledge_base_id Int?
+  user_id           Int?
+  permission        String?   @db.VarChar(255)
+  create_time       DateTime? @db.DateTime(0)
+  update_time       DateTime? @db.DateTime(0)
+  del_flag          Int?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model t_recent_access {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  document_id Int
+  access_time DateTime @db.DateTime(0)
+  create_time DateTime @db.DateTime(0)
+  update_time DateTime @db.DateTime(0)
+  del_flag    Int
+}
+
+model t_user {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique(map: "email") @db.VarChar(100)
+  password    String   @db.VarChar(100)
+  username    String   @db.VarChar(50)
+  avatar      String?  @db.VarChar(255)
+  phone       String?  @db.VarChar(20)
+  create_time DateTime @db.DateTime(0)
+  update_time DateTime @db.DateTime(0)
+  del_flag    Int
 }
