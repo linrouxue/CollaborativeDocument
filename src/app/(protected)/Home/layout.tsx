@@ -8,9 +8,12 @@ import {
   HomeOutlined,
   FileOutlined,
   AppstoreOutlined,
+  TwitterOutlined,
+  SearchOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { Dropdown, Spin } from "antd";
+import { Dropdown, Spin, Input } from "antd";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 // src/app/Home/layout.tsx
@@ -29,6 +32,7 @@ export default function ProtectedLayout({
 }) {
   const [mounted, setMounted] = useState(false);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -38,11 +42,11 @@ export default function ProtectedLayout({
     const getPageTitle = (path: string) => {
       switch (path) {
         case "/Home":
-          return "主页 - 协同文档系统";
+          return "主页 - 协同文档";
         case "/Home/knowledge":
-          return "知识库 - 协同文档系统";
+          return "知识库 - 协同文档";
         default:
-          return "协同文档系统";
+          return "协同文档";
       }
     };
     document.title = getPageTitle(pathname);
@@ -156,7 +160,8 @@ export default function ProtectedLayout({
 
   return (
     <ProLayout
-      title="协同文档系统"
+      title="协同文档"
+      logo={<TwitterOutlined style={{ fontSize: '24px', color: '#1890ff' }} />}
       layout="mix"
       token={{
         sider: {
@@ -181,12 +186,79 @@ export default function ProtectedLayout({
         onOpenChange: (keys) => setOpenKeys(keys),
         mode: "inline",
       }}
-      menuItemRender={renderMenuItem} // 顶级菜单项渲染
-      subMenuItemRender={renderMenuItem} // 子菜单渲染
+      menuItemRender={renderMenuItem}
+      subMenuItemRender={renderMenuItem}
+      actionsRender={(props) => {
+        return [
+          <div key="search-container"
+            style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: '-8px' }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                right: '0',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 1,
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                alignItems: 'center',
+                border: showSearch ? '1px solid #d9d9d9' : 'none',
+                borderRadius: '4px',
+                backgroundColor: showSearch ? '#fff' : 'transparent',
+                padding: '0 8px',
+                marginRight: showSearch ? '0' : '-8px',
+              }}
+            >
+              <Input
+                placeholder="搜索..."
+                style={{
+                  width: showSearch ? '160px' : '0',
+                  transition: 'all 0.3s ease',
+                  border: 'none',
+                  padding: '4px 0',
+                  fontSize: '14px',
+                  outline: 'none',
+                  backgroundColor: 'transparent',
+                  boxShadow: 'none',
+                }}
+                onPressEnter={(e) => {
+                  console.log('搜索:', (e.target as HTMLInputElement).value);
+                }}
+              />
+            </div>
+
+              {showSearch ? (
+                <CloseOutlined 
+                  key="close" 
+                  style={{ 
+                    fontSize: '16px',
+                    position: 'relative',
+                    zIndex: 2,
+                    color: '#1890ff',
+                    transition: 'all 0.3s ease',
+                  }} 
+                  onClick={() => setShowSearch(false)}
+                />
+              ) : (
+                <SearchOutlined 
+                  key="search" 
+                  style={{ 
+                    fontSize: '20px',
+                    position: 'relative',
+                    zIndex: 2,
+                    color: 'inherit',
+                    transition: 'all 0.3s ease',
+                  }} 
+                  onClick={() => setShowSearch(true)}
+                />
+              )}
+            </div>
+        ];
+      }}
       avatarProps={{
         src: "https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg",
         size: "small",
-        title: "用户",
         render: (props, dom) => (
           <Dropdown menu={{ items }} placement="bottomRight">
             {dom}
