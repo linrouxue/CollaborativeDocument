@@ -246,10 +246,9 @@ function RichEditable() {
           opacity: 1 !important;
         }
       `}</style>
-      <Editable
+      <EditorBody
         decorate={decorate}
         renderLeaf={renderLeaf}
-        style={{ minHeight: 300, padding: 16, border: "1px solid #ccc" }}
       />
     </>
   );

@@ -36,32 +36,30 @@ const { Sider, Header, Content, Footer } = Layout;
 const { Search } = Input;
 const { DirectoryTree } = Tree;
 
-const knowledgeBaseMap: Record<string, TreeDataNode[]> = {
-  前端知识库: [
-    {
-      title: "HTML 教程",
-      key: "html",
-      isLeaf: true,
-    },
-    {
-      title: "CSS 指南",
-      key: "css",
-      isLeaf: true,
-    },
-  ],
-  后端知识库: [
-    {
-      title: "Node.js 实践",
-      key: "node",
-      isLeaf: true,
-    },
-    {
-      title: "Express 框架",
-      key: "express",
-      isLeaf: true,
-    },
-  ],
-};
+// 文件集合數據
+const documents: TreeDataNode[] = [
+  {
+    title: "HTML 教程",
+    key: "html",
+    isLeaf: true,
+  },
+  {
+    title: "CSS 指南",
+    key: "css",
+    isLeaf: true,
+  },
+  {
+    title: "Node.js 实践",
+    key: "node",
+    isLeaf: true,
+  },
+  {
+    title: "Express 框架",
+    key: "express",
+    isLeaf: true,
+  },
+];
+
 const moreActionsMenu = {
   items: [
     {
@@ -149,22 +147,14 @@ export default function KnowledgeEditorLayout() {
   } = theme.useToken();
 
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [selectedDoc, setSelectedDoc] = useState<string>("");
-  const [selectedBase, setSelectedBase] = useState<string>("前端知识库");
-  const [treeData, setTreeData] = useState<TreeDataNode[]>(
-    knowledgeBaseMap[selectedBase]
-  );
+  const [selectedDoc, setSelectedDoc] = useState<string>(() => {
+    return String(documents[0]?.key || "");
+  });
+  const [treeData, setTreeData] = useState<TreeDataNode[]>(documents);
   const [searchValue, setSearchValue] = useState("");
 
   // 用户信息（示例）
   const userName = "USER_NAME"; // 这里可以替换为实际的用户名
-
-  // 切换知识库
-  const handleBaseChange = (value: string) => {
-    setSelectedBase(value);
-    setTreeData(knowledgeBaseMap[value]);
-    setSelectedDoc(knowledgeBaseMap[value][0]?.key as string); // 默认选择第一个文档
-  };
 
   // Tree 搜索过滤
   const filterTree = (data: TreeDataNode[], keyword: string): TreeDataNode[] =>
@@ -204,24 +194,9 @@ export default function KnowledgeEditorLayout() {
             marginBottom: 12,
           }}
         >
-          <Select
-            value={selectedBase}
-            onChange={handleBaseChange}
-            style={{ width: 180 }}
-            styles={{
-              popup: {
-                root: {
-                  zIndex: 1500,
-                },
-              },
-            }}
-          >
-            {Object.keys(knowledgeBaseMap).map((key) => (
-              <Select.Option key={key} value={key}>
-                {key}
-              </Select.Option>
-            ))}
-          </Select>
+          <div style={{ color: "#fff", fontSize: "16px", fontWeight: "bold" }}>
+            文档列表
+          </div>
           <Button
             icon={<CloseOutlined />}
             type="text"
@@ -240,6 +215,7 @@ export default function KnowledgeEditorLayout() {
         <StyledTree
           multiple
           defaultExpandAll
+          defaultSelectedKeys={[selectedDoc]}
           treeData={
             searchValue ? filterTree(treeData, searchValue) : treeData
           }
@@ -265,6 +241,13 @@ export default function KnowledgeEditorLayout() {
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0 16px",
+            position: "fixed",
+            top: 0,
+            right: 0,
+            left: sidebarVisible ? 280 : 0,
+            zIndex: 1000,
+            transition: 'left 0.3s ease-in-out',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
           }}
         >
           {/* 左侧内容：返回 + 路径 */}
@@ -289,7 +272,7 @@ export default function KnowledgeEditorLayout() {
 
             {/* 当前路径信息 */}
             <span style={{ fontSize: "16px" }}>
-              {selectedBase} / {selectedDoc}
+              {selectedDoc}
             </span>
           </div>
 
@@ -358,7 +341,7 @@ export default function KnowledgeEditorLayout() {
           </div>
         </Header>
 
-        <Content style={{ margin: "16px" }}>
+        <Content style={{ margin: "16px", marginTop: "75px" }}>
           <div
             style={{
               height: "calc(100vh - 112px)",
@@ -367,17 +350,25 @@ export default function KnowledgeEditorLayout() {
             }}
           >
             {selectedDoc ? (
-              <DocEditor docId={selectedDoc} />
+              <DocEditor roomName={selectedDoc} />
             ) : (
               <div style={{ textAlign: "center", color: "#999", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <p style={{ fontSize: "16px", marginBottom: "8px" }}>请从左侧选择一个文件开始编辑</p>
-                <p style={{ fontSize: "14px" }}>选择文件后，编辑器将自动加载</p>
+                <p style={{ fontSize: "16px", marginBottom: "8px" }}>暂无文件</p>
+                
               </div>
             )}
           </div>
         </Content>
 
-        <Footer style={{ textAlign: "center" }}>
+        <Footer style={{ textAlign: "center",
+          position: "fixed",
+          bottom: 0,
+          right: 0,
+          left: sidebarVisible ? 280 : 0,
+          zIndex: 1000,
+          transition: 'left 0.3s ease-in-out',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+         }}>
           知识库系统 ©{new Date().getFullYear()} Created by XY
         </Footer>
       </Layout>
