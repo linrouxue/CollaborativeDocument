@@ -10,24 +10,25 @@ import {
   message,
   Space,
   Card,
-  Layout
+  Layout,
+  Spin
 } from 'antd';
 import {
   UserOutlined,
   LockOutlined,
   MailOutlined,
   EyeOutlined,
-  EyeInvisibleOutlined
+  EyeInvisibleOutlined,
+  TwitterOutlined
 } from '@ant-design/icons';
 import styled from 'styled-components';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
 
-// 定義動畫樣式
 const StyledLayout = styled(Layout)`
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(24, 144, 255, 0.2) 0%, rgba(82, 196, 26, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.2) 0%, rgba(255,255,255, 0.2) 100%);
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
 
@@ -42,7 +43,7 @@ const StyledCard = styled(Card)`
   max-width: 500px;
   margin: 0 auto;
   backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
   transition: all 0.3s ease;
@@ -56,7 +57,7 @@ const StyledCard = styled(Card)`
 const StyledTitle = styled(Title)`
   text-align: center;
   margin-bottom: 24px !important;
-  background: linear-gradient(45deg, #1890ff, #52c41a);
+  background: linear-gradient(45deg, #1890ff, #73a3f1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 `;
@@ -75,7 +76,7 @@ const StyledForm = styled(Form)`
 const StyledButton = styled(Button)`
   height: 40px;
   font-size: 16px;
-  background: linear-gradient(45deg, #1890ff, #52c41a);
+  background: linear-gradient(45deg, #1890ff, #cacaca);
   border: none;
   transition: all 0.3s ease;
 
@@ -110,22 +111,37 @@ export default function Home() {
 
   const toggleForm = () => setIsLogin(!isLogin);
 
+  if (!mounted) {
+    return (
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgb(245, 246, 247)'
+      }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <StyledLayout>
       <Content style={{ padding: '24px' }}>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
-            <Title level={1} style={{ marginBottom: '16px' }}>
-              知識協作平台
+            <TwitterOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
+            <Title level={1} style={{ marginBottom: '16px', color: '#1890ff' }}>
+              协同文档平台
             </Title>
-            <Text type="secondary" style={{ fontSize: '18px' }}>
-              與團隊一起創建、分享和協作文檔，打造您的知識庫
+            <Text type="secondary" style={{ fontSize: '16px' }}>
+              与团队一起创建、分享和协作文档，打造属于您的知识库
             </Text>
           </div>
 
           <StyledCard>
             <StyledTitle level={2}>
-              {isLogin ? '登錄' : '註冊'}
+              {isLogin ? '登录' : '注册'}
             </StyledTitle>
             <StyledForm
               form={form}
@@ -135,10 +151,10 @@ export default function Home() {
               {!isLogin && (
                 <Form.Item
                   name="name"
-                  rules={[{ required: true, message: '請輸入姓名' }]}
+                  rules={[{ required: true, message: '请输入姓名' }]}
                 >
                   <Input
-                    prefix={<UserOutlined />}
+                    prefix={<UserOutlined style={{ color: '#1890ff' }} />}
                     placeholder="姓名"
                     size="large"
                   />
@@ -147,23 +163,23 @@ export default function Home() {
               <Form.Item
                 name="email"
                 rules={[
-                  { required: true, message: '請輸入電子郵件' },
-                  { type: 'email', message: '請輸入有效的電子郵件' }
+                  { required: true, message: '请输入邮箱' },
+                  { type: 'email', message: '请输入有效的的邮箱' }
                 ]}
               >
                 <Input
-                  prefix={<MailOutlined />}
-                  placeholder="電子郵件"
+                  prefix={<MailOutlined style={{ color: '#1890ff' }} />}
+                  placeholder="电子邮箱"
                   size="large"
                 />
               </Form.Item>
               <Form.Item
                 name="password"
-                rules={[{ required: true, message: '請輸入密碼' }]}
+                rules={[{ required: true, message: '请输入密码' }]}
               >
                 <Input.Password
-                  prefix={<LockOutlined />}
-                  placeholder="密碼"
+                  prefix={<LockOutlined style={{ color: '#1890ff' }} />}
+                  placeholder="密码"
                   size="large"
                   iconRender={(visible) => 
                     visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
@@ -183,17 +199,12 @@ export default function Home() {
                 type="link"
                 onClick={toggleForm}
                 block
+                style={{ color: '#1890ff' }}
               >
                 {isLogin ? '沒有帳號？點擊註冊' : '已有帳號？點擊登錄'}
               </Button>
             </StyledForm>
           </StyledCard>
-
-          <div style={{ textAlign: 'center', marginTop: '48px' }}>
-            <Text type="secondary">
-              © {new Date().getFullYear()} 知識協作平台. 保留所有權利.
-            </Text>
-          </div>
         </Space>
       </Content>
     </StyledLayout>
