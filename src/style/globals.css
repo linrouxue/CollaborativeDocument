@@ -55,3 +55,12 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
 }
+
+
+/* 冻结input框选择之后的背景色 */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:active {
+  transition: background-color 9999s ease-in-out 0s;
+}
