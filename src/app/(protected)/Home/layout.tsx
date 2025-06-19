@@ -171,6 +171,10 @@ export default function ProtectedLayout({
           colorBgHeader: 'rgb(245, 246, 247)',
         },
       }}
+      contentStyle={{
+        background: 'rgb(250, 250, 250)',
+        minHeight: 'calc(100vh - 56px)'
+      }}
       fixedHeader
       fixSiderbar
       contentWidth="Fluid"
