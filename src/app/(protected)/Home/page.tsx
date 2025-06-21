@@ -42,7 +42,7 @@ export default function Home() {
     },
 
 
-  ]);
+  ], []);
 
   const [dataSource, setDataSource] = useState(initialData);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);

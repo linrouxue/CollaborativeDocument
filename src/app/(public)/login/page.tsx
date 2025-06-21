@@ -26,14 +26,86 @@ const { Content } = Layout;
 export default function Home() {
   const router = useRouter();
   const [form] = Form.useForm();
-  const [isLogin, setIsLogin] = useState(true);
+  const [formType, setFormType] = useState<'login' | 'register' | 'forgot'>('login');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const toggleForm = () => setIsLogin(!isLogin);
+  const getFormTitle = () => {
+    switch (formType) {
+      case 'login':
+        return '登录';
+      case 'register':
+        return '注册';
+      case 'forgot':
+        return '忘记密码';
+      default:
+        return '登录';
+    }
+  };
+
+  const getFormComponent = () => {
+    switch (formType) {
+      case 'login':
+        return <LoginForm />;
+      case 'register':
+        return <RegisterForm mode="register" onBackToLogin={() => setFormType('login')} />;
+      case 'forgot':
+        return <RegisterForm mode="forgot" onBackToLogin={() => setFormType('login')} />;
+      default:
+        return <LoginForm />;
+    }
+  };
+
+  const getBottomButtons = () => {
+    switch (formType) {
+      case 'login':
+        return (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Button
+              type="link"
+              onClick={() => setFormType('forgot')}
+              style={{ color: '#1890ff', padding: 0 }}
+            >
+              忘记密码？
+            </Button>
+            <Button
+              type="link"
+              onClick={() => setFormType('register')}
+              style={{ color: '#1890ff', padding: 0 }}
+            >
+              没有账号？点击注册
+            </Button>
+          </div>
+        );
+      case 'register':
+        return (
+          <Button
+            type="link"
+            onClick={() => setFormType('login')}
+            block
+            style={{ color: '#1890ff' }}
+          >
+            已有账号？点击登录
+          </Button>
+        );
+      case 'forgot':
+        return (
+          <Button
+            type="link"
+            onClick={() => setFormType('login')}
+            block
+            style={{ color: '#1890ff' }}
+          >
+            返回登录
+          </Button>
+        );
+      default:
+        return null;
+    }
+  };
 
   if (!mounted) {
     return (
@@ -65,21 +137,10 @@ export default function Home() {
 
           <StyledCard>
             <StyledTitle level={2}>
-              {isLogin ? '登录' : '注册'}
+              {getFormTitle()}
             </StyledTitle>
-            {isLogin ? (
-              <LoginForm />
-            ) : (
-              <RegisterForm />
-            )}
-            <Button
-              type="link"
-              onClick={toggleForm}
-              block
-              style={{ color: '#1890ff' }}
-            >
-              {isLogin ? '没有账号？点击注册' : '已有账号？点击登录'}
-            </Button>
+            {getFormComponent()}
+            {getBottomButtons()}
           </StyledCard>
         </Space>
       </Content>

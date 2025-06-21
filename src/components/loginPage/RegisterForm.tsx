@@ -5,11 +5,18 @@ import { StyledForm, StyledButton } from '../../app/(public)/login/LoginRegister
 import axios from 'axios';
 import LoginForm from './LoginForm';
 
-export default function RegisterForm() {
+interface RegisterFormProps {
+  mode: 'register' | 'forgot';
+  onBackToLogin: () => void;
+}
+
+export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [captchaLoading, setCaptchaLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+
+  const isForgotMode = mode === 'forgot';
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
@@ -36,7 +43,7 @@ export default function RegisterForm() {
     setTimeout(() => setCaptchaLoading(false), 1000);
   };
 
-  if (isRegistered) {
+  if (isRegistered && !isForgotMode) {
     // 注册成功后显示登录表单
     return <LoginForm />;
   }
@@ -56,7 +63,7 @@ export default function RegisterForm() {
       >
         <Input
           prefix={<MailOutlined style={{ color: '#1890ff' }} />}
-          placeholder="电子邮箱"
+          placeholder={isForgotMode ? "请输入注册时的邮箱" : "电子邮箱"}
           size="large"
         />
       </Form.Item>
@@ -83,11 +90,24 @@ export default function RegisterForm() {
       </Form.Item>
       <Form.Item
         name="password"
-        rules={[{ required: true, message: '请输入密码' }]}
+        rules={[
+          { required: true, message: isForgotMode ? '请输入新密码' : '请输入密码' },
+          {
+            validator: (_, value) => {
+              if (!value) return Promise.resolve();
+              
+              if (value.length < 6 || !/^(?=.*[a-zA-Z])(?=.*\d)/.test(value)) {
+                return Promise.reject(new Error('密码至少6位且必须包含字母和数字'));
+              }
+              
+              return Promise.resolve();
+            }
+          }
+        ]}
       >
         <Input.Password
           prefix={<LockOutlined style={{ color: '#1890ff' }} />}
-          placeholder="密码"
+          placeholder={isForgotMode ? "新密码" : "密码"}
           size="large"
           iconRender={(visible) =>
             visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
@@ -98,7 +118,7 @@ export default function RegisterForm() {
         name="confirmPassword"
         dependencies={["password"]}
         rules={[
-          { required: true, message: '请确认密码' },
+          { required: true, message: isForgotMode ? '请确认新密码' : '请确认密码' },
           ({ getFieldValue }) => ({
             validator(_, value) {
               if (!value || getFieldValue('password') === value) {
@@ -125,7 +145,7 @@ export default function RegisterForm() {
           block
           loading={loading}
         >
-          注册
+          {isForgotMode ? '重置密码' : '注册'}
         </StyledButton>
       </Form.Item>
     </StyledForm>
