@@ -19,11 +19,12 @@ import axios from 'axios';
 import LoginForm from '../../../components/loginPage/LoginForm';
 import RegisterForm from '../../../components/loginPage/RegisterForm';
 import { StyledLayout, StyledCard, StyledTitle } from './LoginRegister.styles';
+import { AlertProvider, useAlert } from '@/contexts/AlertContext';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
 
-export default function Home() {
+function LoginPageContent() {
   const router = useRouter();
   const [form] = Form.useForm();
   const [formType, setFormType] = useState<'login' | 'register' | 'forgot'>('login');
@@ -145,5 +146,13 @@ export default function Home() {
         </Space>
       </Content>
     </StyledLayout>
+  );
+}
+
+export default function Home() {
+  return (
+    <AlertProvider>
+      <LoginPageContent />
+    </AlertProvider>
   );
 }

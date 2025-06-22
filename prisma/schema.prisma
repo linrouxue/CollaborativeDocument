@@ -93,10 +93,22 @@ model t_user {
   id          Int      @id @default(autoincrement())
   email       String   @unique(map: "email") @db.VarChar(100)
   password    String   @db.VarChar(100)
-  username    String   @db.VarChar(50)
+  username    String?  @db.VarChar(50)
   avatar      String?  @db.VarChar(255)
   phone       String?  @db.VarChar(20)
   create_time DateTime @db.DateTime(0)
   update_time DateTime @db.DateTime(0)
   del_flag    Int
+}
+
+/// 验证码表 - 用于存储邮箱验证码
+model t_captcha {
+  id         Int       @id @default(autoincrement())
+  email      String    @db.VarChar(255)
+  captcha    String    @db.VarChar(10)
+  expires_at DateTime  @db.DateTime(0)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+
+  @@index([email], map: "idx_email")
+  @@index([expires_at], map: "idx_expires_at")
 }

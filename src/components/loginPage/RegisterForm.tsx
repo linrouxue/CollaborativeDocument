@@ -3,50 +3,88 @@ import { MailOutlined, LockOutlined, EyeOutlined, EyeInvisibleOutlined, SafetyOu
 import { useState } from 'react';
 import { StyledForm, StyledButton } from '../../app/(public)/login/LoginRegister.styles';
 import axios from 'axios';
-import LoginForm from './LoginForm';
+import { useAlert } from '@/contexts/AlertContext';
 
 interface RegisterFormProps {
   mode: 'register' | 'forgot';
   onBackToLogin: () => void;
 }
 
+
 export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [captchaLoading, setCaptchaLoading] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
 
+  const { showAlert } = useAlert();
   const isForgotMode = mode === 'forgot';
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
     try {
-      // 注册接口请求
-      const res = await axios.post('/api/user/register', values);
-      if (res.data && res.data.user) {
-        message.success('注册成功！请登录');
-        setIsRegistered(true);
-        form.resetFields();
+      if (isForgotMode) {
+        // 忘记密码模式 - 重置密码
+        const res = await axios.post('/api/user/reset-password', {
+          email: values.email,
+          captcha: values.captcha,
+          newPassword: values.password,
+          confirmPassword: values.confirmPassword,
+        });
+        if (res.data && res.data.success) {
+          showAlert('密码重置成功！', 'success')
+          onBackToLogin();
+          form.resetFields();
+        } else {
+          showAlert('密码重置失败', 'error')
+        }
       } else {
-        message.error(res.data.message || '注册失败');
+        // 注册模式
+        const res = await axios.post('/api/user/register', values);
+        if (res.data && res.data.user) {
+          message.success('注册成功！请登录');
+          onBackToLogin();
+          form.resetFields();
+        } else {
+          message.error(res.data.message || '注册失败');
+        }
       }
     } catch (error: any) {
-      message.error(error?.response?.data?.message || '注册失败，请重试');
+      const errorMessage = isForgotMode ? '密码重置失败，请重试' : '注册失败，请重试';
+      message.error(error?.response?.data?.message || errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  // 获取验证码按钮点击事件（可后续实现）
+  // 获取验证码按钮点击事件
   const handleGetCaptcha = async () => {
-    setCaptchaLoading(true);
-    setTimeout(() => setCaptchaLoading(false), 1000);
-  };
+    const email = form.getFieldValue('email');
+    if (!email) {
+      message.error('请先输入邮箱地址');
+      return;
+    }
 
-  if (isRegistered && !isForgotMode) {
-    // 注册成功后显示登录表单
-    return <LoginForm />;
-  }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      message.error('请输入有效的邮箱地址');
+      return;
+    }
+
+    setCaptchaLoading(true);
+    try {
+      // 发送验证码API
+      const res = await axios.post('/api/user/send-captcha', { email });
+      if (res.data && res.data.success) {
+        message.success('验证码已发送到您的邮箱');
+      } else {
+        message.error(res.data.message || '发送验证码失败');
+      }
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || '发送验证码失败，请重试');
+    } finally {
+      setCaptchaLoading(false);
+    }
+  };
 
   return (
     <StyledForm
