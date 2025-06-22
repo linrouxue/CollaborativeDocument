@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import EditorSidebar from "./EditorSidebar";
-import EditorContentArea from "./EditorContentArea";
+import React, { useState } from 'react';
+import EditorSidebar from './EditorSidebar';
+import EditorContentArea from './EditorContentArea';
 
 interface EditorBodyProps {
   // 编辑器内容，目录数据等可以按需传入
-  editor:any
+  editor: any;
   // 装饰器
   decorate: any;
   // 渲染叶子节点
@@ -38,7 +38,7 @@ const EditorBody: React.FC<EditorBodyProps> = ({
         toggleCollapsed={toggleSidebar}
         // TODO: 需要传入大纲数据
       />
-      <EditorContentArea 
+      <EditorContentArea
         editor={editor}
         decorate={decorate}
         renderLeaf={renderLeaf}

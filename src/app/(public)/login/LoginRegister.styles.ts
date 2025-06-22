@@ -5,14 +5,20 @@ const { Title } = Typography;
 
 export const StyledLayout = styled(Layout)`
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(24, 144, 255, 0.2) 0%, rgba(255,255,255, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.2) 0%, rgba(255, 255, 255, 0.2) 100%);
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
 
   @keyframes gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
   }
 `;
 
@@ -59,6 +65,6 @@ export const StyledButton = styled(Button)`
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
   }
-`; 
+`;

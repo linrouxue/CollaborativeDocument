@@ -11,10 +11,7 @@ export async function POST(request: NextRequest) {
 
     // 验证必填字段
     if (!email || !captcha || !newPassword || !confirmPassword) {
-      return NextResponse.json(
-        { success: false, message: '请填写所有必填字段' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: '请填写所有必填字段' }, { status: 400 });
     }
 
     // 验证邮箱格式
@@ -46,14 +43,11 @@ export async function POST(request: NextRequest) {
     let existingUser;
     try {
       existingUser = await (prisma as any).t_user.findFirst({
-        where: { email }
+        where: { email },
       });
 
       if (!existingUser) {
-        return NextResponse.json(
-          { success: false, message: '该邮箱未注册' },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: '该邮箱未注册' }, { status: 400 });
       }
     } catch (userError) {
       return NextResponse.json(
@@ -84,16 +78,16 @@ export async function POST(request: NextRequest) {
     try {
       const result = await (prisma as any).t_user.update({
         where: { email },
-        data: { 
+        data: {
           password: hashedPassword,
-          update_time: new Date()
-        }
+          update_time: new Date(),
+        },
       });
 
       return NextResponse.json({
         status: 200,
         success: true,
-        message: '密码重置成功'
+        message: '密码重置成功',
       });
     } catch (updateError) {
       return NextResponse.json(
@@ -101,12 +95,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
   } catch (error) {
     console.error('密码重置失败，详细错误:', error);
-    return NextResponse.json(
-      { success: false, message: '密码重置失败，请重试' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: '密码重置失败，请重试' }, { status: 500 });
   }
-} 
+}

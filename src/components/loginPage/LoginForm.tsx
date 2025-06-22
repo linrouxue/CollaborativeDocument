@@ -31,16 +31,12 @@ export default function LoginForm() {
   };
 
   return (
-    <StyledForm
-      form={form}
-      onFinish={handleSubmit}
-      layout="vertical"
-    >
+    <StyledForm form={form} onFinish={handleSubmit} layout="vertical">
       <Form.Item
         name="email"
         rules={[
           { required: true, message: '请输入邮箱' },
-          { type: 'email', message: '请输入有效的邮箱' }
+          { type: 'email', message: '请输入有效的邮箱' },
         ]}
       >
         <Input
@@ -49,29 +45,19 @@ export default function LoginForm() {
           size="large"
         />
       </Form.Item>
-      <Form.Item
-        name="password"
-        rules={[{ required: true, message: '请输入密码' }]}
-      >
+      <Form.Item name="password" rules={[{ required: true, message: '请输入密码' }]}>
         <Input.Password
           prefix={<LockOutlined style={{ color: '#1890ff' }} />}
           placeholder="密码"
           size="large"
-          iconRender={(visible) =>
-            visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
-          }
+          iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
         />
       </Form.Item>
       <Form.Item>
-        <StyledButton
-          type="primary"
-          htmlType="submit"
-          block
-          loading={loading}
-        >
+        <StyledButton type="primary" htmlType="submit" block loading={loading}>
           登录
         </StyledButton>
       </Form.Item>
     </StyledForm>
   );
-} 
+}

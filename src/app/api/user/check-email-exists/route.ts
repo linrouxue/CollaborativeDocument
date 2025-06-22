@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: '缺少邮箱参数' }, { status: 400 });
     }
     const user = await (prisma as any).t_user.findFirst({ where: { email } });
-    return NextResponse.json({ success: true, exists: !!user },{status: 200});
+    return NextResponse.json({ success: true, exists: !!user }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ success: false, message: '查询失败' }, { status: 500 });
   }
-} 
+}

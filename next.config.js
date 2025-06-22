@@ -17,6 +17,6 @@ const nextConfig = {
     // 在生产环境中忽略 ESLint 错误
     ignoreDuringBuilds: true,
   },
-}
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig;

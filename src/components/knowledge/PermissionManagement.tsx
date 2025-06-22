@@ -1,5 +1,5 @@
 import { Input, Table, Button, Select, Space, Tag, Tooltip, Modal } from 'antd';
-import {  UserAddOutlined, InfoCircleOutlined, DeleteOutlined } from '@ant-design/icons';
+import { UserAddOutlined, InfoCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useState, useCallback, useEffect } from 'react';
 import type { TableColumnType } from 'antd';
 import { debounce } from 'lodash';
@@ -24,11 +24,11 @@ const mockMembers: Member[] = [
     name: '李四',
     email: 'lisi@example.com',
     role: 'manager',
-    }
+  },
 ];
 
 const roleOptions = [
-  { 
+  {
     label: '所有者',
     value: 'owner',
     description: [
@@ -40,10 +40,10 @@ const roleOptions = [
       '可以编辑所有文档',
       '可以修订所有文档',
       '可以评论所有文档',
-      '可以阅读所有文档'
-    ]
+      '可以阅读所有文档',
+    ],
   },
-  { 
+  {
     label: '管理者',
     value: 'manager',
     description: [
@@ -52,10 +52,10 @@ const roleOptions = [
       '可以编辑所有文档',
       '可以修订所有文档',
       '可以评论所有文档',
-      '可以阅读所有文档'
-    ]
+      '可以阅读所有文档',
+    ],
   },
-  { 
+  {
     label: '编辑者',
     value: 'editor',
     description: [
@@ -63,33 +63,24 @@ const roleOptions = [
       '可以编辑所有文档',
       '可以修订所有文档',
       '可以评论所有文档',
-      '可以阅读所有文档'
-    ]
+      '可以阅读所有文档',
+    ],
   },
-  { 
+  {
     label: '修订者',
     value: 'reviewer',
-    description: [
-      '可以修订文档内容',
-      '可以评论所有文档',
-      '可以阅读所有文档'
-    ]
+    description: ['可以修订文档内容', '可以评论所有文档', '可以阅读所有文档'],
   },
-  { 
+  {
     label: '评论者',
     value: 'commenter',
-    description: [
-      '可以评论所有文档',
-      '可以阅读所有文档'
-    ]
+    description: ['可以评论所有文档', '可以阅读所有文档'],
   },
-  { 
+  {
     label: '读者',
     value: 'reader',
-    description: [
-      '只能阅读文档，不能做任何修改'
-    ]
-  }
+    description: ['只能阅读文档，不能做任何修改'],
+  },
 ];
 
 const roleColors = {
@@ -98,7 +89,7 @@ const roleColors = {
   editor: 'green',
   reviewer: 'orange',
   commenter: 'cyan',
-  reader: 'default'
+  reader: 'default',
 };
 
 export default function PermissionManagement() {
@@ -115,11 +106,12 @@ export default function PermissionManagement() {
       }
 
       const searchValue = value.toLowerCase();
-      const filtered = mockMembers.filter(member =>
-        member.name.toLowerCase().includes(searchValue) ||
-        member.email.toLowerCase().includes(searchValue)
+      const filtered = mockMembers.filter(
+        (member) =>
+          member.name.toLowerCase().includes(searchValue) ||
+          member.email.toLowerCase().includes(searchValue)
       );
-      
+
       setSelectedMembers(filtered);
     }, 500),
     []
@@ -160,7 +152,7 @@ export default function PermissionManagement() {
       dataIndex: 'role',
       key: 'role',
       render: (role: string) => {
-        const roleInfo = roleOptions.find(r => r.value === role);
+        const roleInfo = roleOptions.find((r) => r.value === role);
         return (
           <div className="flex items-center">
             <Select
@@ -169,12 +161,14 @@ export default function PermissionManagement() {
               options={roleOptions}
               onChange={(value) => console.log('权限变更:', value)}
             />
-            <Tooltip 
+            <Tooltip
               title={
                 <div>
                   <div className="font-medium mb-1">权限说明：</div>
                   {roleInfo?.description.map((item, index) => (
-                    <div key={index} className="text-xs">{item}</div>
+                    <div key={index} className="text-xs">
+                      {item}
+                    </div>
                   ))}
                 </div>
               }
@@ -189,13 +183,12 @@ export default function PermissionManagement() {
       title: '操作',
       key: 'action',
       render: (_: any, record: Member) => (
-        <Button 
-          type="link" 
-          danger 
+        <Button
+          type="link"
+          danger
           icon={<DeleteOutlined />}
           onClick={() => console.log('移除成员:', record.id)}
-        >
-        </Button>
+        ></Button>
       ),
     },
   ];
@@ -227,12 +220,7 @@ export default function PermissionManagement() {
   return (
     <div className="p-4 h-[400]">
       <div className="flex justify-between items-center mb-4">
-
-        <Button 
-          type="primary" 
-          icon={<UserAddOutlined />}
-          onClick={handleAddMember}
-        >
+        <Button type="primary" icon={<UserAddOutlined />} onClick={handleAddMember}>
           添加成员
         </Button>
       </div>
@@ -240,20 +228,20 @@ export default function PermissionManagement() {
       <div className="mb-4">
         <div className="text-sm text-gray-500 mb-2">权限说明：</div>
         <Space size={[0, 8]} wrap>
-          {roleOptions.map(role => (
+          {roleOptions.map((role) => (
             <Tooltip
               key={role.value}
               title={
                 <div>
                   {role.description.map((item, index) => (
-                    <div key={index} className="text-xs">{item}</div>
+                    <div key={index} className="text-xs">
+                      {item}
+                    </div>
                   ))}
                 </div>
               }
             >
-              <Tag color={roleColors[role.value as keyof typeof roleColors]}>
-                {role.label}
-              </Tag>
+              <Tag color={roleColors[role.value as keyof typeof roleColors]}>{role.label}</Tag>
             </Tooltip>
           ))}
         </Space>
@@ -295,7 +283,7 @@ export default function PermissionManagement() {
               onChange={handleMemberSelect}
               options={[
                 { label: '张三', value: '1' },
-                { label: '李四', value: '2' }
+                { label: '李四', value: '2' },
               ]}
             />
           </div>
@@ -318,4 +306,4 @@ export default function PermissionManagement() {
       </Modal>
     </div>
   );
-} 
+}

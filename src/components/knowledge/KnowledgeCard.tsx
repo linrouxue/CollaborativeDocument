@@ -1,4 +1,4 @@
-import { Tooltip } from "antd";
+import { Tooltip } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 
@@ -11,7 +11,14 @@ interface KnowledgeCardProps {
   onDelete: (id: string) => void;
 }
 
-export default function KnowledgeCard({ id, title, description, cover, onEdit, onDelete }: KnowledgeCardProps) {
+export default function KnowledgeCard({
+  id,
+  title,
+  description,
+  cover,
+  onEdit,
+  onDelete,
+}: KnowledgeCardProps) {
   const router = useRouter();
 
   const handleCardClick = () => {
@@ -38,13 +45,13 @@ export default function KnowledgeCard({ id, title, description, cover, onEdit, o
           </div>
           <div className="p-4 w-full flex justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <Tooltip title="编辑">
-              <EditOutlined 
-                className="text-sm hover:!text-blue-600 transition-colors" 
+              <EditOutlined
+                className="text-sm hover:!text-blue-600 transition-colors"
                 onClick={handleEdit}
               />
             </Tooltip>
             <Tooltip title="删除">
-              <DeleteOutlined 
+              <DeleteOutlined
                 className="text-sm hover:!text-red-600 transition-colors"
                 onClick={handleDelete}
               />
@@ -52,12 +59,12 @@ export default function KnowledgeCard({ id, title, description, cover, onEdit, o
           </div>
         </div>
       </div>
-      <img 
-        className="w-full h-50 rounded-lg object-cover opacity-80 group-hover:opacity-60 transition-opacity" 
+      <img
+        className="w-full h-50 rounded-lg object-cover opacity-80 group-hover:opacity-60 transition-opacity"
         alt="知识库图片"
         src={cover}
         onClick={handleCardClick}
       />
     </div>
   );
-} 
+}

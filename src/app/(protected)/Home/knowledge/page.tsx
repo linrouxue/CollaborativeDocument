@@ -1,6 +1,6 @@
 'use client';
-import { Skeleton, Row, Col, Input, message } from "antd";
-import { useState } from "react";
+import { Skeleton, Row, Col, Input, message } from 'antd';
+import { useState } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import KnowledgeCard from '@/components/knowledge/KnowledgeCard';
 import CreateKnowledgeModal from '@/components/knowledge/CreateKnowledgeModal';
@@ -19,15 +19,15 @@ interface KnowledgeData {
 const know: KnowledgeData[] = [
   {
     id: '1',
-    title: "知识库2",
+    title: '知识库2',
     description: '知识库2的描述信息',
-    cover: 'https://os.alipayobjects.com/rmsportal/QBnOOoLaAfKPirc.png'
+    cover: 'https://os.alipayobjects.com/rmsportal/QBnOOoLaAfKPirc.png',
   },
   {
     id: '2',
-    title: "知识库3",
-    description: '知识库3的描述信息'
-  }
+    title: '知识库3',
+    description: '知识库3的描述信息',
+  },
 ];
 
 export default function Knowledge() {
@@ -50,7 +50,7 @@ export default function Knowledge() {
   };
 
   const handleEdit = (id: string) => {
-    const knowledge = know.find(item => item.id === id);
+    const knowledge = know.find((item) => item.id === id);
     if (knowledge) {
       setModalMode('edit');
       setCurrentKnowledge(knowledge);
@@ -59,7 +59,7 @@ export default function Knowledge() {
   };
 
   const handleDelete = (id: string) => {
-    const knowledge = know.find(item => item.id === id);
+    const knowledge = know.find((item) => item.id === id);
     if (knowledge) {
       setCurrentKnowledge(knowledge);
       setIsDeleteModalOpen(true);
@@ -88,9 +88,9 @@ export default function Knowledge() {
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">知识库</h1>
-        <Input.Search 
-          placeholder="搜索知识库" 
-          allowClear 
+        <Input.Search
+          placeholder="搜索知识库"
+          allowClear
           onSearch={onSearch}
           style={{ width: 300 }}
           className="ml-4"
@@ -99,7 +99,7 @@ export default function Knowledge() {
       <Skeleton active loading={loading}>
         <Row gutter={[10, 16]}>
           <Col>
-            <div 
+            <div
               className="relative w-40 cursor-pointer transition-transform hover:scale-103"
               onClick={showCreateModal}
             >

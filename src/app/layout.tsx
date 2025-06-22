@@ -10,18 +10,12 @@ export const metadata: Metadata = {
   description: '基于 Next.js 和 Ant Design 的协同文档系统',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN">
       <body>
         <AntdRegistry>
-          <ConfigProvider theme={theme}>
-            {children}
-          </ConfigProvider>
+          <ConfigProvider theme={theme}>{children}</ConfigProvider>
         </AntdRegistry>
       </body>
     </html>

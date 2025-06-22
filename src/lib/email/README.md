@@ -1,6 +1,7 @@
 # 邮件服务配置说明
 
 ## 环境变量配置
+
 ```env
 # 数据库配置
 DATABASE_URL="mysql://username:password@localhost:3306/database_name"
@@ -19,12 +20,14 @@ NEXTAUTH_URL=http://localhost:3000
 ## QQ邮箱配置步骤
 
 1. **开启SMTP服务**
+
    - 登录QQ邮箱
    - 进入"设置" → "账户"
    - 找到"POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV服务"
    - 开启"POP3/SMTP服务"
 
 2. **获取授权码**
+
    - 开启服务后，点击"生成授权码"
    - 按照提示操作，获取16位授权码
    - 将授权码填入 `SMTP_PASS` 环境变量
@@ -38,6 +41,7 @@ NEXTAUTH_URL=http://localhost:3000
 ## 其他邮箱配置
 
 ### Gmail
+
 ```env
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
@@ -46,6 +50,7 @@ SMTP_PASS=your-app-password
 ```
 
 ### 163邮箱
+
 ```env
 SMTP_HOST=smtp.163.com
 SMTP_PORT=587
@@ -54,6 +59,7 @@ SMTP_PASS=your-authorization-code
 ```
 
 ### 企业邮箱
+
 ```env
 SMTP_HOST=smtp.your-company.com
 SMTP_PORT=587
@@ -72,4 +78,4 @@ SMTP_PASS=your-password
 
 1. **连接失败**: 检查SMTP配置和网络连接
 2. **认证失败**: 确认邮箱和授权码正确
-3. **发送失败**: 检查邮箱是否开启了SMTP服务 
+3. **发送失败**: 检查邮箱是否开启了SMTP服务

@@ -1,4 +1,4 @@
-import { Modal } from "antd";
+import { Modal } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 
 interface DeleteKnowledgeModalProps {
@@ -8,31 +8,31 @@ interface DeleteKnowledgeModalProps {
   knowledgeName: string;
 }
 
-export default function DeleteKnowledgeModal({ 
-  open, 
-  onCancel, 
+export default function DeleteKnowledgeModal({
+  open,
+  onCancel,
   onConfirm,
-  knowledgeName 
+  knowledgeName,
 }: DeleteKnowledgeModalProps) {
   return (
     <Modal
-        title={
-            <div className="flex items-center text-lg">
-            <ExclamationCircleOutlined className="text-red-500 mr-2" />
-            删除知识库
-            </div>
-        }
-        open={open}
-        onOk={onConfirm}
-        onCancel={onCancel}
-        okText="删除"
-        cancelText="取消"
-        okButtonProps={{ 
-            danger: true,
-            className: '!bg-red-500 hover:!bg-red-600'
-        }}
-        className="delete-knowledge-modal"
-        maskClosable={false}
+      title={
+        <div className="flex items-center text-lg">
+          <ExclamationCircleOutlined className="text-red-500 mr-2" />
+          删除知识库
+        </div>
+      }
+      open={open}
+      onOk={onConfirm}
+      onCancel={onCancel}
+      okText="删除"
+      cancelText="取消"
+      okButtonProps={{
+        danger: true,
+        className: '!bg-red-500 hover:!bg-red-600',
+      }}
+      className="delete-knowledge-modal"
+      maskClosable={false}
     >
       <div className="py-6">
         <div className="text-center mb-6">
@@ -47,4 +47,4 @@ export default function DeleteKnowledgeModal({
       </div>
     </Modal>
   );
-} 
+}

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 /* @import 'ant-design-pro/dist/ant-design-pro.css';  */
 
 :root {
@@ -55,7 +55,6 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
 }
-
 
 /* 冻结input框选择之后的背景色 */
 input:-webkit-autofill,

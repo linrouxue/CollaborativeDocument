@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   createEditor,
   Descendant,
@@ -8,22 +8,26 @@ import {
   Transforms,
   Element as SlateElement,
   BaseEditor,
-} from "slate";
-import { Slate, withReact, ReactEditor, Editable } from "slate-react";
-import { HistoryEditor, withHistory } from "slate-history";
+} from 'slate';
+import { Slate, withReact, ReactEditor, Editable } from 'slate-react';
+import { HistoryEditor, withHistory } from 'slate-history';
 
-import EditorHeaderToolbar from "./EditorHeaderToolbar";
-import EditorFooter from "./EditorFooter";
-import EditorBody from "./EditorBody";
+import EditorHeaderToolbar from './EditorHeaderToolbar';
+import EditorFooter from './EditorFooter';
+import EditorBody from './EditorBody';
 
-import * as Y from "yjs";
-import { WebsocketProvider } from "y-websocket";
-import { YjsEditor, withCursors, withYjs} from "@slate-yjs/core";
-import {getRemoteCursorsOnLeaf,useDecorateRemoteCursors,getRemoteCaretsOnLeaf } from '@slate-yjs/react';
-import { addAlpha } from "@/utils/addAlpha";
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
+import { YjsEditor, withCursors, withYjs } from '@slate-yjs/core';
+import {
+  getRemoteCursorsOnLeaf,
+  useDecorateRemoteCursors,
+  getRemoteCaretsOnLeaf,
+} from '@slate-yjs/react';
+import { addAlpha } from '@/utils/addAlpha';
 
 type CustomElement = {
-  type: "paragraph";
+  type: 'paragraph';
   children: CustomText[];
 };
 
@@ -31,7 +35,7 @@ type CustomText = {
   text: string;
 };
 
-declare module "slate" {
+declare module 'slate' {
   interface CustomTypes {
     Editor: BaseEditor & ReactEditor & HistoryEditor;
     Element: CustomElement;
@@ -41,8 +45,8 @@ declare module "slate" {
 
 const initialValue: Descendant[] = [
   {
-    type: "paragraph",
-    children: [{ text: "欢迎使用 Slate 协同编辑器！" }],
+    type: 'paragraph',
+    children: [{ text: '欢迎使用 Slate 协同编辑器！' }],
   },
 ];
 
@@ -55,36 +59,32 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' })
   const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
   const [provider, setProvider] = useState<WebsocketProvider | null>(null);
   const [onlineUsers, setOnlineUsers] = useState(1);
-  const websocketUrl = "ws://192.168.2.36:1234";
+  const websocketUrl = 'ws://192.168.2.36:1234';
 
   // 初始化 Yjs 文档与连接
   useEffect(() => {
     const yDoc = new Y.Doc();
-    const yXmlText = yDoc.get("slate", Y.XmlText);
-    const yProvider = new WebsocketProvider(
-      websocketUrl,
-      roomName,
-      yDoc
-    );
+    const yXmlText = yDoc.get('slate', Y.XmlText);
+    const yProvider = new WebsocketProvider(websocketUrl, roomName, yDoc);
 
     // 连接状态监听
-    yProvider.on("status", (event: { status: string }) => {
-      console.log("Connection status:", event.status);
-      setConnected(event.status === "connected");
+    yProvider.on('status', (event: { status: string }) => {
+      console.log('Connection status:', event.status);
+      setConnected(event.status === 'connected');
     });
 
     // 在线人数监听
     const awareness = yProvider.awareness;
     const updateOnlineUsers = () => setOnlineUsers(awareness.getStates().size);
 
-    awareness.on("change", updateOnlineUsers);
+    awareness.on('change', updateOnlineUsers);
     updateOnlineUsers();
 
     setSharedType(yXmlText);
     setProvider(yProvider);
 
     return () => {
-      awareness.off("change", updateOnlineUsers);
+      awareness.off('change', updateOnlineUsers);
       yProvider.destroy();
       yDoc.destroy();
     };
@@ -92,10 +92,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' })
 
   useEffect(() => {
     if (provider) {
-      console.log(
-        "Awareness States:",
-        Array.from(provider.awareness.getStates().values())
-      );
+      console.log('Awareness States:', Array.from(provider.awareness.getStates().values()));
     }
   }, [provider, onlineUsers]);
 
@@ -125,25 +122,21 @@ const SlateEditor = ({
   connected: boolean;
 }) => {
   const randomName = useMemo(() => {
-    const names = ["Alice", "Bob", "Charlie", "David"];
+    const names = ['Alice', 'Bob', 'Charlie', 'David'];
     return names[Math.floor(Math.random() * names.length)];
   }, []);
 
   const randomColor = useMemo(() => {
-    const colors = ["#00ff00", "#ff0000", "#0000ff", "#ff9900"];
+    const colors = ['#00ff00', '#ff0000', '#0000ff', '#ff9900'];
     return colors[Math.floor(Math.random() * colors.length)];
   }, []);
 
   const editor = useMemo(() => {
     const e = withReact(
       withHistory(
-        withCursors(
-          withYjs(createEditor(), sharedType),
-          provider.awareness,
-          {
-            data: { name: randomName, color: randomColor }
-          }
-        )
+        withCursors(withYjs(createEditor(), sharedType), provider.awareness, {
+          data: { name: randomName, color: randomColor },
+        })
       )
     );
     return e;
@@ -151,8 +144,8 @@ const SlateEditor = ({
 
   const initialValue: Descendant[] = [
     {
-      type: "paragraph",
-      children: [{ text: "欢迎使用 Slate 协同编辑器！" }],
+      type: 'paragraph',
+      children: [{ text: '欢迎使用 Slate 协同编辑器！' }],
     },
   ];
   const [value, setValue] = useState<Descendant[]>(initialValue);
@@ -184,7 +177,11 @@ function RichEditable() {
     getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
       if (cursor.data) {
         props.children = (
-          <span style={{ backgroundColor: addAlpha(cursor.data.color as string, 0.5) }}>
+          <span
+            style={{
+              backgroundColor: addAlpha(cursor.data.color as string, 0.5),
+            }}
+          >
             {props.children}
           </span>
         );
@@ -193,35 +190,35 @@ function RichEditable() {
     getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
       if (caret.data) {
         props.children = (
-          <span style={{ position: "relative" }}>
+          <span style={{ position: 'relative' }}>
             <span
               contentEditable={false}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 top: 0,
                 bottom: 0,
                 left: -1,
                 width: 2,
                 backgroundColor: caret.data.color as string,
-                animation: "blink 1s step-end infinite",
+                animation: 'blink 1s step-end infinite',
               }}
             />
             <span
               contentEditable={false}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 left: -1,
                 top: 0,
-                fontSize: "0.75rem",
-                color: "#fff",
+                fontSize: '0.75rem',
+                color: '#fff',
                 backgroundColor: caret.data.color as string,
                 borderRadius: 4,
-                padding: "0 4px",
-                transform: "translateY(-100%)",
+                padding: '0 4px',
+                transform: 'translateY(-100%)',
                 zIndex: 10,
                 opacity: 0,
-                transition: "opacity 0.2s",
-                pointerEvents: "none",
+                transition: 'opacity 0.2s',
+                pointerEvents: 'none',
               }}
               className="caret-name"
             >
@@ -237,19 +234,23 @@ function RichEditable() {
 
   return (
     <>
-      <style jsx global>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-        span[style*="position: relative"]:hover .caret-name {
-          opacity: 1 !important;
-        }
-      `}</style>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+          }
+          span[style*="position: relative"]:hover .caret-name {
+            opacity: 1 !important;
+          }
+        `,
+        }}
+      />
       <Editable
         decorate={decorate}
         renderLeaf={renderLeaf}
-        style={{ minHeight: 300, padding: 16, border: "1px solid #ccc" }}
+        style={{ minHeight: 300, padding: 16, border: '1px solid #ccc' }}
       />
     </>
   );

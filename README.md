@@ -13,11 +13,13 @@ cp .env.example .env
 ```
 
 2. 安装依赖：
+
 ```bash
 pnpm install
 ```
 
 3. 初始化数据库：
+
 ```bash
 # 拉取数据库结构
 pnpm db:pull
@@ -27,6 +29,7 @@ pnpm db:generate
 ```
 
 4. 启动开发服务器：
+
 ```bash
 pnpm start:dev
 ```
@@ -40,7 +43,6 @@ pnpm start:dev
    ```
    DATABASE_URL="mysql://用户名:密码@主机:端口/数据库名"
    ```
-
 
 ## 开发注意事项
 

@@ -11,7 +11,6 @@ const emailConfig = {
   },
 };
 
-
 // 创建邮件传输器
 const transporter = nodemailer.createTransport(emailConfig);
 
@@ -69,4 +68,4 @@ export async function sendCaptchaEmail(to: string, captcha: string): Promise<boo
 // 验证邮件配置
 export function validateEmailConfig(): boolean {
   return !!(emailConfig.auth.user && emailConfig.auth.pass);
-} 
+}

@@ -1,5 +1,5 @@
-import { Modal, Form, Input, Upload, Tabs } from "antd";
-import { useState, useEffect } from "react";
+import { Modal, Form, Input, Upload, Tabs } from 'antd';
+import { useState, useEffect } from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import PermissionManagement from './PermissionManagement';
@@ -19,12 +19,12 @@ interface CreateKnowledgeModalProps {
   initialData?: KnowledgeData;
 }
 
-export default function CreateKnowledgeModal({ 
-  open, 
-  onCancel, 
-  onSuccess, 
+export default function CreateKnowledgeModal({
+  open,
+  onCancel,
+  onSuccess,
   mode,
-  initialData 
+  initialData,
 }: CreateKnowledgeModalProps) {
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -34,12 +34,14 @@ export default function CreateKnowledgeModal({
     if (open && mode === 'edit' && initialData) {
       form.setFieldsValue(initialData);
       if (initialData.cover) {
-        setFileList([{
-          uid: '-1',
-          name: 'cover',
-          status: 'done',
-          url: initialData.cover,
-        }]);
+        setFileList([
+          {
+            uid: '-1',
+            name: 'cover',
+            status: 'done',
+            url: initialData.cover,
+          },
+        ]);
       }
     }
   }, [open, mode, initialData, form]);
@@ -58,7 +60,7 @@ export default function CreateKnowledgeModal({
         ...values,
         cover: fileList[0]?.url || fileList[0]?.thumbUrl,
       };
-      
+
       console.log('表单值:', formData);
       // TODO: 这里添加创建/编辑知识库的API调用
       handleCancel();
@@ -84,7 +86,7 @@ export default function CreateKnowledgeModal({
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
+      reader.onerror = (error) => reject(error);
     });
   };
 
@@ -93,11 +95,7 @@ export default function CreateKnowledgeModal({
       key: 'basic',
       label: '基本信息',
       children: (
-        <Form
-          form={form}
-          layout="vertical"
-          requiredMark={false}
-        >
+        <Form form={form} layout="vertical" requiredMark={false}>
           <Form.Item
             name="title"
             label="知识库名称"
@@ -105,22 +103,16 @@ export default function CreateKnowledgeModal({
           >
             <Input placeholder="请输入知识库名称" />
           </Form.Item>
-          
+
           <Form.Item
             name="description"
             label="知识库描述"
             rules={[{ required: true, message: '请输入知识库描述' }]}
           >
-            <Input.TextArea 
-              placeholder="请输入知识库描述" 
-              rows={4}
-            />
+            <Input.TextArea placeholder="请输入知识库描述" rows={4} />
           </Form.Item>
 
-          <Form.Item
-            name="cover"
-            label="封面图片"
-          >
+          <Form.Item name="cover" label="封面图片">
             <Upload
               listType="picture-card"
               maxCount={1}
@@ -149,20 +141,16 @@ export default function CreateKnowledgeModal({
 
   return (
     <Modal
-        title={mode === 'create' ? '新建知识库' : '编辑知识库'}
-        open={open}
-        onOk={handleOk}
-        onCancel={handleCancel}
-        okText={mode === 'create' ? '创建' : '保存'}
-        cancelText="取消"
-        width={800}
-        maskClosable={false}
+      title={mode === 'create' ? '新建知识库' : '编辑知识库'}
+      open={open}
+      onOk={handleOk}
+      onCancel={handleCancel}
+      okText={mode === 'create' ? '创建' : '保存'}
+      cancelText="取消"
+      width={800}
+      maskClosable={false}
     >
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={items}
-      />
+      <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} />
     </Modal>
   );
-} 
+}

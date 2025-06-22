@@ -1,48 +1,48 @@
-'use client'
+'use client';
 import { Table, Tag, Button, Popconfirm, message, Avatar, Space } from 'antd';
 import { useMemo, useState } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import styles from './RecentTable.module.css';
 
 export default function Home() {
-
   // mock数据
-  const initialData = useMemo(() => [
-    {
-      key: '1',
-      type: '知识库',
-      name: '今天文档',
-      description: '今天打开的文档',
-      members: ['张三'],
-      openTime: 1750298400000,
-    },
-    {
-      key: '2',
-      type: '文档',
-      name: '昨天文档',
-      description: '昨天打开的文档',
-      members: ['李四'],
-      openTime: 1750212000000,
-    },
-    {
-      key: '3',
-      type: '知识库',
-      name: '今年文档',
-      description: '今年内其他日期的文档',
-      members: ['王五'],
-      openTime: 1746064800000,
-    },
-    {
-      key: '4',
-      type: '文档',
-      name: '去年文档',
-      description: '去年的文档',
-      members: ['赵六'],
-      openTime: 1714528800000,
-    },
-
-
-  ], []);
+  const initialData = useMemo(
+    () => [
+      {
+        key: '1',
+        type: '知识库',
+        name: '今天文档',
+        description: '今天打开的文档',
+        members: ['张三'],
+        openTime: 1750298400000,
+      },
+      {
+        key: '2',
+        type: '文档',
+        name: '昨天文档',
+        description: '昨天打开的文档',
+        members: ['李四'],
+        openTime: 1750212000000,
+      },
+      {
+        key: '3',
+        type: '知识库',
+        name: '今年文档',
+        description: '今年内其他日期的文档',
+        members: ['王五'],
+        openTime: 1746064800000,
+      },
+      {
+        key: '4',
+        type: '文档',
+        name: '去年文档',
+        description: '去年的文档',
+        members: ['赵六'],
+        openTime: 1714528800000,
+      },
+    ],
+    []
+  );
 
   const [dataSource, setDataSource] = useState(initialData);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -55,7 +55,7 @@ export default function Home() {
   };
 
   const handleDelete = (key: string) => {
-    setDataSource((prev) => prev.filter(item => item.key !== key));
+    setDataSource((prev) => prev.filter((item) => item.key !== key));
     message.success('已删除');
   };
 
@@ -64,7 +64,7 @@ export default function Home() {
       message.warning('请先选择要删除的项');
       return;
     }
-    setDataSource((prev) => prev.filter(item => !selectedRowKeys.includes(item.key)));
+    setDataSource((prev) => prev.filter((item) => !selectedRowKeys.includes(item.key)));
     setSelectedRowKeys([]);
     message.success('批量删除成功');
   };
@@ -133,7 +133,12 @@ export default function Home() {
       title: '操作',
       key: 'action',
       render: (_: any, record: any) => (
-        <Popconfirm title="确定要删除这条记录吗？" onConfirm={() => handleDelete(record.key)} okText="删除" cancelText="取消">
+        <Popconfirm
+          title="确定要删除这条记录吗？"
+          onConfirm={() => handleDelete(record.key)}
+          okText="删除"
+          cancelText="取消"
+        >
           <Button type="link" icon={<DeleteOutlined />} />
         </Popconfirm>
       ),
@@ -145,13 +150,13 @@ export default function Home() {
       <div className="flex items-center mb-4 justify-between">
         <h1 className="text-2xl font-bold">最近浏览</h1>
         {selectedRowKeys.length > 0 && (
-          <Popconfirm title="确定要删除选中的记录吗？" onConfirm={handleBatchDelete} okText="删除" cancelText="取消">
-            <Button
-              type="primary"
-              icon={<DeleteOutlined />}
-              size="small"
-              style={{ minWidth: 90 }}
-            >
+          <Popconfirm
+            title="确定要删除选中的记录吗？"
+            onConfirm={handleBatchDelete}
+            okText="删除"
+            cancelText="取消"
+          >
+            <Button type="primary" icon={<DeleteOutlined />} size="small" style={{ minWidth: 90 }}>
               批量删除
             </Button>
           </Popconfirm>

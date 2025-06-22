@@ -22,41 +22,42 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
   const [visibleIds, setVisibleIds] = useState<Set<number>>(new Set());
   const timeoutRefs = useRef<Record<number, NodeJS.Timeout>>({});
   const nextId = useRef(0);
-  
+
   // 清理所有定时器
   useEffect(() => {
+    const currentTimeouts = timeoutRefs.current;
     return () => {
-      Object.values(timeoutRefs.current).forEach(clearTimeout);
+      Object.values(currentTimeouts).forEach(clearTimeout);
     };
   }, []);
 
   const showAlert = (message: string, type: AlertType = 'info', duration = 2000) => {
     const id = nextId.current++;
     const newAlert = { id, message, type };
-    
+
     // 添加新提示
-    setAlerts(prev => [...prev, newAlert]);
-    
+    setAlerts((prev) => [...prev, newAlert]);
+
     // 设置显示状态
     setTimeout(() => {
-      setVisibleIds(prev => {
+      setVisibleIds((prev) => {
         const newSet = new Set(prev);
         newSet.add(id);
         return newSet;
       });
     }, 10);
-    
+
     // 设置隐藏定时器
     timeoutRefs.current[id] = setTimeout(() => {
-      setVisibleIds(prev => {
+      setVisibleIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(id);
         return newSet;
       });
-      
+
       // 延迟移除提示
       timeoutRefs.current[id] = setTimeout(() => {
-        setAlerts(prev => prev.filter(alert => alert.id !== id));
+        setAlerts((prev) => prev.filter((alert) => alert.id !== id));
         delete timeoutRefs.current[id];
       }, 300);
     }, duration);
@@ -66,13 +67,13 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
     <AlertContext.Provider value={{ showAlert }}>
       {/* 渲染所有提示 */}
       <div className="alert-container">
-        {alerts.map(alert => (
+        {alerts.map((alert) => (
           <div
             key={alert.id}
             className={`custom-alert ${visibleIds.has(alert.id) ? 'show' : ''}`}
             style={{
               position: 'fixed',
-              top: 80 + alerts.findIndex(a => a.id === alert.id) * 60, // 堆叠效果
+              top: 80 + alerts.findIndex((a) => a.id === alert.id) * 60, // 堆叠效果
               left: '50%',
               zIndex: 9999,
               minWidth: 320,
@@ -90,21 +91,25 @@ export const AlertProvider = ({ children }: { children: ReactNode }) => {
           </div>
         ))}
       </div>
-      
+
       {children}
-      
+
       {/* 全局样式 */}
-      <style jsx global>{`
-        .custom-alert {
-          opacity: 0;
-          transform: translate(-50%, -20px) !important;
-          transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-        .custom-alert.show {
-          opacity: 1;
-          transform: translate(-50%, 0) !important;
-        }
-      `}</style>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          .custom-alert {
+            opacity: 0;
+            transform: translate(-50%, -20px) !important;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+          }
+          .custom-alert.show {
+            opacity: 1;
+            transform: translate(-50%, 0) !important;
+          }
+        `,
+        }}
+      />
     </AlertContext.Provider>
   );
 };

@@ -13,10 +13,7 @@ export async function POST(request: NextRequest) {
     // 验证必填字段
     if (!email || !password || !confirmPassword || !captcha) {
       console.log('必填字段验证失败');
-      return NextResponse.json(
-        { success: false, message: '请填写所有必填字段' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: '请填写所有必填字段' }, { status: 400 });
     }
 
     // 验证邮箱格式
@@ -68,15 +65,12 @@ export async function POST(request: NextRequest) {
     // 检查邮箱是否已注册
     try {
       const existingUser = await (prisma as any).t_user.findFirst({
-        where: { email }
+        where: { email },
       });
 
       if (existingUser) {
         console.log('邮箱已被注册:', email);
-        return NextResponse.json(
-          { success: false, message: '该邮箱已被注册' },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, message: '该邮箱已被注册' }, { status: 400 });
       }
       console.log('邮箱可用');
     } catch (userError) {
@@ -98,30 +92,27 @@ export async function POST(request: NextRequest) {
           password: hashedPassword,
           create_time: new Date(),
           update_time: new Date(),
-          del_flag: 0
-        }
+          del_flag: 0,
+        },
       });
 
       console.log('用户创建成功，ID:', newUser.id);
-      return NextResponse.json({
-        success: true,
-        message: '注册成功',
-        user: { email }}, {
-        status: 200
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          message: '注册成功',
+          user: { email },
+        },
+        {
+          status: 200,
+        }
+      );
     } catch (createError) {
       console.error('创建用户时数据库错误:', createError);
-      return NextResponse.json(
-        { success: false, message: '注册失败，请重试' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, message: '注册失败，请重试' }, { status: 500 });
     }
-
   } catch (error) {
     console.error('注册失败，详细错误:', error);
-    return NextResponse.json(
-      { success: false, message: '注册失败，请重试' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: '注册失败，请重试' }, { status: 500 });
   }
-} 
+}
