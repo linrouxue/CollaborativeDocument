@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifyCaptcha } from '../send-captcha/route';
-
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,7 +40,7 @@ export async function POST(request: NextRequest) {
     // 1. 检查用户是否存在
     let existingUser;
     try {
-      existingUser = await (prisma as any).t_user.findFirst({
+      existingUser = await prisma.t_user.findFirst({
         where: { email },
       });
 
@@ -76,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // 更新密码
     try {
-      const result = await (prisma as any).t_user.update({
+      const result = await prisma.t_user.update({
         where: { email },
         data: {
           password: hashedPassword,

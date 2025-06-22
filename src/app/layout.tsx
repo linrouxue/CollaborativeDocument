@@ -4,6 +4,7 @@ import '@/style/globals.css';
 import { ConfigProvider } from 'antd';
 import theme from './themeConfig';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
+import { Providers } from '@/components/providers/Providers';
 
 export const metadata: Metadata = {
   title: '协同文档',
@@ -15,7 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN">
       <body>
         <AntdRegistry>
-          <ConfigProvider theme={theme}>{children}</ConfigProvider>
+          <ConfigProvider theme={theme}>
+            <Providers>{children}</Providers>
+          </ConfigProvider>
         </AntdRegistry>
       </body>
     </html>

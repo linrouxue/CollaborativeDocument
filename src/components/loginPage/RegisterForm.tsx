@@ -1,4 +1,4 @@
-import { Form, Input, Button, message } from 'antd';
+import { Form, Input, Button } from 'antd';
 import {
   MailOutlined,
   LockOutlined,
@@ -10,19 +10,21 @@ import {
 import { useState } from 'react';
 import { StyledForm, StyledButton } from '../../app/(public)/login/LoginRegister.styles';
 import axios from 'axios';
+import { register, RegisterRequest } from '@/lib/api/auth';
 import { useAlert } from '@/contexts/AlertContext';
+import { useRouter } from 'next/navigation';
 
 interface RegisterFormProps {
   mode: 'register' | 'forgot';
-  onBackToLogin: () => void;
+  onBackToLogin?: () => void;
 }
 
 export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [captchaLoading, setCaptchaLoading] = useState(false);
-
   const { showAlert } = useAlert();
+  const router = useRouter();
   const isForgotMode = mode === 'forgot';
 
   const handleSubmit = async (values: any) => {
@@ -37,26 +39,30 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
           confirmPassword: values.confirmPassword,
         });
         if (res.data && res.data.success) {
-          showAlert('密码重置成功！', 'success');
-          onBackToLogin();
+          showAlert('密码重置成功！请使用新密码登录', 'success');
+          onBackToLogin?.();
           form.resetFields();
+          router.push('/login');
         } else {
-          showAlert('密码重置失败', 'error');
+          showAlert(res.data?.message || '密码重置失败', 'error');
         }
       } else {
         // 注册模式
-        const res = await axios.post('/api/user/register', values);
-        if (res.data && res.data.user) {
-          message.success('注册成功！请登录');
-          onBackToLogin();
+        const res = await register(values);
+        if (res && res.success) {
+          showAlert('注册成功，请登录', 'success');
+          onBackToLogin?.();
           form.resetFields();
+          router.push('/login');
         } else {
-          message.error(res.data.message || '注册失败');
+          showAlert(res?.message || '注册失败', 'error');
         }
       }
     } catch (error: any) {
-      const errorMessage = isForgotMode ? '密码重置失败，请重试' : '注册失败，请重试';
-      message.error(error?.response?.data?.message || errorMessage);
+      showAlert(
+        error?.message || (isForgotMode ? '密码重置失败，请重试' : '注册失败，请重试'),
+        'error'
+      );
     } finally {
       setLoading(false);
     }
@@ -66,13 +72,13 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
   const handleGetCaptcha = async () => {
     const email = form.getFieldValue('email');
     if (!email) {
-      message.error('请先输入邮箱地址');
+      showAlert('请先输入邮箱地址', 'error');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      message.error('请输入有效的邮箱地址');
+      showAlert('请输入有效的邮箱地址', 'error');
       return;
     }
 
@@ -81,12 +87,12 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
       // 发送验证码API
       const res = await axios.post('/api/user/send-captcha', { email });
       if (res.data && res.data.success) {
-        message.success('验证码已发送到您的邮箱');
+        showAlert('验证码已发送到您的邮箱', 'success');
       } else {
-        message.error(res.data.message || '发送验证码失败');
+        showAlert(res.data.message || '发送验证码失败', 'error');
       }
     } catch (error: any) {
-      message.error(error?.response?.data?.message || '发送验证码失败，请重试');
+      showAlert(error?.response?.data?.message || '发送验证码失败，请重试', 'error');
     } finally {
       setCaptchaLoading(false);
     }
@@ -103,7 +109,7 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
       >
         <Input
           prefix={<MailOutlined style={{ color: '#1890ff' }} />}
-          placeholder={isForgotMode ? '请输入注册时的邮箱' : '电子邮箱'}
+          placeholder={isForgotMode ? '请输入注册邮箱' : '邮箱'}
           size="large"
         />
       </Form.Item>
@@ -128,10 +134,7 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
       <Form.Item
         name="password"
         rules={[
-          {
-            required: true,
-            message: isForgotMode ? '请输入新密码' : '请输入密码',
-          },
+          { required: true, message: isForgotMode ? '请输入新密码' : '请输入密码' },
           {
             validator: (_, value) => {
               if (!value) return Promise.resolve();
@@ -156,10 +159,7 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
         name="confirmPassword"
         dependencies={['password']}
         rules={[
-          {
-            required: true,
-            message: isForgotMode ? '请确认新密码' : '请确认密码',
-          },
+          { required: true, message: isForgotMode ? '请确认新密码' : '请确认密码' },
           ({ getFieldValue }) => ({
             validator(_, value) {
               if (!value || getFieldValue('password') === value) {
@@ -172,7 +172,7 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
       >
         <Input.Password
           prefix={<CheckCircleOutlined style={{ color: '#1890ff' }} />}
-          placeholder="确认密码"
+          placeholder={isForgotMode ? '确认新密码' : '确认密码'}
           size="large"
           iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
         />

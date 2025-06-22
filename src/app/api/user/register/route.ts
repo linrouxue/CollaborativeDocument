@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifyCaptcha } from '../send-captcha/route';
-
-const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password, confirmPassword, captcha } = await request.json();
-    console.log('收到注册请求，邮箱:', email);
 
     // 验证必填字段
     if (!email || !password || !confirmPassword || !captcha) {
@@ -19,7 +16,6 @@ export async function POST(request: NextRequest) {
     // 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      console.log('邮箱格式验证失败:', email);
       return NextResponse.json(
         { success: false, message: '请输入有效的邮箱地址' },
         { status: 400 }
@@ -64,12 +60,11 @@ export async function POST(request: NextRequest) {
 
     // 检查邮箱是否已注册
     try {
-      const existingUser = await (prisma as any).t_user.findFirst({
+      const existingUser = await prisma.t_user.findFirst({
         where: { email },
       });
 
       if (existingUser) {
-        console.log('邮箱已被注册:', email);
         return NextResponse.json({ success: false, message: '该邮箱已被注册' }, { status: 400 });
       }
       console.log('邮箱可用');
@@ -86,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     // 创建用户
     try {
-      const newUser = await (prisma as any).t_user.create({
+      const newUser = await prisma.t_user.create({
         data: {
           email,
           password: hashedPassword,
@@ -101,7 +96,9 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           message: '注册成功',
-          user: { email },
+          data: {
+            user: { email },
+          },
         },
         {
           status: 200,

@@ -6,24 +6,17 @@ import { TwitterOutlined } from '@ant-design/icons';
 import LoginForm from '../../../components/loginPage/LoginForm';
 import RegisterForm from '../../../components/loginPage/RegisterForm';
 import { StyledLayout, StyledCard, StyledTitle } from './LoginRegister.styles';
-import { AlertProvider, useAlert } from '@/contexts/AlertContext';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
 
-function LoginPageContent() {
+export default function LoginPage() {
   const [formType, setFormType] = useState<'login' | 'register' | 'forgot'>('login');
   const [mounted, setMounted] = useState(false);
-  const { showAlert } = useAlert();
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // 示例：调用 showAlert
-  const handleTestAlert = () => {
-    showAlert('这是一个全局弹窗示例', 'success');
-  };
 
   const getFormTitle = () => {
     switch (formType) {
@@ -145,20 +138,9 @@ function LoginPageContent() {
             <StyledTitle level={2}>{getFormTitle()}</StyledTitle>
             {getFormComponent()}
             {getBottomButtons()}
-            <Button type="primary" onClick={handleTestAlert} style={{ marginTop: 16 }}>
-              测试全局弹窗
-            </Button>
           </StyledCard>
         </Space>
       </Content>
     </StyledLayout>
-  );
-}
-
-export default function Home() {
-  return (
-    <AlertProvider>
-      <LoginPageContent />
-    </AlertProvider>
   );
 }

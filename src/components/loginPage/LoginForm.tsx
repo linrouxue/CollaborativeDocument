@@ -1,37 +1,21 @@
-import { Form, Input, message } from 'antd';
+import { Form, Input, Button } from 'antd';
 import { MailOutlined, LockOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { StyledForm, StyledButton } from '../../app/(public)/login/LoginRegister.styles';
-import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginForm() {
   const [form] = Form.useForm();
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const { login, loading } = useAuth();
 
   const handleSubmit = async (values: any) => {
-    // setLoading(true);
-    router.push('/Home');
-    // try {
-    //   // 登录接口请求
-    //   const res = await axios.post('/api/user/login', values);
-    //   if (res.data && res.data.token) {
-    //     message.success('登录成功！');
-    //     // 可存储token等
-    //     router.push('/Home');
-    //   } else {
-    //     message.error(res.data.message || '登录失败');
-    //   }
-    // } catch (error: any) {
-    //   message.error(error?.response?.data?.message || '登录失败，请重试');
-    // } finally {
-    //   setLoading(false);
-    // }
+    const { email, password } = values;
+    await login(email, password);
+    // 其它逻辑不需要，AuthContext 已经处理跳转和弹窗
   };
 
   return (
-    <StyledForm form={form} onFinish={handleSubmit} layout="vertical">
+    <Form form={form} onFinish={handleSubmit} layout="vertical">
       <Form.Item
         name="email"
         rules={[
@@ -58,6 +42,6 @@ export default function LoginForm() {
           登录
         </StyledButton>
       </Form.Item>
-    </StyledForm>
+    </Form>
   );
 }
