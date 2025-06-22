@@ -6,12 +6,18 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginForm() {
   const [form] = Form.useForm();
-  const { login, loading } = useAuth();
+  const { login } = useAuth();
+  const [formLoading, setFormLoading] = useState(false);
 
   const handleSubmit = async (values: any) => {
-    const { email, password } = values;
-    await login(email, password);
-    // 其它逻辑不需要，AuthContext 已经处理跳转和弹窗
+    setFormLoading(true);
+    try {
+      const { email, password } = values;
+      await login(email, password);
+      // 其它逻辑不需要，AuthContext 已经处理跳转和弹窗
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   return (
@@ -38,7 +44,7 @@ export default function LoginForm() {
         />
       </Form.Item>
       <Form.Item>
-        <StyledButton type="primary" htmlType="submit" block loading={loading}>
+        <StyledButton type="primary" htmlType="submit" block loading={formLoading}>
           登录
         </StyledButton>
       </Form.Item>

@@ -40,6 +40,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasTriedRefresh, setHasTriedRefresh] = useState(false);
   const router = useRouter();
   const { showAlert } = useAlert();
 
@@ -56,32 +57,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(res.data);
         } else {
           setUser(null);
-          showAlert('获取用户信息失败，请重新登录', 'error');
+          if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
           router.push('/login');
         }
       } else {
         setUser(null);
-        showAlert('登录已失效，请重新登录', 'warning');
+        if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
         router.push('/login');
       }
     } catch (error) {
       setUser(null);
-      showAlert('认证校验失败，请重新登录', 'error');
+      if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
       router.push('/login');
     } finally {
+      setHasTriedRefresh(true);
       setLoading(false);
     }
-  }, [router, showAlert]);
+  }, [router, hasTriedRefresh, showAlert]);
 
   // 登录
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
       const res = await loginApi({ email, password });
-      if (res && res.data && res.data.user) {
-        setUser(res.data.user);
-        showAlert('登录成功', 'success');
-        router.push('/Home');
+      if (res && res.accessToken) {
+        // 登录成功后用 accessToken 获取用户信息
+        const userRes = await getCurrentUser();
+        if (userRes && userRes.data && userRes.data.user) {
+          setUser(userRes.data.user);
+          showAlert('登录成功', 'success');
+          router.push('/Home');
+        } else {
+          setUser(null);
+          showAlert('获取用户信息失败', 'error');
+        }
       } else {
         setUser(null);
         showAlert(res?.message || '登录失败', 'error');

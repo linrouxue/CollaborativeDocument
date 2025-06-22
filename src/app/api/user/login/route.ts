@@ -44,22 +44,11 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' } // 7 天
     );
 
-    // 构建安全用户对象（排除敏感字段）
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      avatar: user.avatar,
-    };
-
     // 使用 NextResponse 统一处理
     const response = NextResponse.json(
       {
         success: true,
-        data: {
-          user: safeUser, // 使用过滤后的用户信息
-          accessToken,
-        },
+        accessToken,
       },
       { status: 200 }
     );

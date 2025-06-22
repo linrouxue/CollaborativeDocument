@@ -16,6 +16,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
   success: boolean;
   message: string;
+  accessToken?: string;
   data?: {
     user: {
       id: number;
@@ -83,7 +84,13 @@ export const isAuthenticated = (): boolean => {
 // 获取当前用户信息
 export const getCurrentUser = async () => {
   try {
-    const { data } = await axiosInstance.get('/user/profile');
+    const token = getAccessToken();
+    if (!token) throw new Error('未登录');
+    const { data } = await axiosInstance.post(
+      '/user/get-profile',
+      {},
+      { headers: { Authorization: `Bearer ${token}` } } // 配置项
+    );
     return data;
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || '获取用户信息失败');

@@ -6,6 +6,8 @@ import { TwitterOutlined } from '@ant-design/icons';
 import LoginForm from '../../../components/loginPage/LoginForm';
 import RegisterForm from '../../../components/loginPage/RegisterForm';
 import { StyledLayout, StyledCard, StyledTitle } from './LoginRegister.styles';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
@@ -13,10 +15,18 @@ const { Content } = Layout;
 export default function LoginPage() {
   const [formType, setFormType] = useState<'login' | 'register' | 'forgot'>('login');
   const [mounted, setMounted] = useState(false);
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && !loading && isAuthenticated) {
+      router.replace('/Home');
+    }
+  }, [mounted, loading, isAuthenticated, router]);
 
   const getFormTitle = () => {
     switch (formType) {

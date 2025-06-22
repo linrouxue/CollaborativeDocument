@@ -75,6 +75,8 @@ export async function POST(request: NextRequest) {
       path: '/api/auth',
       maxAge: 60 * 60 * 24 * 7,
     });
+
+    return response;
   } catch (error) {
     console.error('Token refresh error:', error);
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
