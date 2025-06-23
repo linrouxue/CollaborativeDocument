@@ -37,24 +37,30 @@ export async function POST(request: NextRequest) {
 
     // 生成 access token
     const accessToken = jwt.sign(
-      { userId: user.id, email: user.email },
+      {
+        userId: user.id,
+        email: user.email,
+        jti: crypto.randomUUID(),
+        iat: Math.floor(Date.now() / 1000),
+      },
       JWT_SECRET,
       { expiresIn: '15m' } // 15 分钟
     );
 
     // 生成 refresh token
+    const jti = crypto.randomUUID();
     const refreshToken = jwt.sign(
-      { userId: user.id },
+      { userId: user.id, jti },
       REFRESH_TOKEN_SECRET,
       { expiresIn: '7d' } // 7 天
     );
 
-    const hashedToken = hashToken(refreshToken);
     await prisma.t_refresh_token.create({
       data: {
-        hashed_token: hashedToken,
+        hashed_token: hashToken(refreshToken),
         user_id: user.id,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        jti,
       },
     });
 

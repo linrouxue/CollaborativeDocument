@@ -49,7 +49,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. 判断是否已吊销
+    // 5. 校验 jti 一致性
+    if (!decoded.jti || decoded.jti !== tokenRecord.jti) {
+      return NextResponse.json(
+        { success: false, message: 'Refresh token jti mismatch' },
+        { status: 401 }
+      );
+    }
+
+    // 判断是否已吊销
     if (tokenRecord.is_revoked) {
       // 安全事件：吊销所有令牌
       await prisma.t_refresh_token.updateMany({
@@ -75,10 +83,20 @@ export async function POST(request: NextRequest) {
 
     // 7. 生成新 accessToken 和 refreshToken
     const user = tokenRecord.t_user;
-    const newAccessToken = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
-      expiresIn: '15m',
-    });
-    const newRefreshToken = jwt.sign({ userId: user.id }, REFRESH_TOKEN_SECRET, {
+    const newAccessToken = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        jti: crypto.randomUUID(),
+        iat: Math.floor(Date.now() / 1000),
+      },
+      JWT_SECRET,
+      {
+        expiresIn: '15m',
+      }
+    );
+    const newJti = crypto.randomUUID();
+    const newRefreshToken = jwt.sign({ userId: user.id, jti: newJti }, REFRESH_TOKEN_SECRET, {
       expiresIn: '7d',
     });
     const newHashedToken = hashToken(newRefreshToken);
@@ -89,6 +107,7 @@ export async function POST(request: NextRequest) {
         hashed_token: newHashedToken,
         user_id: user.id,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        jti: newJti,
       },
     });
 
