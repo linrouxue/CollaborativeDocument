@@ -87,16 +87,16 @@ export async function checkPermission(request: NextRequest) {
   // 8. 合并权限
   const permissionList: number[] = [
     ...knowledgeBasePermission
-      .map(item => item.permission)
-      .filter((p): p is string => p !== null)
-      .map(p => parseInt(p, 10))
-      .filter(num => !isNaN(num)),
+      .map((item: { permission: string | null }) => item.permission)
+      .filter((p: string | null): p is string => p !== null)
+      .map((p: string) => parseInt(p, 10))
+      .filter((num: number) => !isNaN(num)),
     ...ancestorDocumentPermission
-      .map(item => item.permission)
-      .filter((p): p is number => typeof p === 'number'),
+      .map((item: { permission: number }) => item.permission)
+      .filter((p: number): p is number => typeof p === 'number'),
     ...documentPermission
-      .map(item => item.permission)
-      .filter((p): p is number => typeof p === 'number')
+      .map((item: { permission: number }) => item.permission)
+      .filter((p: number): p is number => typeof p === 'number')
   ];
   console.log('[权限校验] 权限列表:', permissionList);
   const minPermission = Math.min(...permissionList);
