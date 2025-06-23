@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'your-refresh-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET!;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
+
+function hashToken(token: string) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +49,15 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' } // 7 天
     );
 
+    const hashedToken = hashToken(refreshToken);
+    await prisma.t_refresh_token.create({
+      data: {
+        hashed_token: hashedToken,
+        user_id: user.id,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
     // 使用 NextResponse 统一处理
     const response = NextResponse.json(
       {
@@ -58,7 +72,7 @@ export async function POST(request: NextRequest) {
       name: 'refreshToken',
       value: refreshToken,
       httpOnly: true,
-      //   secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/api/auth',
       maxAge: 60 * 60 * 24 * 7,

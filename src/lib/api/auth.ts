@@ -70,8 +70,6 @@ export const logout = async (): Promise<void> => {
     await axiosInstance.post('/user/logout');
   } catch (error) {
     // 忽略后端登出失败
-  } finally {
-    setAccessToken(null);
   }
 };
 

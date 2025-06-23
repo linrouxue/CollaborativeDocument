@@ -19,6 +19,7 @@ import { useRouter, usePathname } from 'next/navigation';
 // src/app/Home/layout.tsx
 // import type { Metadata } from "next";
 import '@/style/globals.css';
+import { useAuth } from '@/contexts/AuthContext';
 
 // export const metadata: Metadata = {
 //   title: "协同文档系统",
@@ -31,6 +32,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [showSearch, setShowSearch] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -47,11 +49,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     };
     document.title = getPageTitle(pathname);
   }, [pathname]);
-
-  const logout = () => {
-    console.log('退出登录');
-    router.push('/');
-  };
 
   const items: MenuProps['items'] = [
     {

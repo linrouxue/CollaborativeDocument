@@ -96,9 +96,6 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           message: '注册成功',
-          data: {
-            user: { email },
-          },
         },
         {
           status: 200,
