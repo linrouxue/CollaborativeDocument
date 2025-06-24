@@ -12,7 +12,7 @@ export default function Home() {
     () => [
       {
         key: '1',
-        knowledgeBaseId: '1',
+        knowledgeBaseId: null,
         knowledgeBaseName: null,
         name: '今天文档',
         description: '今天打开的文档',
@@ -30,7 +30,7 @@ export default function Home() {
       },
       {
         key: '3',
-        knowledgeBaseId: '1',
+        knowledgeBaseId: null,
         knowledgeBaseName: null,
         name: '今年文档',
         description: '今年内其他日期的文档',
@@ -112,15 +112,20 @@ export default function Home() {
       render: (_: string, record: any) => (
         <div>
           <div className="font-bold">{record.name}</div>
-          <div className="text-xs text-gray-500">
-            <CloudOutlined style={{marginRight: 4, color: '#1890ff'}}/>
-            <Link
+          <div className="text-xs text-gray-500" style={{marginTop: 4}}>
+            
+            {record.knowledgeBaseId && (
+              <div>
+              <CloudOutlined style={{marginRight: 4, color: '#1890ff'}}/>
+              <Link
               href={`/Home/knowledge/${record.knowledgeBaseId || record.knowledgeBaseName}`}
               style={{ color: '#1890ff', textDecoration: 'none', cursor: 'pointer' }}
             >
               {record.knowledgeBaseName}
             </Link>
+            </div>)}
           </div>
+          
         </div>
       ),
     },
