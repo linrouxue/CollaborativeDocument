@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
-
+/**
+ *1.所有者（知识库转移权，知识库成员权限分配，删除知识库权限，知识库文档权（增删改），文档管理权，文档编辑权，文档修订权，文档评论权，文档阅读权）
+2.管理者（知识库成员权限分配，知识库文档权（增删改），文档编辑权，文档修订权，文档评论权，文档阅读权）
+3.编辑者（知识库文档权（增删改），文档编辑权，文档修订权，文档评论权，文档阅读权）
+4.修订者（文档修订权，文档评论权，文档阅读权）
+5.评论者（文档评论权，文档阅读权）
+6.读者（文档阅读权）
+ */
 // 权限映射关系
 const requiredPermissionMap: { [url: string]: number } = {
   '/api/permission': 3,
@@ -100,7 +107,7 @@ export async function checkPermission(request: NextRequest) {
   ];
   console.log('[权限校验] 权限列表:', permissionList);
   const minPermission = Math.min(...permissionList);
-  console.log('[权限校验] 最小权限:', minPermission);
+  console.log('[权限校验] 最大权限:', minPermission);
 
   // 9. 校验权限
   const url = request.nextUrl.pathname;
