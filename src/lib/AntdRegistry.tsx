@@ -13,4 +13,4 @@ const StyledComponentsRegistry = ({ children }: { children: React.ReactNode }) =
   return <StyleProvider cache={cache}>{children}</StyleProvider>;
 };
 
-export default StyledComponentsRegistry; 
+export default StyledComponentsRegistry;

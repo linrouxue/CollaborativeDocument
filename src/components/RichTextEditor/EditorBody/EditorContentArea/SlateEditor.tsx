@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { Slate, Editable, withReact, useSlate } from "slate-react";
-import { createEditor, Descendant, Editor } from "slate";
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { Slate, Editable, withReact, useSlate } from 'slate-react';
+import { createEditor, Descendant, Editor } from 'slate';
 import {
   BoldOutlined,
   ItalicOutlined,
   UnderlineOutlined,
   UndoOutlined,
   RedoOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 
 interface SlateEditorProps {
   decorate: any;
@@ -30,7 +30,7 @@ const ToolbarButton = ({
 }) => (
   <button
     onMouseDown={onMouseDown}
-    className={`p-2 rounded hover:bg-gray-100 ${active ? "bg-gray-100" : ""}`}
+    className={`p-2 rounded hover:bg-gray-100 ${active ? 'bg-gray-100' : ''}`}
     title={title}
     type="button"
   >
@@ -58,28 +58,28 @@ const Toolbar = () => {
   return (
     <div className="mb-2 flex gap-2 border-b p-2 bg-white sticky top-0 z-10">
       <ToolbarButton
-        active={isMarkActive(editor, "bold")}
+        active={isMarkActive(editor, 'bold')}
         onMouseDown={(e) => {
           e.preventDefault();
-          toggleMark(editor, "bold");
+          toggleMark(editor, 'bold');
         }}
         icon={<BoldOutlined style={{ fontSize: 18 }} />}
         title="粗體"
       />
       <ToolbarButton
-        active={isMarkActive(editor, "italic")}
+        active={isMarkActive(editor, 'italic')}
         onMouseDown={(e) => {
           e.preventDefault();
-          toggleMark(editor, "italic");
+          toggleMark(editor, 'italic');
         }}
         icon={<ItalicOutlined style={{ fontSize: 18 }} />}
         title="斜體"
       />
       <ToolbarButton
-        active={isMarkActive(editor, "underline")}
+        active={isMarkActive(editor, 'underline')}
         onMouseDown={(e) => {
           e.preventDefault();
-          toggleMark(editor, "underline");
+          toggleMark(editor, 'underline');
         }}
         icon={<UnderlineOutlined style={{ fontSize: 18 }} />}
         title="下划線"
@@ -108,13 +108,18 @@ const Toolbar = () => {
 
 const initialValue: Descendant[] = [
   {
-    type: "paragraph",
-    children: [{ text: "歡迎使用 Slate 協作編輯器！" }],
+    type: 'paragraph',
+    children: [{ text: '歡迎使用 Slate 協作編輯器！' }],
   },
 ];
 
-const SlateEditor: React.FC<SlateEditorProps> = ({ decorate, renderLeaf }) => {
-
+const SlateEditor: React.FC<SlateEditorProps> = ({
+  editor,
+  decorate,
+  renderLeaf,
+  onChange,
+  value,
+}) => {
   return (
     <>
       <Toolbar />

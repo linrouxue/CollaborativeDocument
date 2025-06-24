@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useSlate } from "slate-react";
-import { Editor } from "slate";
+import React from 'react';
+import { useSlate } from 'slate-react';
+import { Editor } from 'slate';
 import {
   BoldOutlined,
   ItalicOutlined,
   UnderlineOutlined,
   UndoOutlined,
   RedoOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 
 // 工具栏按钮组件
 const ToolbarButton = ({
@@ -26,7 +26,7 @@ const ToolbarButton = ({
   return (
     <button
       onMouseDown={onMouseDown}
-      className={`p-2 rounded hover:bg-gray-100 ${active ? "bg-gray-100" : ""}`}
+      className={`p-2 rounded hover:bg-gray-100 ${active ? 'bg-gray-100' : ''}`}
       title={title}
       type="button"
     >
@@ -56,28 +56,28 @@ const EditorHeaderToolbar: React.FC = () => {
   return (
     <div className="mb-2 flex gap-2 border-b pb-2">
       <ToolbarButton
-        active={isMarkActive(editor, "bold")}
+        active={isMarkActive(editor, 'bold')}
         onMouseDown={(e) => {
           e.preventDefault();
-          toggleMark(editor, "bold");
+          toggleMark(editor, 'bold');
         }}
         icon={<BoldOutlined style={{ fontSize: 18 }} />}
         title="粗體"
       />
       <ToolbarButton
-        active={isMarkActive(editor, "italic")}
+        active={isMarkActive(editor, 'italic')}
         onMouseDown={(e) => {
           e.preventDefault();
-          toggleMark(editor, "italic");
+          toggleMark(editor, 'italic');
         }}
         icon={<ItalicOutlined style={{ fontSize: 18 }} />}
         title="斜體"
       />
       <ToolbarButton
-        active={isMarkActive(editor, "underline")}
+        active={isMarkActive(editor, 'underline')}
         onMouseDown={(e) => {
           e.preventDefault();
-          toggleMark(editor, "underline");
+          toggleMark(editor, 'underline');
         }}
         icon={<UnderlineOutlined style={{ fontSize: 18 }} />}
         title="下划線"
