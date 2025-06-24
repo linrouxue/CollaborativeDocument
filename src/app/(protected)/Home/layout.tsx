@@ -121,11 +121,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       icon: <FileOutlined />,
       routes: [
         {
-          path: '/Home/docs/file1',
+          path: '/Home/docs/1',
           name: '文件1',
         },
         {
-          path: '/Home/docs/file2',
+          path: '/Home/docs/2',
           name: '文件2',
         },
       ],

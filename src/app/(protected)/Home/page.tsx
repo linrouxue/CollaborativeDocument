@@ -3,6 +3,8 @@ import { Table, Tag, Button, Popconfirm, message, Avatar, Space } from 'antd';
 import { useMemo, useState } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import styles from './RecentTable.module.css';
+import { CloudOutlined } from '@ant-design/icons';
+import Link from 'next/link';
 
 export default function Home() {
   // mock数据
@@ -10,7 +12,8 @@ export default function Home() {
     () => [
       {
         key: '1',
-        type: '知识库',
+        knowledgeBaseId: '1',
+        knowledgeBaseName: null,
         name: '今天文档',
         description: '今天打开的文档',
         members: ['张三'],
@@ -18,7 +21,8 @@ export default function Home() {
       },
       {
         key: '2',
-        type: '文档',
+        knowledgeBaseId: '1',
+        knowledgeBaseName: '后端知识库',
         name: '昨天文档',
         description: '昨天打开的文档',
         members: ['李四'],
@@ -26,7 +30,8 @@ export default function Home() {
       },
       {
         key: '3',
-        type: '知识库',
+        knowledgeBaseId: '1',
+        knowledgeBaseName: null,
         name: '今年文档',
         description: '今年内其他日期的文档',
         members: ['王五'],
@@ -34,7 +39,8 @@ export default function Home() {
       },
       {
         key: '4',
-        type: '文档',
+        knowledgeBaseId: '1',
+        knowledgeBaseName: '后端知识库',
         name: '去年文档',
         description: '去年的文档',
         members: ['赵六'],
@@ -68,7 +74,13 @@ export default function Home() {
     setSelectedRowKeys([]);
     message.success('批量删除成功');
   };
-
+  function formatName(knowledgeBaseName: string | null, type: string, name: string) {
+    if (type === '知识库') {
+      return name;
+    } else {
+      return name + '(' + knowledgeBaseName + ')';
+    }
+  }
   function formatTime(ts: number) {
     if (!ts) return '-';
     const date = new Date(ts);
@@ -100,7 +112,15 @@ export default function Home() {
       render: (_: string, record: any) => (
         <div>
           <div className="font-bold">{record.name}</div>
-          <div className="text-xs text-gray-500">{record.description}</div>
+          <div className="text-xs text-gray-500">
+            <CloudOutlined style={{marginRight: 4, color: '#1890ff'}}/>
+            <Link
+              href={`/Home/knowledge/${record.knowledgeBaseId || record.knowledgeBaseName}`}
+              style={{ color: '#1890ff', textDecoration: 'none', cursor: 'pointer' }}
+            >
+              {record.knowledgeBaseName}
+            </Link>
+          </div>
         </div>
       ),
     },
@@ -168,7 +188,18 @@ export default function Home() {
         dataSource={dataSource}
         pagination={false}
         className={styles.recentTable}
+        onRow={(record) => ({
+          onClick: () => {
+            // 跳转到对应文档页面
+            window.location.href = `/Home/docs/${record.key}`;
+            // 或者用 Next.js 的路由跳转（推荐）：
+            // router.push(`/Home/docs/${record.key}`);
+          },
+          style: { cursor: 'pointer' }
+        })}
       />
+    
+      
     </div>
   );
 }
