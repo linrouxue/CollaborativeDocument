@@ -50,11 +50,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     document.title = getPageTitle(pathname);
   }, [pathname]);
 
-  const logout = () => {
-    console.log('退出登录');
-    router.push('/');
-  };
-
   const items: MenuProps['items'] = [
     {
       key: 'profile',

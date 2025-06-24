@@ -83,7 +83,6 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({
-        status: 200,
         success: true,
         message: '密码重置成功',
       });

@@ -53,8 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (newToken) {
         // 拿到新 token 后获取用户信息
         const res = await getCurrentUser();
-        if (res.data) {
-          setUser(res.data);
+        if (res && res.success && res.data && res.data.user) {
+          setUser(res.data.user);
         } else {
           setUser(null);
           if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       const res = await loginApi({ email, password });
-      if (res && res.accessToken) {
+      if (res && res.data && res.data.accessToken) {
         // 登录成功后用 accessToken 获取用户信息
         const userRes = await getCurrentUser();
         if (userRes && userRes.data && userRes.data.user) {
