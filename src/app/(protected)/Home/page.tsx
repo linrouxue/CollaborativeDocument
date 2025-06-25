@@ -1,58 +1,102 @@
 'use client';
 import { Table, Tag, Button, Popconfirm, message, Avatar, Space } from 'antd';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect  } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import styles from './RecentTable.module.css';
 import { CloudOutlined } from '@ant-design/icons';
 import Link from 'next/link';
+// import {getAccessToken} from '@/lib/api/tokenManager';
+import { getRecentAccess } from '@/lib/api/recentAccess';
+
+interface RecentAccessItem {
+  key: number;
+  documentId: number;
+  knowledgeBaseId: number | null;
+  knowledgeBaseName: string | null;
+  name: string | null;
+  members: (string | null)[];
+  openTime: number;
+}
+
+interface ApiResponse {
+  success: boolean;
+  data: RecentAccessItem[];
+  // message?: string;
+}
 
 export default function Home() {
   // mock数据
-  const initialData = useMemo(
-    () => [
-      {
-        key: '1',
-        knowledgeBaseId: null,
-        knowledgeBaseName: null,
-        name: '今天文档',
-        description: '今天打开的文档',
-        members: ['张三'],
-        openTime: 1750298400000,
-      },
-      {
-        key: '2',
-        knowledgeBaseId: '1',
-        knowledgeBaseName: '后端知识库',
-        name: '昨天文档',
-        description: '昨天打开的文档',
-        members: ['李四'],
-        openTime: 1750212000000,
-      },
-      {
-        key: '3',
-        knowledgeBaseId: null,
-        knowledgeBaseName: null,
-        name: '今年文档',
-        description: '今年内其他日期的文档',
-        members: ['王五'],
-        openTime: 1746064800000,
-      },
-      {
-        key: '4',
-        knowledgeBaseId: '1',
-        knowledgeBaseName: '后端知识库',
-        name: '去年文档',
-        description: '去年的文档',
-        members: ['赵六'],
-        openTime: 1714528800000,
-      },
-    ],
-    []
-  );
+  // const initialData = useMemo(
+  //   () => [
+  //     {
+  //       key: '1',
+  //       knowledgeBaseId: null,
+  //       knowledgeBaseName: null,
+  //       name: '今天文档',
+  //       description: '今天打开的文档',
+  //       members: ['张三'],
+  //       openTime: 1750298400000,
+  //     },
+  //     {
+  //       key: '2',
+  //       knowledgeBaseId: '1',
+  //       knowledgeBaseName: '后端知识库',
+  //       name: '昨天文档',
+  //       description: '昨天打开的文档',
+  //       members: ['李四'],
+  //       openTime: 1750212000000,
+  //     },
+  //     {
+  //       key: '3',
+  //       knowledgeBaseId: null,
+  //       knowledgeBaseName: null,
+  //       name: '今年文档',
+  //       description: '今年内其他日期的文档',
+  //       members: ['王五'],
+  //       openTime: 1746064800000,
+  //     },
+  //     {
+  //       key: '4',
+  //       knowledgeBaseId: '1',
+  //       knowledgeBaseName: '后端知识库',
+  //       name: '去年文档',
+  //       description: '去年的文档',
+  //       members: ['赵六'],
+  //       openTime: 1714528800000,
+  //     },
+  //   ],
+  //   []
+  // );
 
-  const [dataSource, setDataSource] = useState(initialData);
+  // const [dataSource, setDataSource] = useState(initialData);
+  const [dataSource, setDataSource] = useState<RecentAccessItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+    // 获取最近访问数据
+  useEffect(() => {
+    const fetchRecentAccess = async () => {
+      try {
+        setLoading(true);
+        // const result: ApiResponse = await getRecentAccess();
+        console.log('进来获取最近访问数据')
+        const result : ApiResponse | null  = await getRecentAccess();
+        console.log('result', result);
 
+        if (result && result.success) {
+          setDataSource(result.data);
+        } else {
+          message.error( '获取数据失败');
+        }
+      } catch (error) {
+        console.error('获取最近访问数据失败:', error);
+        message.error('获取数据失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentAccess();
+  }, []);
   const rowSelection = {
     selectedRowKeys,
     onChange: (newSelectedRowKeys: React.Key[]) => {
@@ -61,26 +105,20 @@ export default function Home() {
   };
 
   const handleDelete = (key: string) => {
-    setDataSource((prev) => prev.filter((item) => item.key !== key));
-    message.success('已删除');
+    // setDataSource((prev) => prev.filter((item) => item.key !== key));
+    // message.success('已删除');
   };
 
   const handleBatchDelete = () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning('请先选择要删除的项');
-      return;
-    }
-    setDataSource((prev) => prev.filter((item) => !selectedRowKeys.includes(item.key)));
-    setSelectedRowKeys([]);
-    message.success('批量删除成功');
+    // if (selectedRowKeys.length === 0) {
+    //   message.warning('请先选择要删除的项');
+    //   return;
+    // }
+    // setDataSource((prev) => prev.filter((item) => !selectedRowKeys.includes(item.key)));
+    // setSelectedRowKeys([]);
+    // message.success('批量删除成功');
   };
-  function formatName(knowledgeBaseName: string | null, type: string, name: string) {
-    if (type === '知识库') {
-      return name;
-    } else {
-      return name + '(' + knowledgeBaseName + ')';
-    }
-  }
+
   function formatTime(ts: number) {
     if (!ts) return '-';
     const date = new Date(ts);

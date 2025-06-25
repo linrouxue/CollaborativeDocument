@@ -4,11 +4,15 @@ export class TokenParser {
   private token: string | null;
 
   constructor(request: Request) {
-    // 兼容 Next.js/Express/Node 原生 Request
-    this.token = request.headers.get
-      ? request.headers.get('accessToken')
-      : (request.headers.get('accessToken') as string | undefined) || null;
-    // console.log('token', this.token);
+   // 兼容 Next.js/Express/Node 原生 Request
+  let rawToken = request.headers.get
+  ? request.headers.get('Authorization')
+  : (request.headers.get('Authorization') as string | undefined) || null;
+
+    // 去除 Bearer 前缀
+    this.token = rawToken?.startsWith('Bearer ') 
+    ? rawToken.substring(7) 
+    : rawToken;
   }
 
   /**
