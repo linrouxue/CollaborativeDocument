@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Layout, Tree, Input, Select, Button, theme, Dropdown, Menu, Avatar, Space } from 'antd';
 import {
@@ -20,6 +20,8 @@ import type { TreeDataNode } from 'antd';
 import styled from 'styled-components';
 
 import DocEditor from '@/components/RichTextEditor';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
 
 const { Sider, Header, Content, Footer } = Layout;
 const { Search } = Input;
@@ -48,86 +50,34 @@ const documents: TreeDataNode[] = [
     isLeaf: true,
   },
 ];
-
-const moreActionsMenu = {
-  items: [
+// 知識庫映射
+const knowledgeBaseMap: Record<string, TreeDataNode[]> = {
+  '前端知识库': documents,
+  '后端知识库': [
     {
-      key: 'download',
-      icon: <DownloadOutlined />,
-      label: '下载文档',
-      onClick: () => {
-        alert(`下载文档：${selectedDoc}`);
-        // 实现下载逻辑
-      },
+      title: 'Java 基础',
+      key: 'java',
+      isLeaf: true,
     },
     {
-      key: 'history',
-      icon: <HistoryOutlined />,
-      label: '查看历史记录',
-      onClick: () => {
-        alert('历史记录功能待实现');
-        // 实现查看历史版本逻辑
-      },
+      title: 'Spring Boot',
+      key: 'spring',
+      isLeaf: true,
+    },
+  ],
+  '数据库知识库': [
+    {
+      title: 'MySQL 教程',
+      key: 'mysql',
+      isLeaf: true,
     },
     {
-      key: 'notifications',
-      icon: <BellOutlined />,
-      label: '通知中心',
-      onClick: () => {
-        alert('打开通知中心');
-        // 实现通知弹窗逻辑
-      },
+      title: 'Redis 指南',
+      key: 'redis',
+      isLeaf: true,
     },
   ],
 };
-
-const StyledTree = styled(DirectoryTree)`
-  .ant-tree-node-content-wrapper {
-    display: flex !important;
-    align-items: center !important;
-    &:hover {
-      background-color: rgba(255, 255, 255, 0.1) !important;
-    }
-  }
-  .ant-tree-node-selected {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-  }
-  .ant-tree-title {
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-  }
-  .ant-tree-switcher {
-    display: flex !important;
-    align-items: center !important;
-  }
-`;
-
-const StyledTreeNode = styled.span`
-  color: #fff;
-  transition: all 0.3s;
-  padding: 4px 8px;
-  border-radius: 4px;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 8px;
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-`;
-
-const StyledSider = styled(Sider)`
-  position: fixed !important;
-  height: 100vh;
-  left: 0;
-  top: 0;
-  z-index: 1000;
-  transition: all 0.3s ease-in-out !important;
-  transform: translateX(${(props) => (props.collapsed ? '-100%' : '0')});
-  overflow: hidden !important;
-  visibility: ${(props) => (props.collapsed ? 'hidden' : 'visible')};
-  opacity: ${(props) => (props.collapsed ? 0 : 1)};
-`;
 
 export default function KnowledgeEditorLayout() {
   const router = useRouter();
@@ -141,8 +91,90 @@ export default function KnowledgeEditorLayout() {
   const [treeData, setTreeData] = useState<TreeDataNode[]>(knowledgeBaseMap[selectedBase]);
   const [searchValue, setSearchValue] = useState('');
 
+  // Yjs 相關狀態
+  const [connected, setConnected] = useState(false);
+  const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
+  const [provider, setProvider] = useState<WebsocketProvider | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState(1);
+  const websocketUrl = 'ws://192.168.2.36:1234';
+
   // 用户信息（示例）
   const userName = 'USER_NAME'; // 这里可以替换为实际的用户名
+
+  // 初始化 Yjs 文档与连接
+  useEffect(() => {
+    if (!selectedDoc) {
+      setConnected(false);
+      setSharedType(null);
+      setProvider(null);
+      setOnlineUsers(1);
+      return;
+    }
+
+    const yDoc = new Y.Doc();
+    const yXmlText = yDoc.get('slate', Y.XmlText);
+    const yProvider = new WebsocketProvider(websocketUrl, selectedDoc, yDoc);
+
+    // 连接状态监听
+    yProvider.on('status', (event: { status: string }) => {
+      console.log('Connection status:', event.status);
+      setConnected(event.status === 'connected');
+    });
+
+    // 在线人数监听
+    const awareness = yProvider.awareness;
+    const updateOnlineUsers = () => setOnlineUsers(awareness.getStates().size);
+
+    awareness.on('change', updateOnlineUsers);
+    updateOnlineUsers();
+
+    setSharedType(yXmlText);
+    setProvider(yProvider);
+
+    return () => {
+      awareness.off('change', updateOnlineUsers);
+      yProvider.destroy();
+      yDoc.destroy();
+    };
+  }, [websocketUrl, selectedDoc]);
+
+  useEffect(() => {
+    if (provider) {
+      console.log('Awareness States:', Array.from(provider.awareness.getStates().values()));
+    }
+  }, [provider, onlineUsers]);
+
+  const moreActionsMenu = {
+    items: [
+      {
+        key: 'download',
+        icon: <DownloadOutlined />,
+        label: '下载文档',
+        onClick: () => {
+          alert(`下载文档：${selectedDoc}`);
+          // 实现下载逻辑
+        },
+      },
+      {
+        key: 'history',
+        icon: <HistoryOutlined />,
+        label: '查看历史记录',
+        onClick: () => {
+          alert('历史记录功能待实现');
+          // 实现查看历史版本逻辑
+        },
+      },
+      {
+        key: 'notifications',
+        icon: <BellOutlined />,
+        label: '通知中心',
+        onClick: () => {
+          alert('打开通知中心');
+          // 实现通知弹窗逻辑
+        },
+      },
+    ],
+  };
 
   // Tree 搜索过滤
   const filterTree = (data: TreeDataNode[], keyword: string): TreeDataNode[] =>
@@ -203,7 +235,7 @@ export default function KnowledgeEditorLayout() {
           onSelect={(keys) => {
             if (keys.length > 0) setSelectedDoc(keys[0] as string);
           }}
-          titleRender={(node) => <StyledTreeNode>{node.title}</StyledTreeNode>}
+          titleRender={(node) => <StyledTreeNode>{(node as any).title}</StyledTreeNode>}
           style={{
             background: '#001529',
             color: '#fff',
@@ -317,7 +349,7 @@ export default function KnowledgeEditorLayout() {
           </div>
         </Header>
 
-        <Content style={{ margin: '16px', marginTop: '75px' }}>
+        <Content style={{ margin: '16px', marginTop: '100px' }}>
           <div
             style={{
               height: 'calc(100vh - 112px)',
@@ -325,8 +357,29 @@ export default function KnowledgeEditorLayout() {
               borderRadius: borderRadiusLG,
             }}
           >
-            {selectedDoc ? (
-              <DocEditor roomName={selectedDoc} />
+            {selectedDoc && connected && sharedType && provider ? (
+              <DocEditor
+                sharedType={sharedType}
+                provider={provider}
+                onlineUsers={onlineUsers}
+                connected={connected}
+              />
+            ) : selectedDoc ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: '#999',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
+                <p style={{ fontSize: '16px', marginBottom: '8px' }}>
+                  正在连接到协同服务器...
+                </p>
+                <p style={{ fontSize: '14px' }}>请稍候</p>
+              </div>
             ) : (
               <div
                 style={{
@@ -354,3 +407,51 @@ export default function KnowledgeEditorLayout() {
     </Layout>
   );
 }
+
+const StyledTree = styled(DirectoryTree)`
+  .ant-tree-node-content-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+  }
+  .ant-tree-node-selected {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+  }
+  .ant-tree-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .ant-tree-switcher {
+    display: flex !important;
+    align-items: center !important;
+  }
+`;
+
+const StyledTreeNode = styled.span`
+  color: #fff;
+  transition: all 0.3s;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px;
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const StyledSider = styled(Sider)`
+  position: fixed !important;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  transition: all 0.3s ease-in-out !important;
+  transform: translateX(${(props) => (props.collapsed ? '-100%' : '0')});
+  overflow: hidden !important;
+  visibility: ${(props) => (props.collapsed ? 'hidden' : 'visible')};
+  opacity: ${(props) => (props.collapsed ? 0 : 1)};
+`;
