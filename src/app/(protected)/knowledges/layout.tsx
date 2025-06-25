@@ -1,16 +1,13 @@
 'use client';
 
-import React, { Suspense, useEffect, useState, useRef } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { ProLayout } from '@ant-design/pro-components';
 import {
   LogoutOutlined,
   UserOutlined,
-  HomeOutlined,
   FileOutlined,
-  AppstoreOutlined,
   TwitterOutlined,
   SearchOutlined,
-  CloseOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Dropdown, Spin } from 'antd';
@@ -33,10 +30,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [mounted, setMounted] = useState(false);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
-
   const contextMenu = useContextMenu();
 
   useEffect(() => {
@@ -87,47 +84,22 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   const menu = [
     {
-      path: '/Home',
-      name: '主页',
-      icon: <HomeOutlined />,
-    },
-    {
-      path: '/Home/knowledge',
-      name: '知识库',
-      icon: <AppstoreOutlined />,
-      routes: [
-        {
-          path: '/knowledges/1',
-          name: '知识库1',
-        },
-        {
-          path: '/knowledges/2',
-          name: '知识库2',
-        },
-        {
-          path: '/knowledges/3',
-          name: '知识库3',
-        },
-      ],
-    },
-    {
-      path: '/Home/docs',
+      path: '/knowledges',
       name: '文档库',
       icon: <FileOutlined />,
       routes: [
         {
-          path: '/Home/docs/1',
+          path: '/knowledges/1',
           name: '文件1',
         },
         {
-          path: '/Home/docs/2',
+          path: '/knowledges/2',
           name: '文件2',
         },
       ],
     },
   ];
 
-  // 右键菜单渲染
   const renderContextMenu = () => (
     <ContextMenu
       visible={contextMenu.visible}
@@ -138,14 +110,13 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     />
   );
 
-  // 右键事件只需调用hook的onContextMenu
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
-    const isDocNode = item.path && item.path.startsWith('/Home/docs/');
+    const isDocNode = item.path && item.path.startsWith('/knowledges/');
     return (
       <div
         onClick={(e) => {
           e.stopPropagation();
-          if (item.path && item.path !== '/Home/docs') {
+          if (item.path && item.path !== '/knowledges') {
             router.push(item.path);
           }
         }}
