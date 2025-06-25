@@ -13,13 +13,14 @@ import {
   CloseOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Dropdown, Spin, Input } from 'antd';
+import { Dropdown, Spin } from 'antd';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 // src/app/Home/layout.tsx
 // import type { Metadata } from "next";
 import '@/style/globals.css';
 import { useAuth } from '@/contexts/AuthContext';
+import SearchModal from '@/components/common/SearchModal';
 
 // export const metadata: Metadata = {
 //   title: "协同文档系统",
@@ -29,7 +30,39 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
-  const [showSearch, setShowSearch] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [recentList, setRecentList] = useState([
+    {
+      key: '1',
+      name: '新版需求分析',
+      knowledgeBase: "林柔雪's Document Library",
+      member: '林柔雪',
+      openTime: '4分钟前',
+    },
+    {
+      key: '2',
+      name: 'AI 工具与技术学习分享',
+      knowledgeBase: "Shuai Zhang's Document Library",
+      member: '张帅',
+      openTime: '3小时前',
+    },
+    {
+      key: '3',
+      name: '首页',
+      knowledgeBase: '测试111',
+      member: '黄浩轩',
+      openTime: '昨天 20:01',
+    },
+    {
+      key: '4',
+      name: '未命名文档',
+      knowledgeBase:
+        "林柔雪's Document Library我今天真的有点无语了.今天出门碰到了一条狗，他对我叫了几声，说我跟他是同类，我不承认，他一直哭，说我辜负了她，可是我觉得我真的非常愿望了今天出门碰到了一条狗，他对我叫了几声，说我跟他是同类，我不承认，他一直哭，说我辜负了她，可是我觉得我真的非常愿望了",
+      member: '林柔雪',
+      openTime: '6月13日',
+    },
+    // ... 可继续补充
+  ]);
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
@@ -187,76 +220,20 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       subMenuItemRender={renderMenuItem}
       actionsRender={(props) => {
         return [
-          <div
-            key="search-container"
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              marginRight: '-8px',
+          <SearchOutlined
+            key="search"
+            className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
+            onClick={() => setSearchModalOpen(true)}
+          />,
+          <SearchModal
+            key="search-modal"
+            open={searchModalOpen}
+            onClose={() => setSearchModalOpen(false)}
+            data={recentList}
+            onItemClick={(key) => {
+              window.location.href = `/Home/docs/${key}`;
             }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                right: '0',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 1,
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                border: showSearch ? '1px solid #d9d9d9' : 'none',
-                borderRadius: '4px',
-                backgroundColor: showSearch ? '#fff' : 'transparent',
-                padding: '0 8px',
-                marginRight: showSearch ? '0' : '-8px',
-              }}
-            >
-              <Input
-                placeholder="搜索..."
-                style={{
-                  width: showSearch ? '160px' : '0',
-                  transition: 'all 0.3s ease',
-                  border: 'none',
-                  padding: '4px 0',
-                  fontSize: '14px',
-                  outline: 'none',
-                  backgroundColor: 'transparent',
-                  boxShadow: 'none',
-                }}
-                onPressEnter={(e) => {
-                  console.log('搜索:', (e.target as HTMLInputElement).value);
-                }}
-              />
-            </div>
-
-            {showSearch ? (
-              <CloseOutlined
-                key="close"
-                style={{
-                  fontSize: '16px',
-                  position: 'relative',
-                  zIndex: 2,
-                  color: '#1890ff',
-                  transition: 'all 0.3s ease',
-                }}
-                onClick={() => setShowSearch(false)}
-              />
-            ) : (
-              <SearchOutlined
-                key="search"
-                style={{
-                  fontSize: '20px',
-                  position: 'relative',
-                  zIndex: 2,
-                  color: 'inherit',
-                  transition: 'all 0.3s ease',
-                }}
-                onClick={() => setShowSearch(true)}
-              />
-            )}
-          </div>,
+          />,
         ];
       }}
       avatarProps={{
