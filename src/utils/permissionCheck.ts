@@ -19,7 +19,15 @@ const requiredPermissionMap: { [url: string]: number } = {
 
 export async function checkPermission(request: NextRequest) {
   // 1. 获取token
-  const token = request.headers.get('accessToken');
+  let rawToken = request.headers.get
+  ? request.headers.get('Authorization')
+  : (request.headers.get('Authorization') as string | undefined) || null;
+
+    // 去除 Bearer 前缀
+    const token = rawToken?.startsWith('Bearer ') 
+    ? rawToken.substring(7) 
+    : rawToken;
+  // const token = request.headers.get('Authorization');
   console.log('[权限校验] accessToken:', token);
   if (!token) {
     console.log('[权限校验] 未登录，缺少token');
