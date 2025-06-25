@@ -158,6 +158,7 @@ export default function Home() {
               <Link
               href={`/Home/knowledge/${record.knowledgeBaseId || record.knowledgeBaseName}`}
               style={{ color: '#1890ff', textDecoration: 'none', cursor: 'pointer' }}
+              onClick={e => e.stopPropagation()}
             >
               {record.knowledgeBaseName}
             </Link>
