@@ -33,7 +33,12 @@ export async function GET(request: NextRequest) {
      for (const item of recentAccess) {
         // console.log("进来一次循环")
         const document = await prisma.t_document.findUnique({
-          where: { id: item.document_id }
+          where: { id: item.document_id },
+          select: {
+            knowledge_base_id: true,
+            user_id: true,
+            title: true
+          }
         });
         // console.log('document', document);
         let knowledgeBaseName = null;
@@ -51,7 +56,7 @@ export async function GET(request: NextRequest) {
           const userName = user?.username ?? null;
           // 将各种信息封装成一个RecentAccessItem对象
           const recentAccessItem: RecentAccessItem = {
-            key: i++,
+            key: item.id,
             documentId: item.document_id,
             knowledgeBaseId: document?.knowledge_base_id ?? null,
             knowledgeBaseName: knowledgeBaseName ?? '',
