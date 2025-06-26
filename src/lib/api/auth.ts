@@ -86,11 +86,7 @@ export const getCurrentUser = async () => {
   try {
     const token = getAccessToken();
     if (!token) throw new Error('未登录');
-    const { data } = await axiosInstance.post(
-      '/user/get-profile',
-      {},
-      { headers: { Authorization: `Bearer ${token}` } } // 配置项
-    );
+    const { data } = await axiosInstance.post('/user/get-profile');
     return data;
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || '获取用户信息失败');
