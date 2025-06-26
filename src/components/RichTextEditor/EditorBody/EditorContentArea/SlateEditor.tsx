@@ -10,102 +10,13 @@ import {
   UndoOutlined,
   RedoOutlined,
 } from '@ant-design/icons';
+import { RenderLeafProps } from 'slate-react';
 
 interface SlateEditorProps {
   editor: Editor;
   decorate: any;
   renderLeaf: any;
 }
-
-// 工具栏按钮组件
-const ToolbarButton = ({
-  active,
-  onMouseDown,
-  icon,
-  title,
-}: {
-  active: boolean;
-  onMouseDown: (e: React.MouseEvent) => void;
-  icon: React.ReactNode;
-  title: string;
-}) => (
-  <button
-    onMouseDown={onMouseDown}
-    className={`p-2 rounded hover:bg-gray-100 ${active ? 'bg-gray-100' : ''}`}
-    title={title}
-    type="button"
-  >
-    {icon}
-  </button>
-);
-
-// 判断格式是否激活
-const isMarkActive = (editor: Editor, format: string) => {
-  const marks = Editor.marks(editor);
-  return marks ? (marks as any)[format] === true : false;
-};
-
-// 切换格式
-const toggleMark = (editor: Editor, format: string) => {
-  if (isMarkActive(editor, format)) {
-    editor.removeMark(format);
-  } else {
-    editor.addMark(format, true);
-  }
-};
-
-const Toolbar = () => {
-  const editor = useSlate();
-  return (
-    <div className="mb-2 flex gap-2 border-b p-2 bg-white sticky top-0 z-10">
-      <ToolbarButton
-        active={isMarkActive(editor, 'bold')}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          toggleMark(editor, 'bold');
-        }}
-        icon={<BoldOutlined style={{ fontSize: 18 }} />}
-        title="粗體"
-      />
-      <ToolbarButton
-        active={isMarkActive(editor, 'italic')}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          toggleMark(editor, 'italic');
-        }}
-        icon={<ItalicOutlined style={{ fontSize: 18 }} />}
-        title="斜體"
-      />
-      <ToolbarButton
-        active={isMarkActive(editor, 'underline')}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          toggleMark(editor, 'underline');
-        }}
-        icon={<UnderlineOutlined style={{ fontSize: 18 }} />}
-        title="下划線"
-      />
-      <ToolbarButton
-        active={false}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          editor.undo?.();
-        }}
-        icon={<UndoOutlined style={{ fontSize: 18 }} />}
-        title="撤销"
-      />
-      <ToolbarButton
-        active={false}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          editor.redo?.();
-        }}
-        icon={<RedoOutlined style={{ fontSize: 18 }} />}
-        title="重做"
-      />
-    </div>
-  );
-};
 
 const initialValue: Descendant[] = [
   {
@@ -114,17 +25,88 @@ const initialValue: Descendant[] = [
   },
 ];
 
-const SlateEditor: React.FC<SlateEditorProps> = ({
-  editor,
-  decorate,
-  renderLeaf,
-}) => {
+const SlateEditor: React.FC<SlateEditorProps> = ({ editor, decorate, renderLeaf }) => {
+  // 支持自定义块类型的渲染
+  const renderElement = useCallback((props) => {
+    const { element, attributes, children } = props;
+    switch (element.type) {
+      case 'heading-one':
+        return (
+          <h1 {...attributes} style={{ fontSize: '1.5em', fontWeight: 700 }}>
+            {children}
+          </h1>
+        );
+      case 'heading-two':
+        return (
+          <h2 {...attributes} style={{ fontSize: '1.2em', fontWeight: 600 }}>
+            {children}
+          </h2>
+        );
+      case 'bulleted-list':
+        return (
+          <ul {...attributes} style={{ paddingLeft: 24 }}>
+            {children}
+          </ul>
+        );
+      case 'numbered-list':
+        return (
+          <ol {...attributes} style={{ paddingLeft: 24 }}>
+            {children}
+          </ol>
+        );
+      case 'list-item':
+        return <li {...attributes}>{children}</li>;
+      case 'block-quote':
+        return (
+          <blockquote
+            {...attributes}
+            style={{ borderLeft: '4px solid #ccc', margin: 0, paddingLeft: 12, color: '#888' }}
+          >
+            {children}
+          </blockquote>
+        );
+      case 'code':
+        return (
+          <pre
+            {...attributes}
+            style={{ background: '#f6f6f6', padding: 12, borderRadius: 4, fontFamily: 'monospace' }}
+          >
+            <code>{children}</code>
+          </pre>
+        );
+      case 'divider':
+        return (
+          <div {...attributes}>
+            <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '12px 0' }} />
+          </div>
+        );
+
+      default:
+        return <p {...attributes}>{children}</p>;
+    }
+  }, []);
+
+  // 行内样式渲染：加粗、斜体、下划线
+  const renderLeafWithMarks = useCallback((props: RenderLeafProps) => {
+    let { children, leaf, attributes } = props;
+    if (leaf.bold) {
+      children = <strong>{children}</strong>;
+    }
+    if (leaf.italic) {
+      children = <em>{children}</em>;
+    }
+    if (leaf.underline) {
+      children = <u>{children}</u>;
+    }
+    return <span {...attributes}>{children}</span>;
+  }, []);
+
   return (
     <>
-      <Toolbar />
       <Editable
         decorate={decorate}
-        renderLeaf={renderLeaf}
+        renderLeaf={renderLeafWithMarks}
+        renderElement={renderElement}
         placeholder="請開始輸入..."
         spellCheck
         autoFocus
