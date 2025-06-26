@@ -1,11 +1,14 @@
 'use client';
 import { Skeleton, Row, Col, Input, message } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import KnowledgeCard from '@/components/knowledge/KnowledgeCard';
 import CreateKnowledgeModal from '@/components/knowledge/CreateKnowledgeModal';
 import DeleteKnowledgeModal from '@/components/knowledge/DeleteKnowledgeModal';
 import type { SearchProps } from 'antd/es/input';
+import { useRouter } from 'next/navigation';
+import { firstGetKnowledgeBase } from '@/lib/api/knowledgeBase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DEFAULT_IMAGE = '/book.webp';
 
@@ -16,19 +19,19 @@ interface KnowledgeData {
   cover?: string;
 }
 
-const know: KnowledgeData[] = [
-  {
-    id: '1',
-    title: '知识库2',
-    description: '知识库2的描述信息',
-    cover: 'https://os.alipayobjects.com/rmsportal/QBnOOoLaAfKPirc.png',
-  },
-  {
-    id: '2',
-    title: '知识库3',
-    description: '知识库3的描述信息',
-  },
-];
+// const know: KnowledgeData[] = [
+//   {
+//     id: '1',
+//     title: '知识库2',
+//     description: '知识库2的描述信息',
+//     cover: 'https://os.alipayobjects.com/rmsportal/QBnOOoLaAfKPirc.png',
+//   },
+//   {
+//     id: '2',
+//     title: '知识库3',
+//     description: '知识库3的描述信息',
+//   },
+// ];
 
 export default function Knowledge() {
   const [loading, setLoading] = useState<boolean>(false);
@@ -37,12 +40,42 @@ export default function Knowledge() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentKnowledge, setCurrentKnowledge] = useState<KnowledgeData | undefined>();
-
+  const [know, setKnowledgeList] = useState<KnowledgeData[]>([]);
+  const router = useRouter();
   const onSearch: SearchProps['onSearch'] = (value: string) => {
     setSearchText(value);
     console.log('搜索内容:', value);
   };
+  const {user} = useAuth();
 
+  // 獲取知識庫列表
+  const fetchKnowledgeList = async () => {
+    try {
+      setLoading(true);
+      const response = await firstGetKnowledgeBase({size: '20', userId: user?.id || 0}); // 獲取前20個知識庫
+      const data = response.data;
+      console.log(response);
+     // 轉換數據格式
+     const convertedData: KnowledgeData[] = data.map((item: any) => ({
+      id: item.knowledgeBaseId.toString(),
+      title: item.name,
+      description: item.description,
+      cover: item.img
+    }));
+    setKnowledgeList(convertedData);
+    } catch (error) {
+      console.error('獲取知識庫列表失敗:', error);
+      // alert('獲取知識庫列表失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 組件加載時獲取數據
+  useEffect(() => {
+    fetchKnowledgeList();
+  }, []);
+  
   const showCreateModal = () => {
     setModalMode('create');
     setCurrentKnowledge(undefined);
@@ -84,6 +117,10 @@ export default function Knowledge() {
     console.log('知识库操作成功，需要刷新列表');
   };
 
+  const handleClick = (id: string) => {
+    router.push(`/knowledges/${id}`);
+  };
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
@@ -110,7 +147,7 @@ export default function Knowledge() {
             </div>
           </Col>
           {know.map((item) => (
-            <Col key={item.id}>
+            <Col key={item.id} onClick={() => handleClick(item.id)}>
               <KnowledgeCard
                 id={item.id}
                 title={item.title}

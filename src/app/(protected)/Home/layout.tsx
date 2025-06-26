@@ -97,15 +97,15 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       icon: <AppstoreOutlined />,
       routes: [
         {
-          path: '/knowledges/1',
+          path: '/documents/1',
           name: '知识库1',
         },
         {
-          path: '/knowledges/2',
+          path: '/documents/2',
           name: '知识库2',
         },
         {
-          path: '/knowledges/3',
+          path: '/documents/3',
           name: '知识库3',
         },
       ],
@@ -116,11 +116,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       icon: <FileOutlined />,
       routes: [
         {
-          path: '/Home/docs/1',
+          path: '/documents/doc1',
           name: '文件1',
         },
         {
-          path: '/Home/docs/2',
+          path: '/documents/doc2',
           name: '文件2',
         },
       ],

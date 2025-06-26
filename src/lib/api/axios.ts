@@ -3,6 +3,8 @@ import { getAccessToken, setAccessToken } from './tokenManager';
 
 export const baseURL = 'http://localhost:3000/api';
 
+export const JavaBaseURL = 'http://119.29.229.71:8585'
+
 const axiosInstance = axios.create({
   baseURL,
   timeout: 10000,
