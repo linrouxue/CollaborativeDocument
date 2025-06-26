@@ -64,11 +64,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // 過濾用戶信息，移除敏感數據
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      avatar: user.avatar,
+      phone: user.phone,
+    };
+
     // 使用 NextResponse 统一处理
     const response = NextResponse.json(
       {
         success: true,
-        accessToken,
+        data: {
+          user: safeUser, // 使用过滤后的用户信息
+          accessToken,
+        },
       },
       { status: 200 }
     );

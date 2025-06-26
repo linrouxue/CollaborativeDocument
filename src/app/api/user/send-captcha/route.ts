@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: '验证码已发送到您的邮箱',
+      data: { email: emailLower },
     });
   } catch (error) {
     console.error('发送验证码失败，详细错误:', error);

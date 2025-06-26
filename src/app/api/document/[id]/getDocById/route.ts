@@ -1,38 +1,38 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { checkPermission } from '@/utils/permissionCheck';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  // 校验权限
+  const { pass, response, user, minPermission, document } = await checkPermission(request);
+  // 不通过直接返回
+  if (!pass) return response;
   try {
-    // 验证文档 ID
-    if (!params.id) {
-      return NextResponse.json({ error: '文档 ID 不能为空' }, { status: 400 });
+    const id = parseInt(params.id);
+    if (!id) {
+      return new NextResponse('Missing document id', { status: 400 });
     }
-
-    // 检查文档是否存在
     const doc = await prisma.t_document.findUnique({
-      where: { id: params.id },
-      select: {
-        id: true,
-        content: true,
-        create_time: true,
-        update_time: true,
-        title: true,
-        creator_id: true,
-      },
+      where: { id },
+      select: { content: true }
     });
 
-    if (!doc) {
-      return NextResponse.json({ error: '文档不存在' }, { status: 404 });
+    if (!doc || !doc.content) {
+      return new NextResponse(null, { status: 404 });
     }
 
-    // 验证文档内容
-    if (!doc.content) {
-      return NextResponse.json({ error: '文档内容为空' }, { status: 400 });
-    }
-
-    return NextResponse.json(doc);
-  } catch (error) {
-    console.error('获取文档时发生错误:', error);
-    return NextResponse.json({ error: '获取文档失败' }, { status: 500 });
+    return new NextResponse(doc.content, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="doc-${id}.bin"`
+      }
+    });
+  } catch (e) {
+    console.error('Error fetching document binary:', e);
+    return new NextResponse('Server error', { status: 500 });
   }
 }

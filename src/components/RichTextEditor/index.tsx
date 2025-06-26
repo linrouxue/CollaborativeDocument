@@ -25,6 +25,7 @@ import {
   getRemoteCaretsOnLeaf,
 } from '@slate-yjs/react';
 import { addAlpha } from '@/utils/addAlpha';
+import { useAuth } from '@/contexts/AuthContext';
 
 type CustomElement = {
   type: 'paragraph';
@@ -51,83 +52,28 @@ const initialValue: Descendant[] = [
 ];
 
 interface RichTextEditorProps {
-  roomName?: string;
-}
-
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ roomName = 'default' }) => {
-  const [connected, setConnected] = useState(false);
-  const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
-  const [provider, setProvider] = useState<WebsocketProvider | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState(1);
-  const websocketUrl = 'ws://192.168.2.36:1234';
-
-  // 初始化 Yjs 文档与连接
-  useEffect(() => {
-    const yDoc = new Y.Doc();
-    const yXmlText = yDoc.get('slate', Y.XmlText);
-    const yProvider = new WebsocketProvider(websocketUrl, roomName, yDoc);
-
-    // 连接状态监听
-    yProvider.on('status', (event: { status: string }) => {
-      console.log('Connection status:', event.status);
-      setConnected(event.status === 'connected');
-    });
-
-    // 在线人数监听
-    const awareness = yProvider.awareness;
-    const updateOnlineUsers = () => setOnlineUsers(awareness.getStates().size);
-
-    awareness.on('change', updateOnlineUsers);
-    updateOnlineUsers();
-
-    setSharedType(yXmlText);
-    setProvider(yProvider);
-
-    return () => {
-      awareness.off('change', updateOnlineUsers);
-      yProvider.destroy();
-      yDoc.destroy();
-    };
-  }, [websocketUrl, roomName]);
-
-  useEffect(() => {
-    if (provider) {
-      console.log('Awareness States:', Array.from(provider.awareness.getStates().values()));
-    }
-  }, [provider, onlineUsers]);
-
-  if (!connected || !sharedType || !provider) {
-    return <div>Loading…</div>;
-  }
-
-  return (
-    <SlateEditor
-      sharedType={sharedType}
-      provider={provider}
-      onlineUsers={onlineUsers}
-      connected={connected}
-    />
-  );
-};
-
-const SlateEditor = ({
-  sharedType,
-  provider,
-  onlineUsers,
-  connected,
-}: {
   sharedType: Y.XmlText;
   provider: WebsocketProvider;
   onlineUsers: number;
   connected: boolean;
+}
+
+const RichTextEditor: React.FC<RichTextEditorProps> = ({
+  sharedType,
+  provider,
+  onlineUsers,
+  connected,
 }) => {
-  const randomName = useMemo(() => {
-    const names = ['Alice', 'Bob', 'Charlie', 'David'];
-    return names[Math.floor(Math.random() * names.length)];
-  }, []);
+  const { user } = useAuth();
+    
+  // 從 AuthContext 獲取用戶名，如果沒有則使用默認值
+  const userName = useMemo(() => {
+    console.log('try to get user name', user);
+    return user?.username || user?.email || user?.id || 'Anonymous';
+  }, [user]);
 
   const randomColor = useMemo(() => {
-    const colors = ['#00ff00', '#ff0000', '#0000ff', '#ff9900'];
+    const colors = ['#00ff00', '#ff0000', '#0000ff', '#ff9900', '#ff00ff', '#00ffff', '#ffff00', '#ff6600'];
     return colors[Math.floor(Math.random() * colors.length)];
   }, []);
 
@@ -135,20 +81,15 @@ const SlateEditor = ({
     const e = withReact(
       withHistory(
         withCursors(withYjs(createEditor(), sharedType), provider.awareness, {
-          data: { name: randomName, color: randomColor },
+          data: { name: userName, color: randomColor },
         })
       )
     );
     return e;
-  }, [sharedType, provider]);
+  }, [sharedType, provider, userName, randomColor]);
 
-  const initialValue: Descendant[] = [
-    {
-      type: 'paragraph',
-      children: [{ text: '欢迎使用 Slate 协同编辑器！' }],
-    },
-  ];
   const [value, setValue] = useState<Descendant[]>(initialValue);
+  
   // 连接编辑器
   useEffect(() => {
     YjsEditor.connect(editor);
@@ -157,21 +98,21 @@ const SlateEditor = ({
       Transforms.insertNodes(editor, initialValue, { at: [0] });
     }
     return () => YjsEditor.disconnect(editor);
-  }, [editor]);
+  }, [editor, sharedType]);
 
   return (
     <div className="border rounded-lg bg-white p-4 min-h-[400px]">
       <Slate editor={editor} initialValue={value} onChange={setValue}>
         <EditorHeaderToolbar />
-        <RichEditable />
+        <RichEditable editor={editor} value={value} />
         <EditorFooter connected={connected} onlineUsers={onlineUsers} />
       </Slate>
     </div>
   );
 };
 
-// 新增子组件 RichEditable，放在 <Slate> 里面调用 hooks
-function RichEditable() {
+// 新增子組件 RichEditable，放在 <Slate> 裡面調用 hooks
+function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }) {
   const decorate = useDecorateRemoteCursors();
   const renderLeaf = useCallback((props: any) => {
     getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
@@ -247,10 +188,11 @@ function RichEditable() {
         `,
         }}
       />
-      <Editable
+      <EditorBody
+        editor={editor}
         decorate={decorate}
         renderLeaf={renderLeaf}
-        style={{ minHeight: 300, padding: 16, border: '1px solid #ccc' }}
+        editorValue={value}
       />
     </>
   );

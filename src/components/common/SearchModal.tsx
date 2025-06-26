@@ -5,19 +5,44 @@ import ClampText from './ClampText';
 interface SearchModalProps {
   open: boolean;
   onClose: () => void;
-  data: Array<{
-    key: string;
-    name: string;
-    knowledgeBase: string;
-    member: string;
-    openTime: string;
-  }>;
-  onItemClick?: (key: string) => void;
 }
 
-const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, data, onItemClick }) => {
+const recentList = [
+  {
+    key: '1',
+    name: '新版需求分析',
+    knowledgeBase: "林柔雪's Document Library",
+    member: '林柔雪',
+    openTime: '4分钟前',
+  },
+  {
+    key: '2',
+    name: 'AI 工具与技术学习分享',
+    knowledgeBase: "Shuai Zhang's Document Library",
+    member: '张帅',
+    openTime: '3小时前',
+  },
+  {
+    key: '3',
+    name: '首页',
+    knowledgeBase: '测试111',
+    member: '黄浩轩',
+    openTime: '昨天 20:01',
+  },
+  {
+    key: '4',
+    name: '未命名文档',
+    knowledgeBase:
+      "林柔雪's Document Library我今天真的有点无语了.今天出门碰到了一条狗，他对我叫了几声，说我跟他是同类，我不承认，他一直哭，说我辜负了她，可是我觉得我真的非常愿望了今天出门碰到了一条狗，他对我叫了几声，说我跟他是同类，我不承认，他一直哭，说我辜负了她，可是我觉得我真的非常愿望了",
+    member: '林柔雪',
+    openTime: '6月13日',
+  },
+  // ... 可继续补充
+];
+
+const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
   const [searchText, setSearchText] = useState('');
-  const filteredList = data.filter(
+  const filteredList = recentList.filter(
     (item) => item.name.includes(searchText) || item.knowledgeBase.includes(searchText)
   );
   const listRef = useRef<HTMLDivElement>(null);
@@ -122,6 +147,12 @@ const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, data, onItemCl
     return text.replace(/\n/g, ' ').replace(/\s+/g, ' ').replace(reg, '<mark>$1</mark>');
   }
 
+  function handleItemClick(key: string) {
+    window.location.href = `/Home/docs/${key}`;
+    onClose();
+    setSearchText('');
+  }
+
   return (
     <Modal
       open={open}
@@ -158,11 +189,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ open, onClose, data, onItemCl
                 padding: 10,
               }}
               className="cursor-pointer rounded mb-1 bg-white shadow-sm min-h-[44px]"
-              onClick={() => {
-                onClose();
-                setSearchText('');
-                onItemClick?.(item.key);
-              }}
+              onClick={() => handleItemClick(item.key)}
             >
               <div
                 className="font-semibold text-[15px] leading-5 mb-0.5"
