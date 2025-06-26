@@ -1,10 +1,11 @@
 'use client';
-import { Table, Tag, Button, Popconfirm, message, Avatar, Space, Tooltip } from 'antd';
+import { Table, Tag, Button, Popconfirm, message, Avatar, Space, Tooltip, Modal } from 'antd';
 import { useMemo, useState, useEffect  } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import styles from './RecentTable.module.css';
 import { CloudOutlined } from '@ant-design/icons';
 import { ExportOutlined } from '@ant-design/icons';
+import ShareDocument from '@/components/documentShare/share';
 import Link from 'next/link';
 // import {getAccessToken} from '@/lib/api/tokenManager';
 import { getRecentAccess, deleteRecentAccess } from '@/lib/api/recentAccess';
@@ -73,7 +74,6 @@ export default function Home() {
   const [dataSource, setDataSource] = useState<RecentAccessItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-
   const fetchRecentAccess = async () => {
     try {
       setLoading(true);
@@ -134,6 +134,14 @@ export default function Home() {
     }
   };
 
+
+  const [shareVisible, setShareVisible] = useState(false);
+  const [shareRecord, setShareRecord] = useState<RecentAccessItem | null>(null);
+
+  const handleShare = (record: RecentAccessItem) => {
+    setShareRecord(record);
+    setShareVisible(true);
+  };
   function formatTime(ts: number) {
     if (!ts) return '-';
     const date = new Date(ts);
@@ -228,16 +236,17 @@ export default function Home() {
         <Button type="link" icon={<DeleteOutlined />} onClick={e => e.stopPropagation()}/>
         </Tooltip>
         </Popconfirm>
-        <Popconfirm
-        title="确定要删除这条记录吗？"
-        onConfirm={() => handleDelete(record.key.toString())}
-        okText="删除"
-        cancelText="取消"
-      >
+        
         <Tooltip title="分享" >
-        <Button type="link" icon={<ExportOutlined />} onClick={e => e.stopPropagation()}/>
+        <Button
+          type="link"
+          icon={<ExportOutlined />}
+          onClick={e => {
+          e.stopPropagation();
+          handleShare(record);
+  }}
+/>
         </Tooltip>
-      </Popconfirm>
       </div>
       ),
     },
@@ -281,7 +290,10 @@ export default function Home() {
           style: { cursor: 'pointer' }
         })}
       />
-    
+      <ShareDocument
+        open={shareVisible}
+        onCancel={() => setShareVisible(false)}
+      />
       
     </div>
   );
