@@ -50,7 +50,7 @@ const documents: TreeDataNode[] = [
     isLeaf: true,
   },
 ];
-// 知識庫映射
+// 知识库映射
 const knowledgeBaseMap: Record<string, TreeDataNode[]> = {
   '前端知识库': documents,
   '后端知识库': [
@@ -91,7 +91,7 @@ export default function KnowledgeEditorLayout() {
   const [treeData, setTreeData] = useState<TreeDataNode[]>(knowledgeBaseMap[selectedBase]);
   const [searchValue, setSearchValue] = useState('');
 
-  // Yjs 相關狀態
+  // Yjs 相关状态相关状态
   const [connected, setConnected] = useState(false);
   const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
   const [provider, setProvider] = useState<WebsocketProvider | null>(null);

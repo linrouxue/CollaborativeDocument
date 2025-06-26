@@ -34,6 +34,9 @@ type CustomElement = {
 
 type CustomText = {
   text: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
 };
 
 declare module 'slate' {
@@ -65,7 +68,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   connected,
 }) => {
   const { user } = useAuth();
-    
+
   // 從 AuthContext 獲取用戶名，如果沒有則使用默認值
   const userName = useMemo(() => {
     console.log('try to get user name', user);
@@ -73,7 +76,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [user]);
 
   const randomColor = useMemo(() => {
-    const colors = ['#00ff00', '#ff0000', '#0000ff', '#ff9900', '#ff00ff', '#00ffff', '#ffff00', '#ff6600'];
+    const colors = [
+      '#00ff00',
+      '#ff0000',
+      '#0000ff',
+      '#ff9900',
+      '#ff00ff',
+      '#00ffff',
+      '#ffff00',
+      '#ff6600',
+    ];
     return colors[Math.floor(Math.random() * colors.length)];
   }, []);
 
@@ -89,7 +101,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [sharedType, provider, userName, randomColor]);
 
   const [value, setValue] = useState<Descendant[]>(initialValue);
-  
+
   // 连接编辑器
   useEffect(() => {
     YjsEditor.connect(editor);
@@ -188,12 +200,7 @@ function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }
         `,
         }}
       />
-      <EditorBody
-        editor={editor}
-        decorate={decorate}
-        renderLeaf={renderLeaf}
-        editorValue={value}
-      />
+      <EditorBody editor={editor} decorate={decorate} renderLeaf={renderLeaf} editorValue={value} />
     </>
   );
 }

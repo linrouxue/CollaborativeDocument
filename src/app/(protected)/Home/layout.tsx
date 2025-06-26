@@ -140,12 +140,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   // 右键事件只需调用hook的onContextMenu
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
-    const isDocNode = item.path && item.path.startsWith('/Home/docs/');
+    const isDocNode = item.path && item.path.startsWith('/documents');
     return (
       <div
         onClick={(e) => {
           e.stopPropagation();
-          if (item.path && item.path !== '/Home/docs') {
+          if (item.path && item.path !== '/documents') {
             router.push(item.path);
           }
         }}

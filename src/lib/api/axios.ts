@@ -3,6 +3,8 @@ import { getAccessToken, setAccessToken } from './tokenManager';
 
 export const baseURL = 'http://localhost:3000/api';
 
+export const JavaBaseURL = 'http://119.29.229.71:8585'
+
 const axiosInstance = axios.create({
   baseURL,
   timeout: 10000,
@@ -39,10 +41,13 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config as any;
 
     // 如果是 401 错误且不是刷新 token 的请求
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url.includes('/auth/refresh')
+    ) {
       console.log('🚨 401 error detected, attempting token refresh...');
       originalRequest._retry = true;
-
       if (!isRefreshing) {
         isRefreshing = true;
         refreshPromise = axiosInstance
@@ -56,6 +61,7 @@ axiosInstance.interceptors.response.use(
           .catch(() => {
             setAccessToken(null);
             isRefreshing = false;
+            window.location.href = '/login';
             return null;
           });
       }
