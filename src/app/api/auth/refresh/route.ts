@@ -21,10 +21,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. 校验 JWT 签名和过期
-    let decoded: any;
+    // 验证 refresh token
+    let decoded;
     try {
-      decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+      decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as any;
     } catch (error) {
       return NextResponse.json(
         { success: false, message: 'Invalid refresh token' },

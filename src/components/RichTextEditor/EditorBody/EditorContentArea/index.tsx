@@ -8,8 +8,7 @@ interface EditorContentAreaProps {
   editor: any;
   decorate: any;
   renderLeaf: any;
-  onChange: (value: any) => void;
-  value: any;
+  
 }
 
 const EditorContentArea: React.FC<EditorContentAreaProps> = ({

@@ -11,18 +11,17 @@ interface EditorBodyProps {
   decorate: any;
   // 渲染叶子节点
   renderLeaf: any;
+  // 编辑器值
+  editorValue?: any;
   onToggleCollapse?: (collapsed: boolean) => void;
-  onChange: (value: any) => void;
-  value: any;
 }
 
 const EditorBody: React.FC<EditorBodyProps> = ({
   editor,
   decorate,
   renderLeaf,
+  editorValue,
   onToggleCollapse,
-  onChange,
-  value,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -36,14 +35,12 @@ const EditorBody: React.FC<EditorBodyProps> = ({
       <EditorSidebar
         collapsed={collapsed}
         toggleCollapsed={toggleSidebar}
-        // TODO: 需要传入大纲数据
+        editorValue={editorValue || []}
       />
       <EditorContentArea
         editor={editor}
         decorate={decorate}
         renderLeaf={renderLeaf}
-        onChange={onChange}
-        value={value}
       />
     </div>
   );

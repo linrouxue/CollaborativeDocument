@@ -7,27 +7,27 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     // 验证内容
     if (!content) {
-      return NextResponse.json({ error: '文档内容不能为空' }, { status: 400 });
+      return NextResponse.json({ success: false, message: '文档内容不能为空' }, { status: 400 });
     }
 
     // 检查文档是否存在
     const existingDoc = await prisma.t_document.findUnique({
-      where: { id: params.id },
+      where: { id: parseInt(params.id) },
     });
 
     if (!existingDoc) {
-      return NextResponse.json({ error: '文档不存在' }, { status: 404 });
+      return NextResponse.json({ success: false, message: '文档不存在' }, { status: 404 });
     }
 
     // 更新文档
     await prisma.t_document.update({
-      where: { id: params.id },
+      where: { id: parseInt(params.id) },
       data: { content, update_time: new Date() },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: '文档保存成功' });
   } catch (error) {
     console.error('保存文档时发生错误:', error);
-    return NextResponse.json({ error: '保存文档失败' }, { status: 500 });
+    return NextResponse.json({ success: false, message: '保存文档失败' }, { status: 500 });
   }
 }
