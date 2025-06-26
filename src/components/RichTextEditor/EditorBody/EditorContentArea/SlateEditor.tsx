@@ -12,11 +12,9 @@ import {
 } from '@ant-design/icons';
 
 interface SlateEditorProps {
-  editor: any;
+  editor: Editor;
   decorate: any;
   renderLeaf: any;
-  onChange: (value: any) => void;
-  value: any;
 }
 
 // 工具栏按钮组件
@@ -44,7 +42,7 @@ const ToolbarButton = ({
 // 判断格式是否激活
 const isMarkActive = (editor: Editor, format: string) => {
   const marks = Editor.marks(editor);
-  return marks ? marks[format] === true : false;
+  return marks ? (marks as any)[format] === true : false;
 };
 
 // 切换格式
@@ -120,8 +118,6 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
   editor,
   decorate,
   renderLeaf,
-  onChange,
-  value,
 }) => {
   return (
     <>
@@ -130,8 +126,6 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
         decorate={decorate}
         renderLeaf={renderLeaf}
         placeholder="請開始輸入..."
-        value={value}
-        onChange={onChange}
         spellCheck
         autoFocus
         className="min-h-[300px] outline-none p-2 bg-white"

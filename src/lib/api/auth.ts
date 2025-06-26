@@ -31,8 +31,8 @@ export interface AuthResponse {
 export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
   try {
     const { data } = await axiosInstance.post('/user/login', credentials);
-    if (data && data.accessToken) {
-      setAccessToken(data.accessToken);
+    if (data && data.success && data.data && data.data.accessToken) {
+      setAccessToken(data.data.accessToken);
     }
     return data;
   } catch (error: any) {
@@ -54,7 +54,7 @@ export const register = async (userData: RegisterRequest): Promise<AuthResponse>
 export const refreshAccessToken = async (): Promise<string | null> => {
   try {
     const { data } = await axiosInstance.post('/auth/refresh');
-    if (data && data.accessToken) {
+    if (data && data.success && data.accessToken) {
       setAccessToken(data.accessToken);
       return data.accessToken;
     }
@@ -70,6 +70,8 @@ export const logout = async (): Promise<void> => {
     await axiosInstance.post('/user/logout');
   } catch (error) {
     // 忽略后端登出失败
+  } finally {
+    setAccessToken(null);
   }
 };
 

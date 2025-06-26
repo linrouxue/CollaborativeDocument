@@ -38,7 +38,7 @@ const ToolbarButton = ({
 // 判断某种格式是否激活
 const isMarkActive = (editor: Editor, format: string) => {
   const marks = Editor.marks(editor);
-  return marks ? marks[format] === true : false;
+  return marks ? (marks as any)[format] === true : false;
 };
 
 // 切换格式
