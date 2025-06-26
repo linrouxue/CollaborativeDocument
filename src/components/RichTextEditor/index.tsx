@@ -25,6 +25,7 @@ import {
   getRemoteCaretsOnLeaf,
 } from '@slate-yjs/react';
 import { addAlpha } from '@/utils/addAlpha';
+import { useAuth } from '@/contexts/AuthContext';
 
 type CustomElement = {
   type: 'paragraph';
@@ -63,13 +64,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onlineUsers,
   connected,
 }) => {
-  const randomName = useMemo(() => {
-    const names = ['Alice', 'Bob', 'Charlie', 'David'];
-    return names[Math.floor(Math.random() * names.length)];
-  }, []);
+  const { user } = useAuth();
+    
+  // 從 AuthContext 獲取用戶名，如果沒有則使用默認值
+  const userName = useMemo(() => {
+    console.log('try to get user name', user);
+    return user?.username || user?.email || user?.id || 'Anonymous';
+  }, [user]);
 
   const randomColor = useMemo(() => {
-    const colors = ['#00ff00', '#ff0000', '#0000ff', '#ff9900'];
+    const colors = ['#00ff00', '#ff0000', '#0000ff', '#ff9900', '#ff00ff', '#00ffff', '#ffff00', '#ff6600'];
     return colors[Math.floor(Math.random() * colors.length)];
   }, []);
 
@@ -77,12 +81,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const e = withReact(
       withHistory(
         withCursors(withYjs(createEditor(), sharedType), provider.awareness, {
-          data: { name: randomName, color: randomColor },
+          data: { name: userName, color: randomColor },
         })
       )
     );
     return e;
-  }, [sharedType, provider, randomName, randomColor]);
+  }, [sharedType, provider, userName, randomColor]);
 
   const [value, setValue] = useState<Descendant[]>(initialValue);
   

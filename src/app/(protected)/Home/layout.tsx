@@ -97,15 +97,15 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       icon: <AppstoreOutlined />,
       routes: [
         {
-          path: '/knowledges/1',
+          path: '/documents/1',
           name: '知识库1',
         },
         {
-          path: '/knowledges/2',
+          path: '/documents/2',
           name: '知识库2',
         },
         {
-          path: '/knowledges/3',
+          path: '/documents/3',
           name: '知识库3',
         },
       ],
@@ -116,11 +116,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       icon: <FileOutlined />,
       routes: [
         {
-          path: '/Home/docs/1',
+          path: '/documents/doc1',
           name: '文件1',
         },
         {
-          path: '/Home/docs/2',
+          path: '/documents/doc2',
           name: '文件2',
         },
       ],
@@ -140,12 +140,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   // 右键事件只需调用hook的onContextMenu
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
-    const isDocNode = item.path && item.path.startsWith('/Home/docs/');
+    const isDocNode = item.path && item.path.startsWith('/documents');
     return (
       <div
         onClick={(e) => {
           e.stopPropagation();
-          if (item.path && item.path !== '/Home/docs') {
+          if (item.path && item.path !== '/documents') {
             router.push(item.path);
           }
         }}
