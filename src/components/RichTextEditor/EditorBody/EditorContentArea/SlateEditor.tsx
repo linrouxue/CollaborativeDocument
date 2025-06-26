@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 
 interface SlateEditorProps {
+  editor: Editor;
   decorate: any;
   renderLeaf: any;
 }
@@ -41,7 +42,7 @@ const ToolbarButton = ({
 // 判断格式是否激活
 const isMarkActive = (editor: Editor, format: string) => {
   const marks = Editor.marks(editor);
-  return marks ? marks[format] === true : false;
+  return marks ? (marks as any)[format] === true : false;
 };
 
 // 切换格式
@@ -117,8 +118,6 @@ const SlateEditor: React.FC<SlateEditorProps> = ({
   editor,
   decorate,
   renderLeaf,
-  onChange,
-  value,
 }) => {
   return (
     <>
