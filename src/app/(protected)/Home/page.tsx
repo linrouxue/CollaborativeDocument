@@ -235,7 +235,7 @@ export default function Home() {
         onRow={(record) => ({
           onClick: () => {
             // 跳转到对应文档页面
-            window.location.href = `/Home/docs/${record.key}`;
+            window.location.href = `/knowledges/${record.key}`;
             // 或者用 Next.js 的路由跳转（推荐）：
             // router.push(`/Home/docs/${record.key}`);
           },

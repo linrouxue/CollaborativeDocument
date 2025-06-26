@@ -6,6 +6,7 @@ import KnowledgeCard from '@/components/knowledge/KnowledgeCard';
 import CreateKnowledgeModal from '@/components/knowledge/CreateKnowledgeModal';
 import DeleteKnowledgeModal from '@/components/knowledge/DeleteKnowledgeModal';
 import type { SearchProps } from 'antd/es/input';
+import { useRouter } from 'next/navigation';
 
 const DEFAULT_IMAGE = '/book.webp';
 
@@ -37,7 +38,7 @@ export default function Knowledge() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentKnowledge, setCurrentKnowledge] = useState<KnowledgeData | undefined>();
-
+  const router = useRouter();
   const onSearch: SearchProps['onSearch'] = (value: string) => {
     setSearchText(value);
     console.log('搜索内容:', value);
@@ -84,6 +85,10 @@ export default function Knowledge() {
     console.log('知识库操作成功，需要刷新列表');
   };
 
+  const handleClick = (id: string) => {
+    router.push(`/knowledges/${id}`);
+  };
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
@@ -110,7 +115,7 @@ export default function Knowledge() {
             </div>
           </Col>
           {know.map((item) => (
-            <Col key={item.id}>
+            <Col key={item.id} onClick={() => handleClick(item.id)}>
               <KnowledgeCard
                 id={item.id}
                 title={item.title}
