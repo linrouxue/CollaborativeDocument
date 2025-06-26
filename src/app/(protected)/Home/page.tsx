@@ -275,7 +275,8 @@ export default function Home() {
             ) {
               return;
             }
-            window.location.href = `/Home/docs/${record.key}`;
+            // window.location.href = `/Home/docs/${record.key}`;
+            window.location.href = `/documents/${record.documentId}`;
           },
           style: { cursor: 'pointer' }
         })}
