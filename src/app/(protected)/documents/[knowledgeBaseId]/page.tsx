@@ -104,9 +104,9 @@ export default function DocPage() {
       };
     } catch (err) {
       console.error('初始化 Yjs 失敗:', err);
-      setError('初始化協同編輯器失敗');
+      setError('初始化协同编辑器失敗');
       setLoading(false);
-      message.error('初始化協同編輯器失敗');
+      message.error('初始化协同编辑器失敗');
     }
   }, [websocketUrl, knowledgeBaseId]);
 
@@ -116,18 +116,18 @@ export default function DocPage() {
       {
         key: 'download',
         icon: <DownloadOutlined />,
-        label: '下載文檔',
+        label: '下载文档',
         onClick: () => {
-          message.info(`下載文檔：${knowledgeBaseId}`);
+          message.info(`下载文档：${knowledgeBaseId}`);
           // 实现下载逻辑
         },
       },
       {
         key: 'history',
         icon: <HistoryOutlined />,
-        label: '查看歷史記錄',
+        label: '查看历史记录',
         onClick: () => {
-          message.info('歷史記錄功能待實現');
+          message.info('历史记录功能待实现');
           // 实现查看历史版本逻辑
         },
       },
@@ -136,7 +136,7 @@ export default function DocPage() {
         icon: <BellOutlined />,
         label: '通知中心',
         onClick: () => {
-          message.info('打開通知中心');
+          message.info('打开通知中心');
           // 实现通知弹窗逻辑
         },
       },
@@ -155,10 +155,10 @@ export default function DocPage() {
         }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '18px', marginBottom: '12px' }}>
-              正在連接到協同服務器...
+              正在连接到协同服务器...
             </div>
             <div style={{ fontSize: '14px', color: '#999' }}>
-              知識庫 ID: {knowledgeBaseId}
+              知识库 ID: {knowledgeBaseId}
             </div>
           </div>
         </Content>
@@ -185,10 +185,10 @@ export default function DocPage() {
               onClick={() => window.location.reload()}
               style={{ marginRight: '12px' }}
             >
-              重新連接
+              重新连接
             </Button>
             <Button onClick={handleBackToHome}>
-              返回主頁
+              返回主页
             </Button>
           </div>
         </Content>
@@ -198,7 +198,7 @@ export default function DocPage() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* 頂部導航欄 */}
+      {/* 顶部导航栏 */}
       <Header style={{ 
         background: colorBgContainer, 
         padding: '0 16px',
@@ -214,10 +214,10 @@ export default function DocPage() {
             onClick={handleBackToHome}
             style={{ marginRight: '16px' }}
           >
-            返回主頁
+            返回主页
           </Button>
           <div style={{ fontSize: '16px', fontWeight: '500' }}>
-            知識庫：{knowledgeBaseId}
+            知识库：{knowledgeBaseId}
           </div>
         </div>
         
@@ -236,7 +236,7 @@ export default function DocPage() {
               background: connected ? '#52c41a' : '#ff4d4f',
               animation: connected ? 'none' : 'blink 1.5s infinite'
             }} />
-            {connected ? `${onlineUsers} 人在線` : '離線'}
+            {connected ? `${onlineUsers} 人在线` : '离线'}
           </div>
           
           <Dropdown menu={moreActionsMenu} placement="bottomRight">
@@ -272,16 +272,16 @@ export default function DocPage() {
               }}
             >
               <p style={{ fontSize: '16px', marginBottom: '8px' }}>
-                正在連接到協同服務器...
+                正在连接到协同服务器...
               </p>
-              <p style={{ fontSize: '14px' }}>請稍候</p>
+              <p style={{ fontSize: '14px' }}>请稍候</p>
             </div>
           )}
         </div>
       </Content>
 
       <Footer style={{ textAlign: 'center' }}>
-        協同文檔編輯器 ©{new Date().getFullYear()} Created by XY
+        协同文档编辑器 ©{new Date().getFullYear()} Created by XY
       </Footer>
 
       <style jsx>{`

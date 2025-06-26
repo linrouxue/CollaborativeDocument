@@ -66,18 +66,18 @@ export default function DocPage() {
         
         if (event.status === 'connected') {
           setLoading(false);
-          message.success('已連接到協同服務器');
+          message.success('已连接到协同服务器');
         } else if (event.status === 'disconnected') {
-          message.warning('與協同服務器斷開連接');
+          message.warning('与协同服务器断开连接');
         }
       });
 
       // 错误处理
-      yProvider.on('error', (error: any) => {
+      yProvider.on('connection-error', (error: any) => {
         console.error('WebSocket error:', error);
-        setError('連接協同服務器失敗');
+        setError('连接协同服务器失败');
         setLoading(false);
-        message.error('連接協同服務器失敗');
+        message.error('连接协同服务器失败');
       });
 
       // 在线人数监听
@@ -101,9 +101,9 @@ export default function DocPage() {
       };
     } catch (err) {
       console.error('初始化 Yjs 失敗:', err);
-      setError('初始化協同編輯器失敗');
+      setError('初始化协同编辑器失败');
       setLoading(false);
-      message.error('初始化協同編輯器失敗');
+      message.error('初始化协同编辑器失败');
     }
   }, [websocketUrl, docId]);
 
@@ -113,18 +113,18 @@ export default function DocPage() {
       {
         key: 'download',
         icon: <DownloadOutlined />,
-        label: '下載文檔',
+        label: '下载文档',
         onClick: () => {
-          message.info(`下載文檔：${docId}`);
+          message.info(`下载文档：${docId}`);
           // 实现下载逻辑
         },
       },
       {
         key: 'history',
         icon: <HistoryOutlined />,
-        label: '查看歷史記錄',
+        label: '查看历史记录',
         onClick: () => {
-          message.info('歷史記錄功能待實現');
+          message.info('历史记录功能待实现');
           // 实现查看历史版本逻辑
         },
       },
@@ -133,7 +133,7 @@ export default function DocPage() {
         icon: <BellOutlined />,
         label: '通知中心',
         onClick: () => {
-          message.info('打開通知中心');
+          message.info('打开通知中心');
           // 实现通知弹窗逻辑
         },
       },
@@ -152,10 +152,10 @@ export default function DocPage() {
         }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '18px', marginBottom: '12px' }}>
-              正在連接到協同服務器...
+              正在连接到协同服务器...
             </div>
             <div style={{ fontSize: '14px', color: '#999' }}>
-              文檔 ID: {docId}
+              文档 ID: {docId}
             </div>
           </div>
         </Content>
@@ -182,10 +182,10 @@ export default function DocPage() {
               onClick={() => window.location.reload()}
               style={{ marginRight: '12px' }}
             >
-              重新連接
+              重新连接
             </Button>
             <Button onClick={() => router.push('/Home')}>
-              返回首頁
+              返回首页
             </Button>
           </div>
         </Content>
@@ -213,12 +213,12 @@ export default function DocPage() {
         {/* 左侧内容：返回 + 文档信息 */}
         <div className="flex items-center gap-4">
           <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => router.push('/Home')}>
-            返回首頁
+            返回首页
           </Button>
 
           {/* 当前文档信息 */}
           <span style={{ fontSize: '16px' }}>
-            文檔: {docId}
+            文档: {docId}
           </span>
           
           {/* 连接状态指示器 */}
@@ -236,7 +236,7 @@ export default function DocPage() {
               backgroundColor: connected ? '#52c41a' : '#ff4d4f',
               animation: connected ? 'none' : 'blink 1s infinite'
             }} />
-            {connected ? '已連接' : '連接中...'}
+            {connected ? '已连接' : '连接中...'}
           </div>
         </div>
 
@@ -246,9 +246,9 @@ export default function DocPage() {
           <Button
             type="text"
             icon={<LockOutlined />}
-            title="切換權限"
+            title="切换权限"
             onClick={() => {
-              message.info('切換權限功能待實現');
+              message.info('切换权限功能待实现');
               // TODO: 权限切换逻辑
             }}
           />
@@ -257,9 +257,9 @@ export default function DocPage() {
           <Button
             type="text"
             icon={<ShareAltOutlined />}
-            title="分享文檔"
+            title="分享文档"
             onClick={() => {
-              message.info('分享功能待實現');
+              message.info('分享功能待实现');
               // TODO: 分享逻辑
             }}
           />
@@ -279,17 +279,17 @@ export default function DocPage() {
               items: [
                 {
                   key: 'switch',
-                  label: '切換帳號',
+                  label: '切换账号',
                   onClick: () => {
-                    message.info('點擊切換帳號');
+                    message.info('点击切换账号');
                     // 这里写切换账号逻辑
                   },
                 },
                 {
                   key: 'logout',
-                  label: '退出登錄',
+                  label: '退出登录',
                   onClick: () => {
-                    message.info('點擊退出登錄');
+                    message.info('点击退出登录');
                     // 这里写退出登录逻辑
                   },
                 },
@@ -333,16 +333,16 @@ export default function DocPage() {
               }}
             >
               <p style={{ fontSize: '16px', marginBottom: '8px' }}>
-                正在連接到協同服務器...
+                正在连接到协同服务器...
               </p>
-              <p style={{ fontSize: '14px' }}>請稍候</p>
+              <p style={{ fontSize: '14px' }}>请稍候</p>
             </div>
           )}
         </div>
       </Content>
 
       <Footer style={{ textAlign: 'center' }}>
-        協同文檔編輯器 ©{new Date().getFullYear()} Created by XY
+        协同文档编辑器 ©{new Date().getFullYear()} Created by XY
       </Footer>
 
       <style jsx>{`

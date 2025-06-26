@@ -48,14 +48,14 @@ export default function Knowledge() {
   };
   const {user} = useAuth();
 
-  // 獲取知識庫列表
+  // 获取知识库列表
   const fetchKnowledgeList = async () => {
     try {
       setLoading(true);
-      const response = await firstGetKnowledgeBase({size: '20', userId: user?.id || 0}); // 獲取前20個知識庫
+      const response = await firstGetKnowledgeBase({size: '20', userId: user?.id || 0});
       const data = response.data;
       console.log(response);
-     // 轉換數據格式
+     // 转换数据格式
      const convertedData: KnowledgeData[] = data.map((item: any) => ({
       id: item.knowledgeBaseId.toString(),
       title: item.name,
@@ -64,14 +64,14 @@ export default function Knowledge() {
     }));
     setKnowledgeList(convertedData);
     } catch (error) {
-      console.error('獲取知識庫列表失敗:', error);
-      // alert('獲取知識庫列表失敗');
+      console.error('获取知识库列表失败:', error);
+      // alert('获取知识库列表失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // 組件加載時獲取數據
+  // 组件加载时获取数据
   useEffect(() => {
     fetchKnowledgeList();
   }, []);
