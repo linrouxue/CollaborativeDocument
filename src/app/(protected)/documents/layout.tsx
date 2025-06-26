@@ -38,19 +38,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setMounted(true);
-    // 根据当前路由设置标题
-    const getPageTitle = (path: string) => {
-      switch (path) {
-        case '/Home':
-          return '主页 - 协同文档';
-        case '/Home/knowledge':
-          return '知识库 - 协同文档';
-        default:
-          return '协同文档';
-      }
-    };
-    document.title = getPageTitle(pathname);
-  }, [pathname]);
+  }, []);
 
   const items: MenuProps['items'] = [
     {
