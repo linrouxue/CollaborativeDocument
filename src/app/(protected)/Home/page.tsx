@@ -7,6 +7,7 @@ import { CloudOutlined } from '@ant-design/icons';
 import { ExportOutlined } from '@ant-design/icons';
 import ShareDocument from '@/components/documentShare/share';
 import Link from 'next/link';
+import MemberAvatar from '@/components/Avatar/NameAavatar';
 // import {getAccessToken} from '@/lib/api/tokenManager';
 import { getRecentAccess, deleteRecentAccess } from '@/lib/api/recentAccess';
 
@@ -198,18 +199,22 @@ export default function Home() {
       key: 'members',
       align: 'center',
       render: (members: string[]) => {
+        // 封装成组件
+        
+        // if (!members || members.length === 0) return '-';
+        // const name = members[0];
+        // const colorList = ['#f56a00', '#7265e6', '#ffbf00', '#00a2ae', '#1890ff'];
+        // const color = colorList[name.charCodeAt(0) % colorList.length];
+        // return (
+        //   <Space>
+        //     <Avatar style={{ backgroundColor: color, verticalAlign: 'middle' }} size={28}>
+        //       {name[0]}
+        //     </Avatar>
+        //     <span>{name}</span>
+        //   </Space>
+        // );
         if (!members || members.length === 0) return '-';
-        const name = members[0];
-        const colorList = ['#f56a00', '#7265e6', '#ffbf00', '#00a2ae', '#1890ff'];
-        const color = colorList[name.charCodeAt(0) % colorList.length];
-        return (
-          <Space>
-            <Avatar style={{ backgroundColor: color, verticalAlign: 'middle' }} size={28}>
-              {name[0]}
-            </Avatar>
-            <span>{name}</span>
-          </Space>
-        );
+        return <MemberAvatar name={members[0]} />;
       },
     },
     {

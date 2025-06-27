@@ -18,11 +18,11 @@ const CollaboratorAvatar = ({ src, alt }: { src: string; alt: string }) => (
 );
 
 const ShareDocument: React.FC<ShareDocumentProps> = ({ open, onCancel }) => {
-    const collaborators = [
-        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80',
-        'https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80',
-        'https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80'
-    ];
+    // const collaborators = [
+    //     'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80',
+    //     'https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80',
+    //     'https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80'
+    // ];
 
     return (
         <Modal
@@ -48,12 +48,12 @@ const ShareDocument: React.FC<ShareDocumentProps> = ({ open, onCancel }) => {
             <div className={styles.inviteSection}>
                 <div className={styles.inviteHeader}>
                     <label className={styles.sectionLabel}>邀请协作者</label>
-                    <div className={styles.collaborators}>
+                    {/* <div className={styles.collaborators}>
                         {collaborators.map((src, index) => (
                             <CollaboratorAvatar key={index} src={src} alt={`collaborator ${index + 1}`} />
                         ))}
                         <div className={`${styles.avatar} ${styles.moreCollaborators}`}>+10</div>
-                    </div>
+                    </div> */}
                 </div>
                 <div className={styles.inputWrapper}>
                     <input
@@ -89,7 +89,7 @@ const ShareDocument: React.FC<ShareDocumentProps> = ({ open, onCancel }) => {
                     复制链接
                 </button>
                 <div className={styles.shareIcons}>
-                    <button className={styles.iconButton}><img src="https://lf3-static.bytednsdoc.com/obj/eden-cn/lcy_fq/document-icon/feishu.svg" alt="feishu" style={{ width: 20, height: 20 }} /></button>
+                    {/* <button className={styles.iconButton}><img src="https://lf3-static.bytednsdoc.com/obj/eden-cn/lcy_fq/document-icon/feishu.svg" alt="feishu" style={{ width: 20, height: 20 }} /></button> */}
                     <button className={styles.iconButton}><WechatOutlined style={{ fontSize: '20px' }} /></button>
                     <button className={styles.iconButton}><QrcodeOutlined style={{ fontSize: '20px' }} /></button>
                     <button className={styles.iconButton}><LinkOutlined style={{ fontSize: '20px' }} /></button>
