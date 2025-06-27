@@ -7,7 +7,7 @@ import CreateKnowledgeModal from '@/components/knowledge/CreateKnowledgeModal';
 import DeleteKnowledgeModal from '@/components/knowledge/DeleteKnowledgeModal';
 import type { SearchProps } from 'antd/es/input';
 import { useRouter } from 'next/navigation';
-import { firstGetKnowledgeBase } from '@/lib/api/knowledgeBase';
+import { getAllKnowledgeBase } from '@/lib/api/knowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
 
 const DEFAULT_IMAGE = '/book.webp';
@@ -46,23 +46,23 @@ export default function Knowledge() {
     setSearchText(value);
     console.log('搜索内容:', value);
   };
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   // 获取知识库列表
   const fetchKnowledgeList = async () => {
     try {
       setLoading(true);
-      const response = await firstGetKnowledgeBase({size: '20', userId: user?.id || 0});
-      const data = response.data;
-      console.log(response);
-     // 转换数据格式
-     const convertedData: KnowledgeData[] = data.map((item: any) => ({
-      id: item.knowledgeBaseId.toString(),
-      title: item.name,
-      description: item.description,
-      cover: item.img
-    }));
-    setKnowledgeList(convertedData);
+      const response = await getAllKnowledgeBase();
+      // 兼容后端返回格式，保证 data 一定为数组
+      const data = Array.isArray(response) ? response : [];
+      // 转换数据格式，img 为空时用默认图片
+      const convertedData: KnowledgeData[] = data.map((item: any) => ({
+        id: item.knowledgeBaseId?.toString() || '',
+        title: item.name,
+        description: item.description,
+        cover: item.img,
+      }));
+      setKnowledgeList(convertedData);
     } catch (error) {
       console.error('获取知识库列表失败:', error);
       // alert('获取知识库列表失败');
@@ -75,7 +75,7 @@ export default function Knowledge() {
   useEffect(() => {
     fetchKnowledgeList();
   }, []);
-  
+
   const showCreateModal = () => {
     setModalMode('create');
     setCurrentKnowledge(undefined);

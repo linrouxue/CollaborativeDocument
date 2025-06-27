@@ -32,7 +32,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  // refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,36 +44,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const { showAlert } = useAlert();
 
-  // 刷新 token 并获取用户信息
-  const refreshUser = useCallback(async () => {
-    setLoading(true);
-    try {
-      // 自动刷新 accessToken
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        // 拿到新 token 后获取用户信息
-        const res = await getCurrentUser();
-        if (res && res.success && res.data && res.data.user) {
-          setUser(res.data.user);
-        } else {
-          setUser(null);
-          if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
-          router.push('/login');
-        }
-      } else {
-        setUser(null);
-        if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
-        router.push('/login');
-      }
-    } catch (error) {
-      setUser(null);
-      if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
-      router.push('/login');
-    } finally {
-      setHasTriedRefresh(true);
-      setLoading(false);
-    }
-  }, [router, hasTriedRefresh, showAlert]);
+  // // 刷新 token 并获取用户信息
+  // const refreshUser = useCallback(async () => {
+  //   setLoading(true);
+  //   try {
+  //     // 自动刷新 accessToken
+  //     const newToken = await refreshAccessToken();
+  //     if (newToken) {
+  //       // 拿到新 token 后获取用户信息
+  //       const res = await getCurrentUser();
+  //       if (res && res.success && res.data && res.data.user) {
+  //         setUser(res.data.user);
+  //       } else {
+  //         setUser(null);
+  //         if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
+  //         router.push('/login');
+  //       }
+  //     } else {
+  //       setUser(null);
+  //       if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
+  //       router.push('/login');
+  //     }
+  //   } catch (error) {
+  //     setUser(null);
+  //     if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
+  //     router.push('/login');
+  //   } finally {
+  //     setHasTriedRefresh(true);
+  //     setLoading(false);
+  //   }
+  // }, [router, hasTriedRefresh, showAlert]);
 
   // 登录
   const login = async (email: string, password: string) => {
@@ -119,19 +119,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 初始化时自动刷新 token 并获取用户信息
+  // // 初始化时自动刷新 token 并获取用户信息
+  // useEffect(() => {
+  //   refreshUser();
+  //   // eslint-disable-next-line
+  // }, []);
+
   useEffect(() => {
-    refreshUser();
+    setLoading(true);
+    getCurrentUser()
+      .then((res) => {
+        if (res && res.success && res.data && res.data.user) {
+          setUser(res.data.user);
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
     // eslint-disable-next-line
   }, []);
-
   const value: AuthContextType = {
     user,
     loading,
     isAuthenticated: !!user,
     login,
     logout,
-    refreshUser,
+    // refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
