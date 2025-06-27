@@ -1,6 +1,8 @@
 import React from 'react';
 import { Modal } from 'antd';
 import styles from './share.module.css';
+import { useState } from 'react';
+import { Select } from 'antd';
 import { 
     QuestionCircleOutlined, 
     PlusOutlined, 
@@ -36,36 +38,9 @@ const ShareDocument: React.FC<ShareDocumentProps> = ({ open, onCancel }) => {
         // styles={{ body: { background: 'none', boxShadow: 'none', padding: 0 } }}
         
     >
+        
         <div className={styles.shareContainer}>
-            <div className={styles.header}>
-                <div className={styles.title}>
-                    分享文档
-                    <QuestionCircleOutlined className={styles.helpIcon} />
-                </div>
-                {/* <button className={styles.permissionButton}>申请编辑权限</button> */}
-            </div>
-
-            <div className={styles.inviteSection}>
-                <div className={styles.inviteHeader}>
-                    <label className={styles.sectionLabel}>邀请协作者</label>
-                    {/* <div className={styles.collaborators}>
-                        {collaborators.map((src, index) => (
-                            <CollaboratorAvatar key={index} src={src} alt={`collaborator ${index + 1}`} />
-                        ))}
-                        <div className={`${styles.avatar} ${styles.moreCollaborators}`}>+10</div>
-                    </div> */}
-                </div>
-                <div className={styles.inputWrapper}>
-                    <input
-                        type="text"
-                        placeholder="搜索用户、群组、部门或用户组"
-                        className={styles.searchInput}
-                    />
-                    <button className={styles.addButton}>
-                        <PlusOutlined />
-                    </button>
-                </div>
-            </div>
+            
 
             <div className={styles.linkShareSection}>
                 <label className={styles.sectionLabel}>链接分享</label>
@@ -79,7 +54,16 @@ const ShareDocument: React.FC<ShareDocumentProps> = ({ open, onCancel }) => {
                         <p className={styles.status}>互联网获得链接的人</p>
                         <p className={styles.description}>互联网获得链接的人可阅读</p>
                     </div>
-                    <button className={styles.linkPermission}>可阅读</button>
+                    <Select
+                        className={styles.linkPermission}
+                        defaultValue="read"
+                        style={{ width: 100 }}
+                        options={[
+                            { value: 'read', label: '可阅读' },
+                            { value: 'edit', label: '可编辑' },
+                            { value: 'comment', label: '可评论' },
+                        ]}
+                        />
                 </div>
             </div>
 
