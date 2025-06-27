@@ -71,7 +71,7 @@ model t_knowledge_base {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model t_knowledge_base_permission {
-  id                Int       @id
+  id                Int       @id @default(autoincrement())
   knowledge_base_id Int?
   user_id           Int?
   permission        Int?
