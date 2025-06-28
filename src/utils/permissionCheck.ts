@@ -102,10 +102,9 @@ export async function checkPermission(request: NextRequest) {
   // 8. 合并权限
   const permissionList: number[] = [
     ...knowledgeBasePermission
-      .map((item: { permission: string | null }) => item.permission)
-      .filter((p: string | null): p is string => p !== null)
-      .map((p: string) => parseInt(p, 10))
-      .filter((num: number) => !isNaN(num)),
+      .map((item: { permission: number | null }) => item.permission)
+      .filter((p: number | null): p is number => p !== null)
+      .map((p: number) => p),
     ...ancestorDocumentPermission
       .map((item: { permission: number }) => item.permission)
       .filter((p: number): p is number => typeof p === 'number'),

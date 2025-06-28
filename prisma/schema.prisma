@@ -137,3 +137,16 @@ model t_refresh_token {
 model t_document_base {
   id Int @id @default(autoincrement())
 }
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model t_notice {
+  id          Int       @id @default(autoincrement())
+  notice_type Int?
+  sid         Int?
+  user_id     Int?
+  permission  Int?
+  read_flag   Int?
+  create_time DateTime? @db.DateTime(0)
+  update_time DateTime? @db.DateTime(0)
+  del_flag    String?   @db.VarChar(255)
+}
