@@ -73,3 +73,42 @@ export const newKnowledgeBase = async (params: NewKnowledgeBaseParams) => {
     throw error;
   }
 };
+
+/**
+ * 删除知识库
+ * @param knowledgeBaseId 知识库ID
+ * @returns 删除结果
+ */
+export const deleteKnowledgeBase = async (knowledgeBaseId: number) => {
+  try {
+    const data = await javaAxiosInstance.delete(`/api/knowledge-base/delete/${knowledgeBaseId}`, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+interface UpdateKnowledgeBaseParams {
+  knowledgeBaseId: number;
+  name?: string;
+  description?: string;
+  img?: string;
+}
+
+/**
+ * 编辑知识库
+ * @param params 包含 knowledgeBaseId、name、description、img
+ * @returns 编辑结果
+ */
+export const updateKnowledgeBase = async (params: UpdateKnowledgeBaseParams) => {
+  try {
+    const data = await javaAxiosInstance.post('/api/knowledge-base/update', params, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};

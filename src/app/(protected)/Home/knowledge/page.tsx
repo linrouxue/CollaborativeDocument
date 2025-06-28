@@ -7,8 +7,13 @@ import CreateKnowledgeModal from '@/components/knowledge/CreateKnowledgeModal';
 import DeleteKnowledgeModal from '@/components/knowledge/DeleteKnowledgeModal';
 import type { SearchProps } from 'antd/es/input';
 import { useRouter } from 'next/navigation';
-import { getAllKnowledgeBase } from '@/lib/api/knowledgeBase';
+import {
+  getAllKnowledgeBase,
+  deleteKnowledgeBase,
+  updateKnowledgeBase,
+} from '@/lib/api/knowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAlert } from '@/contexts/AlertContext';
 
 const DEFAULT_IMAGE = '/book.webp';
 
@@ -42,6 +47,7 @@ export default function Knowledge() {
   const [currentKnowledge, setCurrentKnowledge] = useState<KnowledgeData | undefined>();
   const [know, setKnowledgeList] = useState<KnowledgeData[]>([]);
   const router = useRouter();
+  const { showAlert } = useAlert();
   const onSearch: SearchProps['onSearch'] = (value: string) => {
     setSearchText(value);
     console.log('搜索内容:', value);
@@ -64,6 +70,7 @@ export default function Knowledge() {
       }));
       setKnowledgeList(convertedData);
     } catch (error) {
+      showAlert('获取知识库列表失败', 'error');
       console.error('获取知识库列表失败:', error);
       // alert('获取知识库列表失败');
     } finally {
@@ -99,12 +106,17 @@ export default function Knowledge() {
     }
   };
 
-  const handleDeleteConfirm = () => {
-    // TODO: 调用删除API
-    console.log('删除知识库:', currentKnowledge?.id);
-    message.success('删除成功');
-    setIsDeleteModalOpen(false);
-    setCurrentKnowledge(undefined);
+  const handleDeleteConfirm = async () => {
+    if (!currentKnowledge?.id) return;
+    try {
+      await deleteKnowledgeBase(Number(currentKnowledge.id));
+      showAlert('删除成功', 'success');
+      setIsDeleteModalOpen(false);
+      setCurrentKnowledge(undefined);
+      fetchKnowledgeList(); // 删除后刷新列表
+    } catch (error) {
+      showAlert('删除失败', 'error');
+    }
   };
 
   const handleModalCancel = () => {
@@ -112,9 +124,11 @@ export default function Knowledge() {
     setCurrentKnowledge(undefined);
   };
 
-  const handleModalSuccess = () => {
-    // TODO: 刷新知识库列表
-    console.log('知识库操作成功，需要刷新列表');
+  const handleModalSuccess = async (data?: any) => {
+    // 新建成功或其他情况，直接刷新列表
+    setIsModalOpen(false);
+    setCurrentKnowledge(undefined);
+    fetchKnowledgeList();
   };
 
   const handleClick = (id: string) => {

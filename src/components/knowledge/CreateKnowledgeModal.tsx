@@ -1,10 +1,11 @@
-import { Modal, Form, Input, Upload, Tabs } from 'antd';
+import { Modal, Form, Input, Upload, Tabs, message } from 'antd';
 import { useState, useEffect } from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import PermissionManagement from './PermissionManagement';
-import { newKnowledgeBase } from '@/lib/api/knowledgeBase';
+import { newKnowledgeBase, updateKnowledgeBase } from '@/lib/api/knowledgeBase';
 import { uploadImage } from '@/lib/api/uploadImg';
+import { useAlert } from '@/contexts/AlertContext';
 
 interface KnowledgeData {
   id?: string;
@@ -31,6 +32,7 @@ export default function CreateKnowledgeModal({
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [activeTab, setActiveTab] = useState('basic');
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (open && mode === 'edit' && initialData) {
@@ -61,23 +63,39 @@ export default function CreateKnowledgeModal({
       let coverUrl = fileList[0]?.url || fileList[0]?.thumbUrl || '';
       // 如果有新上传的图片，先上传图片
       if (fileList[0]?.originFileObj) {
-        coverUrl = await uploadImage(fileList[0].originFileObj as File);
+        try {
+          coverUrl = await uploadImage(fileList[0].originFileObj as File);
+        } catch (e) {
+          throw e;
+        }
       }
       const formData = {
         ...values,
         cover: coverUrl,
       };
-      console.log('表单值:', formData);
-      // 创建知识库API调用
-      await newKnowledgeBase({
-        name: formData.title,
-        description: formData.description,
-        img: formData.cover || '',
-      });
+      if (mode === 'create') {
+        // 创建知识库
+        await newKnowledgeBase({
+          name: formData.title,
+          description: formData.description,
+          img: formData.cover || '',
+        });
+        showAlert('知识库创建成功', 'success');
+      } else if (mode === 'edit' && initialData?.id) {
+        // 编辑知识库
+        await updateKnowledgeBase({
+          knowledgeBaseId: Number(initialData.id),
+          name: formData.title,
+          description: formData.description,
+          img: formData.cover || '',
+        });
+        showAlert('知识库编辑成功', 'success');
+      }
       handleCancel();
       onSuccess();
     } catch (error) {
-      console.error('表单验证失败或创建知识库失败:', error);
+      showAlert(mode === 'create' ? '知识库创建失败' : '知识库编辑失败', 'error');
+      console.error('表单验证失败或知识库操作失败:', error);
     }
   };
 
