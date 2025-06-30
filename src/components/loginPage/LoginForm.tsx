@@ -3,17 +3,20 @@ import { MailOutlined, LockOutlined, EyeOutlined, EyeInvisibleOutlined } from '@
 import { useState } from 'react';
 import { StyledForm, StyledButton } from '../../app/(public)/login/LoginRegister.styles';
 import { useAuth } from '@/contexts/AuthContext';
-
+import { useSearchParams } from 'next/navigation';
 export default function LoginForm() {
   const [form] = Form.useForm();
   const { login } = useAuth();
   const [formLoading, setFormLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const callback = searchParams.get('callback');
 
   const handleSubmit = async (values: any) => {
     setFormLoading(true);
     try {
       const { email, password } = values;
-      await login(email, password);
+      // await login(email, password);
+      await login(email, password, callback || undefined); // 传递 callback
       // 其它逻辑不需要，AuthContext 已经处理跳转和弹窗
     } finally {
       setFormLoading(false);

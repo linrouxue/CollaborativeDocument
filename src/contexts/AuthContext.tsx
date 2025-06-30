@@ -30,7 +30,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, callback?: string) => Promise<void>;
   logout: () => Promise<void>;
   // refreshUser: () => Promise<void>;
 }
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // }, [router, hasTriedRefresh, showAlert]);
 
   // 登录
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, callback?: string) => {
     setLoading(true);
     try {
       const res = await loginApi({ email, password });
@@ -86,7 +86,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userRes && userRes.data && userRes.data.user) {
           setUser(userRes.data.user);
           showAlert('登录成功', 'success');
-          router.push('/Home');
+          // 根据callback跳转
+          if (callback) {
+            router.push(callback);
+          } else {
+            router.push('/Home');
+          }
         } else {
           setUser(null);
           showAlert('获取用户信息失败', 'error');

@@ -7,7 +7,7 @@ interface RecentAccessItem {
     documentId: number;
     knowledgeBaseId: number;
     knowledgeBaseName: string;
-    name: string;
+    name: string | null;
     // description: string;
     // 所属成员
     members: string[];
