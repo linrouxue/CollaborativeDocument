@@ -181,6 +181,7 @@ export default function Knowledge() {
         onSuccess={handleModalSuccess}
         mode={modalMode}
         initialData={currentKnowledge}
+        knowledgeBaseId={currentKnowledge?.id}
       />
 
       <DeleteKnowledgeModal

@@ -20,6 +20,7 @@ interface CreateKnowledgeModalProps {
   onSuccess: () => void;
   mode: 'create' | 'edit';
   initialData?: KnowledgeData;
+  knowledgeBaseId?: string | number;
 }
 
 export default function CreateKnowledgeModal({
@@ -28,6 +29,7 @@ export default function CreateKnowledgeModal({
   onSuccess,
   mode,
   initialData,
+  knowledgeBaseId,
 }: CreateKnowledgeModalProps) {
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -164,7 +166,7 @@ export default function CreateKnowledgeModal({
     {
       key: 'permission',
       label: '权限管理',
-      children: <PermissionManagement />,
+      children: <PermissionManagement knowledgeBaseId={Number(knowledgeBaseId)} />,
     },
   ];
 

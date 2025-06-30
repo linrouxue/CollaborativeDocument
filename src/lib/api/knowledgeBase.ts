@@ -112,3 +112,21 @@ export const updateKnowledgeBase = async (params: UpdateKnowledgeBaseParams) => 
     throw error;
   }
 };
+
+/**
+ * 获取知识库权限列表
+ * @returns 某个知识库权限列表
+ */
+export const getKnowledgeBasePermissionList = async (knowledgeBaseId: number) => {
+  try {
+    const { data } = await javaAxiosInstance.get(
+      `/api/knowledge-base-permission/${knowledgeBaseId}`,
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      }
+    );
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
