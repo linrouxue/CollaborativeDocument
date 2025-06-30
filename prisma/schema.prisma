@@ -50,7 +50,8 @@ model t_document_version {
   document_id Int
   user_id     Int
   title       String    @db.VarChar(200)
-  content     String    @db.LongText
+  content     Bytes     @db.MediumBlob
+  cover       String?   @db.VarChar(255)
   version     String    @db.VarChar(50)
   create_time DateTime? @db.DateTime(0)
   update_time DateTime? @db.DateTime(0)

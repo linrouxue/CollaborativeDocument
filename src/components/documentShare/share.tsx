@@ -1,8 +1,8 @@
 import React from 'react';
 import { Modal } from 'antd';
 import styles from './share.module.css';
-import { useState } from 'react';
 import { Select, App } from 'antd';
+import { Tooltip } from 'antd';
 import { 
     LinkOutlined, 
     GlobalOutlined, 
@@ -10,6 +10,8 @@ import {
     WechatOutlined,
 } from '@ant-design/icons';
 import {encrypt} from "@/utils/crypto"
+import { useEffect, useState } from 'react';
+import { getDocumentPermission } from '@/lib/api/documentPermission'; 
 
 interface ShareDocumentProps {
     open: boolean;
@@ -20,7 +22,24 @@ const CollaboratorAvatar = ({ src, alt }: { src: string; alt: string }) => (
     <img src={src} alt={alt} className={styles.avatar} />
 );
 
+
 const ShareDocument: React.FC<ShareDocumentProps> = ({ open, documentId, onCancel }) => {
+    const [permission, setPermission] = useState<number | null>(null);
+
+    useEffect(() => {
+    if (documentId) {
+        getDocumentPermission(documentId)
+        .then(res => setPermission(res.permission))
+        .catch(() => setPermission(null));
+    }
+    }, [documentId]);
+    const permissionOptions = [
+        { value: 'read', label: '可阅读' }
+      ];
+      if (permission !== null && permission <= 3) { 
+        permissionOptions.push({ value: 'edit', label: '可编辑' });
+      }
+
     const { notification } = App.useApp();
     // 管理选择框的值
     const [selectedPermission, setSelectedPermission] = useState('read');
@@ -66,6 +85,23 @@ const ShareDocument: React.FC<ShareDocumentProps> = ({ open, documentId, onCance
         }
 
     }
+    const shareIcons = [
+        {
+          icon: <WechatOutlined style={{ fontSize: '20px' }} />,
+          title: '微信分享',
+          onClick: copyLink
+        },
+        {
+          icon: <QrcodeOutlined style={{ fontSize: '20px' }} />,
+          title: '二维码分享',
+          onClick: copyLink
+        },
+        {
+          icon: <LinkOutlined style={{ fontSize: '20px' }} />,
+          title: '复制链接',
+          onClick: copyLink
+        }
+      ];
     // const collaborators = [
     //     'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80',
     //     'https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-1.2.1&auto=format&fit=crop&w=40&q=80',
@@ -106,11 +142,7 @@ const ShareDocument: React.FC<ShareDocumentProps> = ({ open, documentId, onCance
                         value={selectedPermission}
                         onChange={setSelectedPermission}
                         style={{ width: 100 }}
-                        options={[
-                            { value: 'read', label: '可阅读' },
-                            { value: 'edit', label: '可编辑' },
-                            // { value: 'comment', label: '可评论' },
-                        ]}
+                        options={permissionOptions}
                         />
                 </div>
             </div>
@@ -121,11 +153,19 @@ const ShareDocument: React.FC<ShareDocumentProps> = ({ open, documentId, onCance
                     复制链接
                 </button>
                 <div className={styles.shareIcons}>
-                    {/* <button className={styles.iconButton}><img src="https://lf3-static.bytednsdoc.com/obj/eden-cn/lcy_fq/document-icon/feishu.svg" alt="feishu" style={{ width: 20, height: 20 }} /></button> */}
-                    <button className={styles.iconButton}><WechatOutlined style={{ fontSize: '20px' }} /></button>
-                    <button className={styles.iconButton}><QrcodeOutlined style={{ fontSize: '20px' }} /></button>
-                    <button className={styles.iconButton}><LinkOutlined style={{ fontSize: '20px' }} /></button>
-                </div>
+                    {shareIcons.map((item, idx) => (
+                        <Tooltip title={item.title} key={idx}>
+                        <button
+                            className={styles.iconButton}
+                            onClick={item.onClick}
+                            type="button"
+                            style={{ cursor: 'pointer', background: 'none', border: 'none' }}
+                        >
+                            {item.icon}
+                        </button>
+                        </Tooltip>
+                    ))}
+                    </div>
             </div>
         </div>
         </Modal>
