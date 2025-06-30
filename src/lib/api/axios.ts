@@ -101,17 +101,8 @@ const javaAxiosInstance = axios.create({
 });
 
 javaAxiosInstance.interceptors.request.use(requestInterceptor, Promise.reject);
-javaAxiosInstance.interceptors.response.use(
-  (response: AxiosResponse) => {
-    // 只在这里多一行 code 判断
-    const { code, msg, data } = response.data || {};
-    if (code === 0) {
-      return data;
-    } else {
-      return Promise.reject(new Error(msg || 'Java接口请求失败'));
-    }
-  },
-  (error) => errorInterceptor(error, javaAxiosInstance)
+javaAxiosInstance.interceptors.response.use(responseInterceptor, (error) =>
+  errorInterceptor(error, javaAxiosInstance)
 );
 
 export default axiosInstance;
