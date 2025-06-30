@@ -2,7 +2,7 @@ import { javaAxiosInstance } from './axios';
 
 export const getAllKnowledgeBase = async () => {
   try {
-    const data = await javaAxiosInstance.get(`/api/knowledge-base/select-all`, {
+    const { data } = await javaAxiosInstance.get(`/api/knowledge-base/select-all`, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     return data;

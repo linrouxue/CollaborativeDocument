@@ -60,7 +60,7 @@ export default function Knowledge() {
       setLoading(true);
       const response = await getAllKnowledgeBase();
       // 兼容后端返回格式，保证 data 一定为数组
-      const data = Array.isArray(response) ? response : [];
+      const data = Array.isArray(response.data) ? response.data : [];
       // 转换数据格式，img 为空时用默认图片
       const convertedData: KnowledgeData[] = data.map((item: any) => ({
         id: item.knowledgeBaseId?.toString() || '',
