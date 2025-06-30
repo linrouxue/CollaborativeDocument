@@ -18,6 +18,10 @@ function requestInterceptor(config: any) {
 
 // 通用响应拦截器（本地接口用，直接返回 response）
 function responseInterceptor(response: AxiosResponse) {
+  const data = response.data;
+  if (data && data.success === false) {
+    return Promise.reject(new Error(data.message || '接口请求失败'));
+  }
   return response;
 }
 

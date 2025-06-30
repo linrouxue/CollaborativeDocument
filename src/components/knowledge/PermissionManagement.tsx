@@ -3,121 +3,64 @@ import { UserAddOutlined, InfoCircleOutlined, DeleteOutlined } from '@ant-design
 import { useState, useCallback, useEffect } from 'react';
 import type { TableColumnType } from 'antd';
 import { debounce } from 'lodash';
-
+import { getKnowledgeBasePermissionList } from '@/lib/api/knowledgeBase';
+import { roleOptions, roleColors, permissionMap } from './const';
 interface Member {
-  id: string;
-  name: string;
+  userId: number;
+  username: string;
   email: string;
-  role: 'owner' | 'manager' | 'editor' | 'reviewer' | 'commenter' | 'reader';
   avatar?: string;
+  permission: number;
 }
 
-const mockMembers: Member[] = [
-  {
-    id: '1',
-    name: '张三',
-    email: 'zhangsan@example.com',
-    role: 'owner',
-  },
-  {
-    id: '2',
-    name: '李四',
-    email: 'lisi@example.com',
-    role: 'manager',
-  },
-];
+const reversePermissionMap = Object.fromEntries(
+  Object.entries(permissionMap).map(([k, v]) => [v, Number(k)])
+) as Record<string, number>;
 
-const roleOptions = [
-  {
-    label: '所有者',
-    value: 'owner',
-    description: [
-      '可以转让知识库给其他人',
-      '可以管理所有成员权限',
-      '可以删除整个知识库',
-      '可以创建、编辑和删除文档',
-      '可以管理所有文档',
-      '可以编辑所有文档',
-      '可以修订所有文档',
-      '可以评论所有文档',
-      '可以阅读所有文档',
-    ],
-  },
-  {
-    label: '管理者',
-    value: 'manager',
-    description: [
-      '可以管理成员权限',
-      '可以创建、编辑和删除文档',
-      '可以编辑所有文档',
-      '可以修订所有文档',
-      '可以评论所有文档',
-      '可以阅读所有文档',
-    ],
-  },
-  {
-    label: '编辑者',
-    value: 'editor',
-    description: [
-      '可以创建、编辑和删除文档',
-      '可以编辑所有文档',
-      '可以修订所有文档',
-      '可以评论所有文档',
-      '可以阅读所有文档',
-    ],
-  },
-  {
-    label: '修订者',
-    value: 'reviewer',
-    description: ['可以修订文档内容', '可以评论所有文档', '可以阅读所有文档'],
-  },
-  {
-    label: '评论者',
-    value: 'commenter',
-    description: ['可以评论所有文档', '可以阅读所有文档'],
-  },
-  {
-    label: '读者',
-    value: 'reader',
-    description: ['只能阅读文档，不能做任何修改'],
-  },
-];
-
-const roleColors = {
-  owner: 'purple',
-  manager: 'blue',
-  editor: 'green',
-  reviewer: 'orange',
-  commenter: 'cyan',
-  reader: 'default',
-};
-
-export default function PermissionManagement() {
-  const [searchText, setSearchText] = useState('');
+export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBaseId: number }) {
+  const [members, setMembers] = useState<Member[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<Member[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!knowledgeBaseId) return;
+    setLoading(true);
+    const fetchData = async () => {
+      try {
+        const list = await getKnowledgeBasePermissionList(knowledgeBaseId);
+        const safeList = Array.isArray(list.data) ? list.data : [];
+        setMembers(safeList);
+        setSelectedMembers(safeList);
+      } catch (e) {
+        setMembers([]);
+        setSelectedMembers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [knowledgeBaseId]);
 
   // 创建防抖的搜索函数
   const debouncedSearch = useCallback(
     debounce((value: string) => {
       if (!value) {
-        setSelectedMembers(mockMembers);
+        setSelectedMembers(members);
         return;
       }
-
       const searchValue = value.toLowerCase();
-      const filtered = mockMembers.filter(
+      const filtered = members.filter(
         (member) =>
-          member.name.toLowerCase().includes(searchValue) ||
+          member.username.toLowerCase().includes(searchValue) ||
           member.email.toLowerCase().includes(searchValue)
       );
-
       setSelectedMembers(filtered);
     }, 500),
-    []
+    [members]
   );
 
-  // 组件卸载时取消未执行的防抖函数
   useEffect(() => {
     return () => {
       debouncedSearch.cancel();
@@ -133,8 +76,8 @@ export default function PermissionManagement() {
   const columns: TableColumnType<Member>[] = [
     {
       title: '成员',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'username',
+      key: 'username',
       render: (text: string, record: Member) => (
         <div className="flex items-center">
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
@@ -149,17 +92,20 @@ export default function PermissionManagement() {
     },
     {
       title: '权限',
-      dataIndex: 'role',
-      key: 'role',
-      render: (role: string) => {
+      dataIndex: 'permission',
+      key: 'permission',
+      render: (permission: number, record: Member) => {
+        const role = permissionMap[record.permission] || 'reader';
         const roleInfo = roleOptions.find((r) => r.value === role);
         return (
           <div className="flex items-center">
             <Select
-              defaultValue={role}
+              value={role}
               style={{ width: 120 }}
               options={roleOptions}
-              onChange={(value) => console.log('权限变更:', value)}
+              onChange={(value) => {
+                handleRoleChange(record.userId, value);
+              }}
             />
             <Tooltip
               title={
@@ -187,7 +133,7 @@ export default function PermissionManagement() {
           type="link"
           danger
           icon={<DeleteOutlined />}
-          onClick={() => console.log('移除成员:', record.id)}
+          onClick={() => console.log('移除成员:', record.userId)}
         ></Button>
       ),
     },
@@ -215,6 +161,17 @@ export default function PermissionManagement() {
     // TODO: 实现添加成员
     console.log('添加成员');
     handleModalCancel();
+  };
+
+  // 权限变更时，更新成员权限
+  const handleRoleChange = (userId: number, newRole: string) => {
+    const newPermission = reversePermissionMap[newRole];
+    setMembers((prev) =>
+      prev.map((m) => (m.userId === userId ? { ...m, permission: newPermission } : m))
+    );
+    setSelectedMembers((prev) =>
+      prev.map((m) => (m.userId === userId ? { ...m, permission: newPermission } : m))
+    );
   };
 
   return (
@@ -259,8 +216,9 @@ export default function PermissionManagement() {
         </div>
         <Table
           columns={columns}
-          dataSource={selectedMembers.length > 0 ? selectedMembers : mockMembers}
-          rowKey="id"
+          dataSource={selectedMembers}
+          rowKey="userId"
+          loading={loading}
           pagination={false}
           scroll={{ y: 200 }}
         />
