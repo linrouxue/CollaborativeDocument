@@ -8,9 +8,11 @@ import {
   FileOutlined,
   TwitterOutlined,
   SearchOutlined,
+  EllipsisOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Dropdown, Spin } from 'antd';
+import { Dropdown, Spin, Button } from 'antd';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 // src/app/Home/layout.tsx
@@ -20,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import SearchModal from '@/components/common/SearchModal';
 import ContextMenu from '@/components/common/ContextMenu';
 import { useContextMenu } from '@/components/common/useContextMenu';
+import { useDocHeaderStore } from '@/store/docHeaderStore';
 
 // export const metadata: Metadata = {
 //   title: "协同文档系统",
@@ -35,6 +38,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const { logout } = useAuth();
   const contextMenu = useContextMenu();
+  const onlineUsers = useDocHeaderStore((state) => state.onlineUsers);
+  const connected = useDocHeaderStore((state) => state.connected);
+  const moreActionsMenu = useDocHeaderStore((state) => state.moreActionsMenu);
+  const handleBackToHome = useDocHeaderStore((state) => state.handleBackToHome);
 
   useEffect(() => {
     setMounted(true);
@@ -120,6 +127,26 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       </div>
     );
   };
+  const renderMoreActionsDropdown = () => {
+    if (!moreActionsMenu) return null;
+
+    return (
+      <Dropdown key="more" menu={moreActionsMenu} placement="bottomRight">
+        <Button type="text" icon={<EllipsisOutlined />} />
+      </Dropdown>
+    );
+  };
+  const renderOnlineStatus = () => (
+    <div
+      className={`flex items-center gap-1 text-sm  cursor-default bg-none ${connected ? 'text-green-500' : 'text-red-500'}`}
+    >
+      <div
+        className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}
+        style={{ animation: connected ? 'none' : 'blink 1.5s infinite' }}
+      />
+      {connected ? `${onlineUsers} 人在线` : '离线'}
+    </div>
+  );
 
   return (
     <>
@@ -157,16 +184,31 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         }}
         menuItemRender={renderMenuItem}
         subMenuItemRender={renderMenuItem}
-        actionsRender={(props) => {
-          return [
-            <SearchOutlined
-              key="search"
-              className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
-              onClick={() => setSearchModalOpen(true)}
-            />,
-            <SearchModal open={searchModalOpen} onClose={() => setSearchModalOpen(false)} />,
-          ];
-        }}
+        headerContentRender={() => (
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Button
+              type="text"
+              icon={<ArrowLeftOutlined />}
+              onClick={handleBackToHome}
+              style={{ marginRight: '8px' }}
+            >
+              返回
+            </Button>
+            {/* <div style={{ fontSize: '16px', fontWeight: '500' }}>知识库：{knowledgeTitle}</div> */}
+          </div>
+        )}
+        actionsRender={() => [
+          // 在线人数
+          renderOnlineStatus(),
+          renderMoreActionsDropdown(),
+          // 搜索
+          <SearchOutlined
+            key="search"
+            className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
+            onClick={() => setSearchModalOpen(true)}
+          />,
+          <SearchModal open={searchModalOpen} onClose={() => setSearchModalOpen(false)} />,
+        ]}
         avatarProps={{
           src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
           size: 'small',

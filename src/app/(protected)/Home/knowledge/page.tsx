@@ -132,7 +132,7 @@ export default function Knowledge() {
   };
 
   const handleClick = (id: string) => {
-    router.push(`/knowledges/${id}`);
+    router.push(`/documents/${id}`);
   };
 
   return (

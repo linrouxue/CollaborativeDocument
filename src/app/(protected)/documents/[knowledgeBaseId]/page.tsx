@@ -2,58 +2,44 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Layout, Button, theme, Space, Avatar, Dropdown, message } from 'antd';
-import {
-  ArrowLeftOutlined,
-  UserOutlined,
-  EllipsisOutlined,
-  ShareAltOutlined,
-  HistoryOutlined,
-  DownloadOutlined,
-  BellOutlined,
-  LockOutlined,
-} from '@ant-design/icons';
+import { Layout, Button, theme, Space, Avatar, Dropdown } from 'antd';
+import { HistoryOutlined, DownloadOutlined, BellOutlined } from '@ant-design/icons';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 
 import DocEditor from '@/components/RichTextEditor';
-
-
 const { Header, Content, Footer } = Layout;
+import { useDocHeaderStore } from '@/store/docHeaderStore';
+import { useAlert } from '@/contexts/AlertContext';
 
 export default function DocPage() {
   const params = useParams();
   const router = useRouter();
   const knowledgeBaseId = params.knowledgeBaseId as string; // 获取当前知识库ID
-  
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // Yjs 相關狀態
   const [connected, setConnected] = useState(false);
   const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
   const [provider, setProvider] = useState<WebsocketProvider | null>(null);
   const [onlineUsers, setOnlineUsers] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // WebSocket 配置
   const websocketUrl = 'ws://localhost:1234';
 
-  // 返回主頁
+  const { showAlert } = useAlert();
+
+  // 返回主页
   const handleBackToHome = () => {
     router.push('/Home');
   };
 
   // 初始化 Yjs 文档与连接
   useEffect(() => {
-    if (!knowledgeBaseId) {
-      setError('知識庫 ID 不能為空');
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -66,21 +52,21 @@ export default function DocPage() {
       yProvider.on('status', (event: { status: string }) => {
         console.log('Connection status:', event.status);
         setConnected(event.status === 'connected');
-        
+
         if (event.status === 'connected') {
           setLoading(false);
-          message.success('已連接到協同服務器');
+          console.log('成功连接');
         } else if (event.status === 'disconnected') {
-          message.warning('與協同服務器斷開連接');
+          console.log('与协同服务器断开连接');
         }
       });
 
       // 错误处理
       yProvider.on('connection-error', (error: any) => {
         console.error('WebSocket error:', error);
-        setError('連接協同服務器失敗');
+        setError('连接协同服务器失败');
         setLoading(false);
-        message.error('連接協同服務器失敗');
+        showAlert('连接协同服务器失败', 'error');
       });
 
       // 在线人数监听
@@ -103,63 +89,54 @@ export default function DocPage() {
         yDoc.destroy();
       };
     } catch (err) {
-      console.error('初始化 Yjs 失敗:', err);
-      setError('初始化协同编辑器失敗');
+      setError('初始化协同编辑器失败');
       setLoading(false);
-      message.error('初始化协同编辑器失敗');
+      showAlert('初始化协同编辑器失败', 'error');
     }
-  }, [websocketUrl, knowledgeBaseId]);
+  }, [websocketUrl, knowledgeBaseId, showAlert]);
 
   // 更多操作菜单
   const moreActionsMenu = {
     items: [
-      {
-        key: 'download',
-        icon: <DownloadOutlined />,
-        label: '下载文档',
-        onClick: () => {
-          message.info(`下载文档：${knowledgeBaseId}`);
-          // 实现下载逻辑
-        },
-      },
-      {
-        key: 'history',
-        icon: <HistoryOutlined />,
-        label: '查看历史记录',
-        onClick: () => {
-          message.info('历史记录功能待实现');
-          // 实现查看历史版本逻辑
-        },
-      },
-      {
-        key: 'notifications',
-        icon: <BellOutlined />,
-        label: '通知中心',
-        onClick: () => {
-          message.info('打开通知中心');
-          // 实现通知弹窗逻辑
-        },
-      },
+      { key: 'download', icon: <DownloadOutlined />, label: '下载文档' },
+      { key: 'history', icon: <HistoryOutlined />, label: '查看历史记录' },
+      { key: 'notifications', icon: <BellOutlined />, label: '通知中心' },
     ],
+    onClick: (info: any) => {
+      if (info.key === 'download') {
+        showAlert('下载功能开发中', 'info');
+      } else if (info.key === 'history') {
+        showAlert('历史记录功能开发中', 'info');
+      } else if (info.key === 'notifications') {
+        showAlert('通知中心功能开发中', 'info');
+      }
+    },
   };
+
+  // 设置 header 数据
+  useEffect(() => {
+    useDocHeaderStore.setState({
+      onlineUsers,
+      connected,
+      moreActionsMenu,
+      handleBackToHome,
+    });
+  }, [onlineUsers, connected, moreActionsMenu, handleBackToHome]);
 
   // 渲染加载状态
   if (loading) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          background: colorBgContainer 
-        }}>
+        <Content
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: colorBgContainer,
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px' }}>
-              正在连接到协同服务器...
-            </div>
-            <div style={{ fontSize: '14px', color: '#999' }}>
-              知识库 ID: {knowledgeBaseId}
-            </div>
+            <div style={{ fontSize: '18px', marginBottom: '12px' }}>正在连接到协同服务器...</div>
           </div>
         </Content>
       </Layout>
@@ -170,26 +147,24 @@ export default function DocPage() {
   if (error) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          background: colorBgContainer 
-        }}>
+        <Content
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: colorBgContainer,
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>
-              {error}
-            </div>
-            <Button 
-              type="primary" 
+            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{error}</div>
+            <Button
+              type="primary"
               onClick={() => window.location.reload()}
               style={{ marginRight: '12px' }}
             >
               重新连接
             </Button>
-            <Button onClick={handleBackToHome}>
-              返回主页
-            </Button>
+            <Button onClick={handleBackToHome}>返回主页</Button>
           </div>
         </Content>
       </Layout>
@@ -198,53 +173,6 @@ export default function DocPage() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* 顶部导航栏 */}
-      <Header style={{ 
-        background: colorBgContainer, 
-        padding: '0 16px',
-        borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button 
-            type="text" 
-            icon={<ArrowLeftOutlined />} 
-            onClick={handleBackToHome}
-            style={{ marginRight: '16px' }}
-          >
-            返回主页
-          </Button>
-          <div style={{ fontSize: '16px', fontWeight: '500' }}>
-            知识库：{knowledgeBaseId}
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '4px',
-            fontSize: '14px',
-            color: connected ? '#52c41a' : '#ff4d4f'
-          }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: connected ? '#52c41a' : '#ff4d4f',
-              animation: connected ? 'none' : 'blink 1.5s infinite'
-            }} />
-            {connected ? `${onlineUsers} 人在线` : '离线'}
-          </div>
-          
-          <Dropdown menu={moreActionsMenu} placement="bottomRight">
-            <Button type="text" icon={<EllipsisOutlined />} />
-          </Dropdown>
-        </div>
-      </Header>
-
       <Content style={{ margin: '16px', marginTop: '10px' }}>
         <div
           style={{
@@ -271,25 +199,12 @@ export default function DocPage() {
                 justifyContent: 'center',
               }}
             >
-              <p style={{ fontSize: '16px', marginBottom: '8px' }}>
-                正在连接到协同服务器...
-              </p>
+              <p style={{ fontSize: '16px', marginBottom: '8px' }}>正在连接到协同服务器...</p>
               <p style={{ fontSize: '14px' }}>请稍候</p>
             </div>
           )}
         </div>
       </Content>
-
-      <Footer style={{ textAlign: 'center' }}>
-        协同文档编辑器 ©{new Date().getFullYear()} Created by XY
-      </Footer>
-
-      <style jsx>{`
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-      `}</style>
     </Layout>
   );
-} 
+}

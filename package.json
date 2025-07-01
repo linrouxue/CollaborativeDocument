@@ -52,7 +52,8 @@
     "ws": "^8.18.2",
     "y-websocket": "^2.0.0",
     "yjs": "^13.6.27",
-    "zod": "^3.25.64"
+    "zod": "^3.25.64",
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
