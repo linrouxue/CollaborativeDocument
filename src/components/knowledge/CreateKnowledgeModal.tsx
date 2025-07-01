@@ -1,4 +1,4 @@
-import { Modal, Form, Input, Upload, Tabs, message } from 'antd';
+import { Modal, Form, Input, Upload, Tabs, Button } from 'antd';
 import { useState, useEffect } from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
@@ -163,12 +163,15 @@ export default function CreateKnowledgeModal({
         </Form>
       ),
     },
-    {
+  ];
+
+  if (mode === 'edit') {
+    items.push({
       key: 'permission',
       label: '权限管理',
       children: <PermissionManagement knowledgeBaseId={Number(knowledgeBaseId)} />,
-    },
-  ];
+    });
+  }
 
   return (
     <Modal
@@ -180,6 +183,18 @@ export default function CreateKnowledgeModal({
       cancelText="取消"
       width={800}
       maskClosable={false}
+      footer={
+        activeTab === 'basic'
+          ? [
+              <Button key="cancel" onClick={handleCancel}>
+                取消
+              </Button>,
+              <Button key="ok" type="primary" onClick={handleOk}>
+                {mode === 'create' ? '创建' : '保存'}
+              </Button>,
+            ]
+          : null
+      }
     >
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} />
     </Modal>

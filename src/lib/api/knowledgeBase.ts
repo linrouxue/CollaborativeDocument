@@ -130,3 +130,56 @@ export const getKnowledgeBasePermissionList = async (knowledgeBaseId: number) =>
     throw error;
   }
 };
+
+/**
+ * 通过邮箱获取成员信息
+ * @param email 邮箱
+ * @returns 用户信息
+ */
+export const getUserByEmail = async (email: string) => {
+  try {
+    const { data } = await javaAxiosInstance.get(`/api/user/${email}`, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 新增或更新成员和知识库权限
+export interface UpdateKnowledgeBasePermissionParams {
+  knowledgeBaseId: number;
+  userIdList: number[];
+  permission: number;
+}
+
+export const updateKnowledgeBasePermission = async (
+  params: UpdateKnowledgeBasePermissionParams
+): Promise<any> => {
+  try {
+    const { data } = await javaAxiosInstance.post('/api/knowledge-base-permission/update', params);
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 删除知识库权限
+export interface DeleteKnowledgeBasePermissionParams {
+  knowledgeBaseId: number;
+  userId: number;
+}
+
+export const deleteKnowledgeBasePermission = async (
+  params: DeleteKnowledgeBasePermissionParams
+): Promise<any> => {
+  try {
+    const { data } = await javaAxiosInstance.delete('/api/knowledge-base-permission/delete', {
+      data: params,
+    });
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
