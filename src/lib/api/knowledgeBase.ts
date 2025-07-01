@@ -183,3 +183,20 @@ export const deleteKnowledgeBasePermission = async (
     throw error;
   }
 };
+
+/**
+ * 知识库模糊搜索
+ * @param keyword 搜索关键词
+ * @returns 知识库列表数组
+ */
+export const getFuzzyKnowledgeBase = async (keyword: string) => {
+  try {
+    const res = await javaAxiosInstance.get(`/api/knowledge-base/fuzzy`, {
+      params: { keyword },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    return res;
+  } catch (error) {
+    throw error;
+  }
+};

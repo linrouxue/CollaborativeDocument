@@ -106,7 +106,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   );
 
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
-    const isDocNode = item.path && item.path.startsWith('/knowledges/');
     return (
       <div
         onClick={(e) => {
@@ -116,7 +115,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           }
         }}
         onContextMenu={
-          isDocNode ? (e) => contextMenu.onContextMenu(e, item.key || item.path) : undefined
+          item.canContextMenu
+            ? (e) => contextMenu.onContextMenu(e, item.key || item.path)
+            : undefined
         }
         style={{
           cursor: 'pointer',

@@ -10,10 +10,11 @@ import { useRouter } from 'next/navigation';
 import {
   getAllKnowledgeBase,
   deleteKnowledgeBase,
-  updateKnowledgeBase,
+  getFuzzyKnowledgeBase,
 } from '@/lib/api/knowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAlert } from '@/contexts/AlertContext';
+import { useKnowledgeBaseStore } from '@/store/knowledgeBaseStore';
 
 const DEFAULT_IMAGE = '/book.webp';
 
@@ -23,20 +24,6 @@ interface KnowledgeData {
   description: string;
   cover?: string;
 }
-
-// const know: KnowledgeData[] = [
-//   {
-//     id: '1',
-//     title: '知识库2',
-//     description: '知识库2的描述信息',
-//     cover: 'https://os.alipayobjects.com/rmsportal/QBnOOoLaAfKPirc.png',
-//   },
-//   {
-//     id: '2',
-//     title: '知识库3',
-//     description: '知识库3的描述信息',
-//   },
-// ];
 
 export default function Knowledge() {
   const [loading, setLoading] = useState<boolean>(false);
@@ -48,9 +35,29 @@ export default function Knowledge() {
   const [know, setKnowledgeList] = useState<KnowledgeData[]>([]);
   const router = useRouter();
   const { showAlert } = useAlert();
-  const onSearch: SearchProps['onSearch'] = (value: string) => {
+  const onSearch: SearchProps['onSearch'] = async (value: string) => {
     setSearchText(value);
-    console.log('搜索内容:', value);
+    if (!value) {
+      // 关键词为空时，显示全部
+      fetchKnowledgeList();
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await getFuzzyKnowledgeBase(value);
+      const data = Array.isArray(response.data?.data) ? response.data.data : [];
+      const convertedData: KnowledgeData[] = data.map((item: any) => ({
+        id: item.knowledgeBaseId?.toString() || '',
+        title: item.name,
+        description: item.description,
+        cover: item.img,
+      }));
+      setKnowledgeList(convertedData);
+    } catch (error) {
+      showAlert('搜索失败', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
   const { user } = useAuth();
 
@@ -114,6 +121,7 @@ export default function Knowledge() {
       setIsDeleteModalOpen(false);
       setCurrentKnowledge(undefined);
       fetchKnowledgeList(); // 删除后刷新列表
+      await useKnowledgeBaseStore.getState().fetchList(); // 同步刷新侧边栏
     } catch (error) {
       showAlert('删除失败', 'error');
     }
@@ -129,6 +137,7 @@ export default function Knowledge() {
     setIsModalOpen(false);
     setCurrentKnowledge(undefined);
     fetchKnowledgeList();
+    await useKnowledgeBaseStore.getState().fetchList(); // 同步刷新侧边栏
   };
 
   const handleClick = (id: string) => {
