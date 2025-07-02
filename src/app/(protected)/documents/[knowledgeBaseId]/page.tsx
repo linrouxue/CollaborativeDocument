@@ -18,14 +18,13 @@ import { WebsocketProvider } from 'y-websocket';
 
 import DocEditor from '@/components/RichTextEditor';
 
-
 const { Header, Content, Footer } = Layout;
 
 export default function DocPage() {
   const params = useParams();
   const router = useRouter();
   const knowledgeBaseId = params.knowledgeBaseId as string; // 获取当前知识库ID
-  
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -37,7 +36,7 @@ export default function DocPage() {
   const [onlineUsers, setOnlineUsers] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // WebSocket 配置
   const websocketUrl = 'ws://localhost:1234';
 
@@ -66,7 +65,7 @@ export default function DocPage() {
       yProvider.on('status', (event: { status: string }) => {
         console.log('Connection status:', event.status);
         setConnected(event.status === 'connected');
-        
+
         if (event.status === 'connected') {
           setLoading(false);
           message.success('已連接到協同服務器');
@@ -93,6 +92,35 @@ export default function DocPage() {
 
       awareness.on('change', updateOnlineUsers);
       updateOnlineUsers();
+
+      // 监听 Yjs 文档的 update 事件，打印协议内容和文本格式
+      yDoc.on('update', (update, origin) => {
+        // 1. 打印原始协议内容
+        console.log('[Yjs 协议 update] 原始协议内容:', update);
+
+        // 2. 打印十六进制
+        const hex = Array.from(update)
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join(' ');
+        console.log('[Yjs 协议 update] 十六进制:', hex);
+
+        // 3. 解码 update，获得结构化变更内容
+        try {
+          const decoded = Y.decodeUpdate(update);
+          console.log('[Yjs 协议 update] 解码内容:', decoded);
+        } catch (e) {
+          console.log('Yjs update 解码失败', e);
+        }
+
+        // 4. 打印当前文档内容
+        if (yXmlText) {
+          console.log('[Yjs 文本内容] 当前内容:', yXmlText.toString());
+          // 如果你想要结构化内容
+          try {
+            console.log('[Yjs 文本内容] JSON:', yXmlText.toJSON());
+          } catch (e) {}
+        }
+      });
 
       setSharedType(yXmlText);
       setProvider(yProvider);
@@ -147,19 +175,17 @@ export default function DocPage() {
   if (loading) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          background: colorBgContainer 
-        }}>
+        <Content
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: colorBgContainer,
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px' }}>
-              正在連接到協同服務器...
-            </div>
-            <div style={{ fontSize: '14px', color: '#999' }}>
-              知識庫 ID: {knowledgeBaseId}
-            </div>
+            <div style={{ fontSize: '18px', marginBottom: '12px' }}>正在連接到協同服務器...</div>
+            <div style={{ fontSize: '14px', color: '#999' }}>知識庫 ID: {knowledgeBaseId}</div>
           </div>
         </Content>
       </Layout>
@@ -170,26 +196,24 @@ export default function DocPage() {
   if (error) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          background: colorBgContainer 
-        }}>
+        <Content
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: colorBgContainer,
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>
-              {error}
-            </div>
-            <Button 
-              type="primary" 
+            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{error}</div>
+            <Button
+              type="primary"
               onClick={() => window.location.reload()}
               style={{ marginRight: '12px' }}
             >
               重新連接
             </Button>
-            <Button onClick={handleBackToHome}>
-              返回主頁
-            </Button>
+            <Button onClick={handleBackToHome}>返回主頁</Button>
           </div>
         </Content>
       </Layout>
@@ -199,46 +223,50 @@ export default function DocPage() {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* 頂部導航欄 */}
-      <Header style={{ 
-        background: colorBgContainer, 
-        padding: '0 16px',
-        borderBottom: '1px solid #f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
+      <Header
+        style={{
+          background: colorBgContainer,
+          padding: '0 16px',
+          borderBottom: '1px solid #f0f0f0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Button 
-            type="text" 
-            icon={<ArrowLeftOutlined />} 
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
             onClick={handleBackToHome}
             style={{ marginRight: '16px' }}
           >
             返回主頁
           </Button>
-          <div style={{ fontSize: '16px', fontWeight: '500' }}>
-            知識庫：{knowledgeBaseId}
-          </div>
+          <div style={{ fontSize: '16px', fontWeight: '500' }}>知識庫：{knowledgeBaseId}</div>
         </div>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '4px',
-            fontSize: '14px',
-            color: connected ? '#52c41a' : '#ff4d4f'
-          }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: connected ? '#52c41a' : '#ff4d4f',
-              animation: connected ? 'none' : 'blink 1.5s infinite'
-            }} />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '14px',
+              color: connected ? '#52c41a' : '#ff4d4f',
+            }}
+          >
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: connected ? '#52c41a' : '#ff4d4f',
+                animation: connected ? 'none' : 'blink 1.5s infinite',
+              }}
+            />
             {connected ? `${onlineUsers} 人在線` : '離線'}
           </div>
-          
+
           <Dropdown menu={moreActionsMenu} placement="bottomRight">
             <Button type="text" icon={<EllipsisOutlined />} />
           </Dropdown>
@@ -271,25 +299,24 @@ export default function DocPage() {
                 justifyContent: 'center',
               }}
             >
-              <p style={{ fontSize: '16px', marginBottom: '8px' }}>
-                正在連接到協同服務器...
-              </p>
+              <p style={{ fontSize: '16px', marginBottom: '8px' }}>正在連接到協同服務器...</p>
               <p style={{ fontSize: '14px' }}>請稍候</p>
             </div>
           )}
         </div>
       </Content>
 
-      <Footer style={{ textAlign: 'center' }}>
-        協同文檔編輯器 ©{new Date().getFullYear()} Created by XY
-      </Footer>
-
       <style jsx>{`
         @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0;
+          }
         }
       `}</style>
     </Layout>
   );
-} 
+}

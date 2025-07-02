@@ -11,6 +11,7 @@ import {
   RedoOutlined,
 } from '@ant-design/icons';
 import { RenderLeafProps } from 'slate-react';
+import FloatingToolbar from './FloatingToolbar';
 
 interface SlateEditorProps {
   editor: Editor;
@@ -103,6 +104,7 @@ const SlateEditor: React.FC<SlateEditorProps> = ({ editor, decorate, renderLeaf 
 
   return (
     <>
+      <FloatingToolbar />
       <Editable
         decorate={decorate}
         renderLeaf={renderLeafWithMarks}

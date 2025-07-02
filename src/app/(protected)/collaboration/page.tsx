@@ -400,9 +400,7 @@ export default function KnowledgeEditorLayout() {
           </div>
         </Content>
 
-        <Footer style={{ textAlign: 'center' }}>
-          知识库系统 ©{new Date().getFullYear()} Created by XY
-        </Footer>
+
       </Layout>
     </Layout>
   );

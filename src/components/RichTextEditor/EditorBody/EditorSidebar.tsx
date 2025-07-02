@@ -18,7 +18,7 @@ const extractOutline = (value: Descendant[]) => {
     return [];
   }
   const outline: string[] = [];
-  value.forEach((node) => {
+  value.forEach((node: any) => {
     if (Array.isArray(node.children)) {
       node.children.forEach((child: any) => {
         if (typeof child.text === 'string' && child.text.trim().length > 0) {

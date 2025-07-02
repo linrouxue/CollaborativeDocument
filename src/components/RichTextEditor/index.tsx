@@ -8,6 +8,7 @@ import {
   Transforms,
   Element as SlateElement,
   BaseEditor,
+  Range,
 } from 'slate';
 import { Slate, withReact, ReactEditor, Editable } from 'slate-react';
 import { HistoryEditor, withHistory } from 'slate-history';
@@ -15,6 +16,7 @@ import { HistoryEditor, withHistory } from 'slate-history';
 import EditorHeaderToolbar from './EditorHeaderToolbar';
 import EditorFooter from './EditorFooter';
 import EditorBody from './EditorBody';
+import EditorContentArea from './EditorBody/EditorContentArea';
 
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
@@ -26,6 +28,8 @@ import {
 } from '@slate-yjs/react';
 import { addAlpha } from '@/utils/addAlpha';
 import { useAuth } from '@/contexts/AuthContext';
+import { useThreadedComments } from './comments/useThreadedComments';
+import CommentsSidebar from './comments/CommentsSidebar';
 
 type CustomElement = {
   type: 'paragraph';
@@ -102,6 +106,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   const [value, setValue] = useState<Descendant[]>(initialValue);
 
+  // 评论协同
+  const ydoc = useMemo(() => provider.doc, [provider]);
+  const { yThreadsMap, addThread, replyToThread, updateComment, deleteThread, getDecorations } =
+    useThreadedComments(editor, ydoc, String(userName));
+
   // 连接编辑器
   useEffect(() => {
     YjsEditor.connect(editor);
@@ -112,37 +121,36 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => YjsEditor.disconnect(editor);
   }, [editor, sharedType]);
 
-  return (
-    <div className="border rounded-lg bg-white p-4 min-h-[400px]">
-      <Slate editor={editor} initialValue={value} onChange={setValue}>
-        <EditorHeaderToolbar />
-        <RichEditable editor={editor} value={value} />
-        <EditorFooter connected={connected} onlineUsers={onlineUsers} />
-      </Slate>
-    </div>
+  // 合并 decorate
+  const decorate = useCallback(
+    (entry: [any, any]) => {
+      const cursorDecorations = useDecorateRemoteCursors()(entry);
+      const commentDecorations = getDecorations(entry);
+      return [...cursorDecorations, ...commentDecorations];
+    },
+    [getDecorations]
   );
-};
 
-// 新增子組件 RichEditable，放在 <Slate> 裡面調用 hooks
-function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }) {
-  const decorate = useDecorateRemoteCursors();
+  // 合并 renderLeaf
   const renderLeaf = useCallback((props: any) => {
+    let children = props.children;
+    // 评论高亮
+    if (props.leaf.threadId) {
+      children = <span style={{ backgroundColor: 'rgba(255,229,100,0.6)' }}>{children}</span>;
+    }
+    // 协同光标高亮
     getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
       if (cursor.data) {
-        props.children = (
-          <span
-            style={{
-              backgroundColor: addAlpha(cursor.data.color as string, 0.5),
-            }}
-          >
-            {props.children}
+        children = (
+          <span style={{ backgroundColor: addAlpha(cursor.data.color as string, 0.5) }}>
+            {children}
           </span>
         );
       }
     });
     getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
       if (caret.data) {
-        props.children = (
+        children = (
           <span style={{ position: 'relative' }}>
             <span
               contentEditable={false}
@@ -177,14 +185,62 @@ function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }
             >
               {caret.data.name as string}
             </span>
-            {props.children}
+            {children}
           </span>
         );
       }
     });
-    return <span {...props.attributes}>{props.children}</span>;
+    return <span {...props.attributes}>{children}</span>;
   }, []);
 
+  // 添加评论按钮
+  const handleAddComment = () => {
+    const { selection } = editor;
+    if (selection && selection && !Range.isCollapsed(selection)) {
+      const text = prompt('请输入评论内容');
+      if (text) addThread(selection, text);
+    }
+  };
+
+  // 侧边栏数据
+  const threads = Array.from(yThreadsMap.entries());
+
+  return (
+    <div className="border rounded-lg bg-white p-4 min-h-[400px]">
+      <Slate editor={editor} initialValue={value} onChange={setValue}>
+        <EditorHeaderToolbar />
+        <div style={{ marginBottom: 8 }}>
+          <button onClick={handleAddComment}>添加评论</button>
+        </div>
+        <EditorContentArea
+          editor={editor}
+          decorate={decorate}
+          renderLeaf={renderLeaf}
+          threads={threads}
+          currentUser={String(userName)}
+          onReply={replyToThread}
+          onEdit={updateComment}
+          onDelete={deleteThread}
+          onAddThread={addThread}
+        />
+        <EditorFooter connected={connected} onlineUsers={onlineUsers} />
+      </Slate>
+    </div>
+  );
+};
+
+// 修改 RichEditable 以支持外部传入 decorate/renderLeaf
+function RichEditable({
+  editor,
+  value,
+  decorate,
+  renderLeaf,
+}: {
+  editor: Editor;
+  value: Descendant[];
+  decorate: any;
+  renderLeaf: any;
+}) {
   return (
     <>
       <style
