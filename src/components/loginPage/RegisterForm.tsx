@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { StyledForm, StyledButton } from '../../app/(public)/login/LoginRegister.styles';
 import axios from 'axios';
 import { register, RegisterRequest } from '@/lib/api/auth';
-import { useAlert } from '@/contexts/AlertContext';
+import { useMessage } from '@/hooks/useMessage';
 import { useRouter } from 'next/navigation';
 
 interface RegisterFormProps {
@@ -23,7 +23,7 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [captchaLoading, setCaptchaLoading] = useState(false);
-  const { showAlert } = useAlert();
+  const message = useMessage();
   const router = useRouter();
   const isForgotMode = mode === 'forgot';
 
@@ -39,29 +39,28 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
           confirmPassword: values.confirmPassword,
         });
         if (res.data && res.data.success) {
-          showAlert('密码重置成功！请使用新密码登录', 'success');
+          message.success('密码重置成功！请使用新密码登录');
           onBackToLogin?.();
           form.resetFields();
           router.push('/login');
         } else {
-          showAlert(res.data?.message || '密码重置失败', 'error');
+          message.error(res.data?.message || '密码重置失败');
         }
       } else {
         // 注册模式
         const res = await register(values);
         if (res && res.success) {
-          showAlert('注册成功，请登录', 'success');
+          message.success('注册成功，请登录');
           onBackToLogin?.();
           form.resetFields();
           router.push('/login');
         } else {
-          showAlert(res?.message || '注册失败', 'error');
+          message.error(res?.message || '注册失败');
         }
       }
     } catch (error: any) {
-      showAlert(
-        error?.message || (isForgotMode ? '密码重置失败，请重试' : '注册失败，请重试'),
-        'error'
+      message.error(
+        error?.message || (isForgotMode ? '密码重置失败，请重试' : '注册失败，请重试')
       );
     } finally {
       setLoading(false);
@@ -72,13 +71,13 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
   const handleGetCaptcha = async () => {
     const email = form.getFieldValue('email');
     if (!email) {
-      showAlert('请先输入邮箱地址', 'error');
+      message.info('请先输入邮箱地址');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      showAlert('请输入有效的邮箱地址', 'error');
+      message.info('请输入有效的邮箱地址');
       return;
     }
 
@@ -87,12 +86,12 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
       // 发送验证码API
       const res = await axios.post('/api/user/send-captcha', { email });
       if (res.data && res.data.success) {
-        showAlert('验证码已发送到您的邮箱', 'success');
+        message.success('验证码已发送到您的邮箱');
       } else {
-        showAlert(res.data.message || '发送验证码失败', 'error');
+        message.error(res.data.message || '发送验证码失败');
       }
     } catch (error: any) {
-      showAlert(error?.response?.data?.message || '发送验证码失败，请重试', 'error');
+      message.error(error?.response?.data?.message || '发送验证码失败，请重试');
     } finally {
       setCaptchaLoading(false);
     }

@@ -10,7 +10,7 @@ import { WebsocketProvider } from 'y-websocket';
 import DocEditor from '@/components/RichTextEditor';
 const { Header, Content, Footer } = Layout;
 import { useDocHeaderStore } from '@/store/docHeaderStore';
-import { useAlert } from '@/contexts/AlertContext';
+import { useMessage } from '@/hooks/useMessage';
 
 export default function DocPage() {
   const params = useParams();
@@ -31,7 +31,7 @@ export default function DocPage() {
   // WebSocket 配置
   const websocketUrl = 'ws://localhost:1234';
 
-  const { showAlert } = useAlert();
+  const message = useMessage();
 
   // 返回主页
   const handleBackToHome = () => {
@@ -66,7 +66,7 @@ export default function DocPage() {
         console.error('WebSocket error:', error);
         setError('连接协同服务器失败');
         setLoading(false);
-        showAlert('连接协同服务器失败', 'error');
+        message.error('连接协同服务器失败');
       });
 
       // 在线人数监听
@@ -91,9 +91,9 @@ export default function DocPage() {
     } catch (err) {
       setError('初始化协同编辑器失败');
       setLoading(false);
-      showAlert('初始化协同编辑器失败', 'error');
+      message.error('初始化协同编辑器失败');
     }
-  }, [websocketUrl, knowledgeBaseId, showAlert]);
+  }, [websocketUrl, knowledgeBaseId]);
 
   // 更多操作菜单
   const moreActionsMenu = {
@@ -104,11 +104,11 @@ export default function DocPage() {
     ],
     onClick: (info: any) => {
       if (info.key === 'download') {
-        showAlert('下载功能开发中', 'info');
+        message.info('下载功能开发中');
       } else if (info.key === 'history') {
-        showAlert('历史记录功能开发中', 'info');
+        message.info('历史记录功能开发中');
       } else if (info.key === 'notifications') {
-        showAlert('通知中心功能开发中', 'info');
+        message.info('通知中心功能开发中');
       }
     },
   };

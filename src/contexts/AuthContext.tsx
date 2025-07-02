@@ -14,11 +14,10 @@ import {
   getCurrentUser,
   login as loginApi,
   logout as logoutApi,
-  refreshAccessToken,
 } from '@/lib/api/auth';
 import { useRouter } from 'next/navigation';
 import { setAccessToken } from '@/lib/api/tokenManager';
-import { useAlert } from '@/contexts/AlertContext';
+import { useMessage } from '@/hooks/useMessage';
 
 interface User {
   id: number;
@@ -40,40 +39,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hasTriedRefresh, setHasTriedRefresh] = useState(false);
   const router = useRouter();
-  const { showAlert } = useAlert();
-
-  // // 刷新 token 并获取用户信息
-  // const refreshUser = useCallback(async () => {
-  //   setLoading(true);
-  //   try {
-  //     // 自动刷新 accessToken
-  //     const newToken = await refreshAccessToken();
-  //     if (newToken) {
-  //       // 拿到新 token 后获取用户信息
-  //       const res = await getCurrentUser();
-  //       if (res && res.success && res.data && res.data.user) {
-  //         setUser(res.data.user);
-  //       } else {
-  //         setUser(null);
-  //         if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
-  //         router.push('/login');
-  //       }
-  //     } else {
-  //       setUser(null);
-  //       if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
-  //       router.push('/login');
-  //     }
-  //   } catch (error) {
-  //     setUser(null);
-  //     if (hasTriedRefresh) showAlert('登录已失效，请重新登录', 'warning');
-  //     router.push('/login');
-  //   } finally {
-  //     setHasTriedRefresh(true);
-  //     setLoading(false);
-  //   }
-  // }, [router, hasTriedRefresh, showAlert]);
+  const message = useMessage();
 
   // 登录
   const login = async (email: string, password: string, callback?: string) => {
@@ -85,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userRes = await getCurrentUser();
         if (userRes && userRes.data && userRes.data.user) {
           setUser(userRes.data.user);
-          showAlert('登录成功', 'success');
+          message.success('登录成功');
           // 根据callback跳转
           if (callback) {
             router.push(callback);
@@ -94,15 +61,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } else {
           setUser(null);
-          showAlert('获取用户信息失败', 'error');
+          message.error('获取用户信息失败');
         }
       } else {
         setUser(null);
-        showAlert(res?.message || '登录失败', 'error');
+        message.error(res?.message || '登录失败');
       }
     } catch (error: any) {
       setUser(null);
-      showAlert(error?.message || '登录失败，请重试', 'error');
+      message.error(error?.message || '登录失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -115,10 +82,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await logoutApi();
       setUser(null);
       setAccessToken(null);
-      showAlert('已退出登录', 'info');
+      message.info('已退出登录');
       router.push('/login');
     } catch (error) {
-      showAlert('登出失败，请重试', 'error');
+      message.error('登出失败，请重试');
     } finally {
       setLoading(false);
     }

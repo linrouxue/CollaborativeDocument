@@ -26,7 +26,11 @@ function responseInterceptor(response: AxiosResponse) {
 }
 
 // 全局唯一的刷新标志
-const refreshFlag = { isRefreshing: false, refreshPromise: null as any };
+const refreshFlag = {
+  isRefreshing: false,
+  refreshPromise: null as Promise<string> | null,
+  pendingRequests: [] as Array<(token: string | null) => void>,
+};
 
 // 通用错误拦截器，所有实例都用 axiosInstance 刷新 token
 async function errorInterceptor(error: AxiosError, instance: any) {
@@ -39,29 +43,51 @@ async function errorInterceptor(error: AxiosError, instance: any) {
     originalRequest._retry = true;
     if (!refreshFlag.isRefreshing) {
       refreshFlag.isRefreshing = true;
-      refreshFlag.refreshPromise = axiosInstance
-        .post('/auth/refresh')
-        .then((res: any) => {
+      refreshFlag.refreshPromise = (async () => {
+        try {
+          const res = await axiosInstance.post('/auth/refresh');
           const newToken = res.data?.accessToken;
           setAccessToken(newToken);
-          refreshFlag.isRefreshing = false;
           return newToken;
-        })
-        .catch(() => {
+        } catch (refreshError) {
           setAccessToken(null);
-          refreshFlag.isRefreshing = false;
           window.location.href = '/login';
-          return null;
-        });
+          return Promise.reject(refreshError);
+        } finally {
+          refreshFlag.isRefreshing = false;
+          refreshFlag.refreshPromise = null;
+        }
+      })();
     }
-    const newToken = await refreshFlag.refreshPromise;
-    if (newToken) {
-      originalRequest.headers = originalRequest.headers || {};
-      originalRequest.headers.Authorization = `Bearer ${newToken}`;
-      return instance(originalRequest);
-    }
+
+    // 将当前请求加入队列
+    return new Promise((resolve, reject) => {
+      refreshFlag.pendingRequests.push((newToken: string | null) => {
+        if (newToken) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          resolve(instance(originalRequest));
+        } else {
+          reject(new Error('令牌刷新失败'));
+        }
+      });
+
+      // 如果刷新正在进行，等待刷新完成
+      if (refreshFlag.refreshPromise) {
+        refreshFlag.refreshPromise
+          .then((newToken) => {
+            // 处理所有等待的请求
+            refreshFlag.pendingRequests.forEach((cb) => cb(newToken));
+            refreshFlag.pendingRequests = [];
+          })
+          .catch(() => {
+            refreshFlag.pendingRequests.forEach((cb) => cb(null));
+            refreshFlag.pendingRequests = [];
+          });
+      }
+    });
   }
-  // 统一错误处理
+
+  // 其他错误处理
   if (error.response) {
     switch (error.response.status) {
       case 401:
@@ -91,7 +117,10 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-axiosInstance.interceptors.request.use(requestInterceptor, Promise.reject);
+axiosInstance.interceptors.request.use(requestInterceptor, (error) => {
+  return Promise.reject(error);
+});
+
 axiosInstance.interceptors.response.use(responseInterceptor, (error) =>
   errorInterceptor(error, axiosInstance)
 );
@@ -104,7 +133,10 @@ const javaAxiosInstance = axios.create({
   withCredentials: true,
 });
 
-javaAxiosInstance.interceptors.request.use(requestInterceptor, Promise.reject);
+javaAxiosInstance.interceptors.request.use(requestInterceptor, (error) => {
+  return Promise.reject(error);
+});
+
 javaAxiosInstance.interceptors.response.use(responseInterceptor, (error) =>
   errorInterceptor(error, javaAxiosInstance)
 );

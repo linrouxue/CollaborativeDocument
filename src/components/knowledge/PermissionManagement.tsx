@@ -10,7 +10,7 @@ import {
   deleteKnowledgeBasePermission,
 } from '@/lib/api/knowledgeBase';
 import { roleOptions, roleColors, permissionMap } from './const';
-import { useAlert } from '@/contexts/AlertContext';
+import { useMessage } from '@/hooks/useMessage';
 
 interface Member {
   userId: number;
@@ -42,7 +42,7 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
   const [memberOptions, setMemberOptions] = useState<MemberOption[]>([]);
   const [fetching, setFetching] = useState(false);
   const [searchInput, setSearchInput] = useState('');
-  const { showAlert } = useAlert();
+  const message = useMessage();
   const [selectedMembersValue, setSelectedMembersValue] = useState<string[]>([]);
   const [selectedMembersDetail, setSelectedMembersDetail] = useState<MemberOption[]>([]);
   const [selectedRole, setSelectedRole] = useState<string | undefined>(undefined);
@@ -82,7 +82,7 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
       const searchValue = value.toLowerCase();
       const filtered = members.filter(
         (member) =>
-          member.username.toLowerCase().includes(searchValue) ||
+          member.username?.toLowerCase().includes(searchValue) ||
           member.email.toLowerCase().includes(searchValue)
       );
       setSelectedMembers(filtered);
@@ -109,10 +109,10 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
       render: (text: string, record: Member) => (
         <div className="flex items-center">
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
-            {text[0]}
+            {text?.[0] || record.email?.[0]}
           </div>
           <div>
-            <div className="font-medium">{text}</div>
+            <div className="font-medium">{text || '未命名用户'}</div>
             <div className="text-xs text-gray-500">{record.email}</div>
           </div>
         </div>
@@ -201,11 +201,11 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
 
   const handleModalConfirm = async () => {
     if (!selectedRole) {
-      showAlert('请选择权限', 'warning');
+      message.info('请选择权限');
       return;
     }
     if (selectedMembersDetail.length === 0) {
-      showAlert('请选择成员', 'warning');
+      message.info('请选择成员');
       return;
     }
     try {
@@ -214,7 +214,7 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
         userIdList: selectedMembersDetail.map((m) => Number(m.userId)),
         permission: reversePermissionMap[selectedRole],
       });
-      showAlert('添加成功', 'success');
+      message.success('添加成功');
       handleModalCancel();
       // 自动刷新成员列表
       setLoading(true);
@@ -230,7 +230,7 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
         setLoading(false);
       }
     } catch (e) {
-      showAlert('添加失败', 'error');
+      message.error('添加失败');
     }
   };
 
@@ -243,7 +243,7 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
         userIdList: [userId],
         permission: newPermission,
       });
-      showAlert('权限更新成功', 'success');
+      message.success('权限更新成功');
       // 刷新成员列表
       setLoading(true);
       try {
@@ -258,7 +258,7 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
         setLoading(false);
       }
     } catch (e) {
-      showAlert('权限更新失败', 'error');
+      message.error('权限更新失败');
     }
   };
 
@@ -284,11 +284,11 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
         ]);
       } else {
         setMemberOptions([]);
-        showAlert('未找到该成员', 'warning');
+        message.info('未找到该成员');
       }
     } catch (e) {
       setMemberOptions([]);
-      showAlert('未找到该成员', 'warning');
+      message.info('未找到该成员');
     }
     setFetching(false);
   };
@@ -310,7 +310,7 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
         knowledgeBaseId,
         userId: deleteUserId,
       });
-      showAlert('移除成功', 'success');
+      message.success('移除成功');
       setDeleteModalOpen(false);
       setDeleteUserId(null);
       // 刷新成员列表
@@ -327,7 +327,7 @@ export default function PermissionManagement({ knowledgeBaseId }: { knowledgeBas
         setLoading(false);
       }
     } catch (e) {
-      showAlert('移除失败', 'error');
+      message.error('移除失败');
     }
   };
 

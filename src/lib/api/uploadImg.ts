@@ -10,12 +10,12 @@ export const uploadImage = async (file: File): Promise<string> => {
   formData.append('file', file);
   try {
     // javaAxiosInstance 拦截器已自动处理 code
-    const url: string = await javaAxiosInstance.post('/api/image/upload', formData, {
+    const { data } = await javaAxiosInstance.post('/api/image/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return url;
+    return data?.data;
   } catch (error) {
     throw error;
   }

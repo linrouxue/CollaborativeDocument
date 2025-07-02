@@ -5,7 +5,7 @@ import type { UploadFile } from 'antd/es/upload/interface';
 import PermissionManagement from './PermissionManagement';
 import { newKnowledgeBase, updateKnowledgeBase } from '@/lib/api/knowledgeBase';
 import { uploadImage } from '@/lib/api/uploadImg';
-import { useAlert } from '@/contexts/AlertContext';
+import { useMessage } from '@/hooks/useMessage';
 
 interface KnowledgeData {
   id?: string;
@@ -34,7 +34,7 @@ export default function CreateKnowledgeModal({
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [activeTab, setActiveTab] = useState('basic');
-  const { showAlert } = useAlert();
+  const message = useMessage();
 
   useEffect(() => {
     if (open && mode === 'edit' && initialData) {
@@ -82,7 +82,7 @@ export default function CreateKnowledgeModal({
           description: formData.description,
           img: formData.cover || '',
         });
-        showAlert('知识库创建成功', 'success');
+        message.success('知识库创建成功');
       } else if (mode === 'edit' && initialData?.id) {
         // 编辑知识库
         await updateKnowledgeBase({
@@ -91,12 +91,12 @@ export default function CreateKnowledgeModal({
           description: formData.description,
           img: formData.cover || '',
         });
-        showAlert('知识库编辑成功', 'success');
+        message.success('知识库编辑成功');
       }
       handleCancel();
       onSuccess();
     } catch (error) {
-      showAlert(mode === 'create' ? '知识库创建失败' : '知识库编辑失败', 'error');
+      message.error(mode === 'create' ? '知识库创建失败' : '知识库编辑失败');
       console.error('表单验证失败或知识库操作失败:', error);
     }
   };

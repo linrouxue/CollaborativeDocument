@@ -1,5 +1,5 @@
 'use client';
-import { Skeleton, Row, Col, Input, message } from 'antd';
+import { Skeleton, Row, Col, Input } from 'antd';
 import { useEffect, useState } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import KnowledgeCard from '@/components/knowledge/KnowledgeCard';
@@ -13,7 +13,7 @@ import {
   getFuzzyKnowledgeBase,
 } from '@/lib/api/knowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAlert } from '@/contexts/AlertContext';
+import { useMessage } from '@/hooks/useMessage';
 import { useKnowledgeBaseStore } from '@/store/knowledgeBaseStore';
 
 const DEFAULT_IMAGE = '/book.webp';
@@ -34,7 +34,7 @@ export default function Knowledge() {
   const [currentKnowledge, setCurrentKnowledge] = useState<KnowledgeData | undefined>();
   const [know, setKnowledgeList] = useState<KnowledgeData[]>([]);
   const router = useRouter();
-  const { showAlert } = useAlert();
+  const message = useMessage();
   const onSearch: SearchProps['onSearch'] = async (value: string) => {
     setSearchText(value);
     if (!value) {
@@ -54,7 +54,7 @@ export default function Knowledge() {
       }));
       setKnowledgeList(convertedData);
     } catch (error) {
-      showAlert('搜索失败', 'error');
+      message.error('搜索失败');
     } finally {
       setLoading(false);
     }
@@ -77,9 +77,7 @@ export default function Knowledge() {
       }));
       setKnowledgeList(convertedData);
     } catch (error) {
-      showAlert('获取知识库列表失败', 'error');
-      console.error('获取知识库列表失败:', error);
-      // alert('获取知识库列表失败');
+      message.error('获取知识库列表失败');
     } finally {
       setLoading(false);
     }
@@ -117,13 +115,13 @@ export default function Knowledge() {
     if (!currentKnowledge?.id) return;
     try {
       await deleteKnowledgeBase(Number(currentKnowledge.id));
-      showAlert('删除成功', 'success');
+      message.success('删除成功');
       setIsDeleteModalOpen(false);
       setCurrentKnowledge(undefined);
       fetchKnowledgeList(); // 删除后刷新列表
       await useKnowledgeBaseStore.getState().fetchList(); // 同步刷新侧边栏
     } catch (error) {
-      showAlert('删除失败', 'error');
+      message.error('删除失败');
     }
   };
 
