@@ -69,7 +69,7 @@ interface GetKnowledgeBaseTreeResponse {
  */
 export const getKnowledgeBaseTree = async (
   knowledgeBaseId: string
-): Promise<GetKnowledgeBaseTreeResponse> => {
+): Promise<any> => {
   try {
     const res = await javaAxiosInstance.get(`/api/document/tree`, {
       params: { id: `kid${knowledgeBaseId}` },

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { ProLayout } from '@ant-design/pro-components';
 import {
   LogoutOutlined,
@@ -29,6 +29,41 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [docTree, setDocTree] = useState<any[]>([]);
 
+  // --- 拖拽相关 ---
+  const [siderWidth, setSiderWidth] = useState(220); // 初始宽度
+  const dragging = useRef(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragging.current = true;
+    document.body.style.cursor = 'ew-resize';
+    e.preventDefault();
+  };
+  const handleMouseMove = (e: MouseEvent) => {
+    if (dragging.current) {
+      // 防止宽度过小或过大
+      const min = 140;
+      const max = 500;
+      const width = Math.max(min, Math.min(max, e.clientX));
+      setSiderWidth(width);
+    }
+  };
+  const handleMouseUp = () => {
+    if (dragging.current) {
+      dragging.current = false;
+      document.body.style.cursor = '';
+    }
+  };
+  useEffect(() => {
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    // eslint-disable-next-line
+  }, []);
+
+  // --- 其他原有内容 ---
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
@@ -41,7 +76,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const params = useParams();
   const knowledgeBaseId = params.knowledgeBaseId as string;
 
-  // 用户菜单项
   const items: MenuProps['items'] = [
     {
       key: 'profile',
@@ -56,7 +90,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     },
   ];
 
-  // 获取文档树数据
   useEffect(() => {
     const fetchDocumentTree = async () => {
       setLoading(true);
@@ -75,10 +108,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     fetchDocumentTree();
   }, [knowledgeBaseId]);
 
-  // 将文档树转换为菜单结构
   const convertDocTreeToMenu = (nodes: any[]): any[] => {
     if (!nodes || !Array.isArray(nodes)) return [];
-
     return nodes.map((node) => ({
       key: node.documentId?.toString() || Math.random().toString(),
       path: `/documents/${node.documentId}`,
@@ -90,7 +121,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     }));
   };
 
-  // 渲染上下文菜单
   const renderContextMenu = () => (
     <ContextMenu
       visible={contextMenu.visible}
@@ -101,7 +131,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     />
   );
 
-  // 渲染菜单项
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
     const isLeaf = !item.routes || item.routes.length === 0;
     return (
@@ -125,10 +154,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     );
   };
 
-  // 渲染更多操作下拉菜单
   const renderMoreActionsDropdown = () => {
     if (!moreActionsMenu) return null;
-
     return (
       <Dropdown key="more" menu={moreActionsMenu} placement="bottomRight">
         <Button type="text" icon={<EllipsisOutlined />} />
@@ -136,7 +163,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     );
   };
 
-  // 渲染在线状态
   const renderOnlineStatus = () => (
     <div
       className={`flex items-center gap-1 text-sm cursor-default bg-none ${connected ? 'text-green-500' : 'text-red-500'}`}
@@ -149,7 +175,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     </div>
   );
 
-  // 加载状态显示
   if (loading) {
     return (
       <div
@@ -188,6 +213,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         fixedHeader
         fixSiderbar
         contentWidth="Fluid"
+        siderWidth={siderWidth} // 侧边栏宽度受控
         route={{
           routes: convertDocTreeToMenu(docTree),
         }}
@@ -238,7 +264,27 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           ),
         }}
       >
-        <Suspense fallback={<Spin size="large" className="global-spin" />}>{children}</Suspense>
+        {/* 拖拽条+内容区域。flex布局保证拖拽条和内容对齐 */}
+        <div style={{ display: 'flex', height: '100%' }}>
+          {/* 拖拽条。定位在侧边栏和内容之间 */}
+          <div
+            style={{
+              width: 4,
+              cursor: 'ew-resize',
+              background: '#e0e0e0',
+              zIndex: 999,
+              position: 'relative',
+              userSelect: 'none',
+            }}
+            onMouseDown={handleMouseDown}
+          />
+          {/* 右侧内容区 */}
+          <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
+            <Suspense fallback={<Spin size="large" className="global-spin" />}>
+              {children}
+            </Suspense>
+          </div>
+        </div>
       </ProLayout>
     </>
   );
