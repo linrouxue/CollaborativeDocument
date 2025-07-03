@@ -13,6 +13,8 @@ import { useDocHeaderStore } from '@/store/docHeaderStore';
 import { useMessage } from '@/hooks/useMessage';
 
 import { getAccessToken } from '@/lib/api/tokenManager';
+import { documentSummary } from '@/lib/api/documents';
+
 
 export default function DocPage() {
   const params = useParams();
@@ -21,9 +23,9 @@ export default function DocPage() {
 
   const token = getAccessToken();
 
-  // 固定写死的SSE和触发URL [根据用户要求]
+  // 固定写死的SSE和触发URL
   const SSE_URL = "http://119.29.229.71:8585/api/sse/connect/9/1";
-  const SUMMARY_TRIGGER_URL = "http://119.29.229.71:8585/api/chat?documentId=1";
+  // const SUMMARY_TRIGGER_URL = "http://localhost:8585/api/chat?documentId=1";
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -41,6 +43,7 @@ export default function DocPage() {
   const [summary, setSummary] = useState('');
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [sseConnected, setSseConnected] = useState(false); // 新增状态：跟踪SSE连接状态
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const message = useMessage();
@@ -92,55 +95,34 @@ export default function DocPage() {
     }
   }, [knowledgeBaseId]);
 
-  // 初始化SSE连接获取文档总结 [核心功能]
+  // 初始化SSE连接（页面加载时自动建立）
   useEffect(() => {
     if (connected) {
-      setIsSummaryLoading(true);
-      setSummary('');
-      setSummaryError(null);
-      
       try {
-        // 1. 创建EventSource连接[1,3](@ref)
+        // 1. 创建EventSource连接
         eventSourceRef.current = new EventSource(SSE_URL, {
           withCredentials: true // 允许跨域凭证
         });
         
-        // 2. 处理接收到的消息[4](@ref)
+        // 2. 处理接收到的消息
         eventSourceRef.current.onmessage = (event) => {
           try {
-            // 解析服务器发送的事件数据[5](@ref)
-            // const data = JSON.parse(event.data);
-            
-            // 处理不同类型的消息[3](@ref)
-            // if (data.type === 'summary_chunk') {
-              setSummary(prev => prev + event.data);
-            // } 
-            // else if (data.type === 'summary_complete') {
-              setIsSummaryLoading(false);
-            // }
+            setSummary(prev => prev + event.data);
+            setIsSummaryLoading(false); // 收到数据后停止加载状态
           } catch (parseError) {
             console.error('SSE数据解析错误:', parseError);
           }
         };
         
-        // 3. 错误处理[4](@ref)
+        // 3. 错误处理
         eventSourceRef.current.onerror = (error) => {
           console.error('SSE连接错误:', error);
           setSummaryError('文档总结连接异常');
           setIsSummaryLoading(false);
           eventSourceRef.current?.close();
         };
-        
-        // 4. 触发文档总结生成[2](@ref)
-        fetch(SUMMARY_TRIGGER_URL,{headers: { 'Content-Type': 'application/json','Authorization':`Bearer ${getAccessToken()}` }})
-          .then(response => {
-            if (!response.ok) throw new Error('触发总结失败');
-          })
-          .catch(err => {
-            console.error('触发总结请求失败:', err);
-            setSummaryError('无法启动文档总结');
-            setIsSummaryLoading(false);
-          });
+
+        setSseConnected(true); // 标记SSE已连接
       } catch (err) {
         console.error('SSE初始化失败:', err);
         setSummaryError('无法建立总结连接');
@@ -148,22 +130,45 @@ export default function DocPage() {
       }
     }
     
-    // 组件卸载时关闭连接[5](@ref)
+    // 组件卸载时关闭连接
     return () => {
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
     };
   }, [connected]);
 
-  // 重试获取文档总结
-  const handleRetrySummary = () => {
+  // 触发文档总结生成（点击按钮后执行）
+  const triggerSummaryRequest = () => {
+    if (!sseConnected) {
+      setSummaryError('SSE连接未建立');
+      return;
+    }
+
+    setIsSummaryLoading(true);
     setSummary('');
     setSummaryError(null);
-    setIsSummaryLoading(true);
     
-    // 重新触发总结请求
-    fetch(SUMMARY_TRIGGER_URL)
-      .catch(err => console.error('重试失败:', err));
+    // 触发文档总结生成
+    // fetch(SUMMARY_TRIGGER_URL, {
+    //   headers: { 
+    //     'Content-Type': 'application/json',
+    //     'Authorization': `Bearer ${getAccessToken()}`
+    //   }
+    // })
+    // .then(response => {
+    //   if (!response.ok) throw new Error('触发总结失败');
+    // })
+    // .catch(err => {
+    //   console.error('触发总结请求失败:', err);
+    //   setSummaryError('无法启动文档总结');
+    //   setIsSummaryLoading(false);
+    // });
+    documentSummary(1)
+  };
+
+  // 重试获取文档总结
+  const handleRetrySummary = () => {
+    triggerSummaryRequest();
   };
 
   // 更多操作菜单
@@ -267,15 +272,26 @@ export default function DocPage() {
               marginBottom: '12px'
             }}>
               <h3 style={{ margin: 0 }}>文档总结</h3>
-              <Button 
-                size="small" 
-                icon={<CloseOutlined />} 
-                onClick={() => {
-                  setIsSummaryLoading(false);
-                  setSummary('');
-                  eventSourceRef.current?.close();
-                }}
-              />
+              <div>
+                <Button 
+                  type="primary" 
+                  onClick={triggerSummaryRequest}
+                  size="small"
+                  style={{ marginRight: '8px' }}
+                  disabled={isSummaryLoading || !sseConnected}
+                >
+                  {summary ? '重新生成' : '生成总结'}
+                </Button>
+                <Button 
+                  size="small" 
+                  icon={<CloseOutlined />} 
+                  onClick={() => {
+                    setIsSummaryLoading(false);
+                    setSummary('');
+                    setSummaryError(null);
+                  }}
+                />
+              </div>
             </div>
             
             {summaryError ? (
@@ -311,7 +327,9 @@ export default function DocPage() {
               </div>
             ) : (
               <div style={{ color: '#999', textAlign: 'center', padding: '16px' }}>
-                文档总结将在此处显示
+                {sseConnected 
+                  ? "请点击上方按钮生成文档总结" 
+                  : "正在建立SSE连接..."}
               </div>
             )}
           </div>

@@ -5,6 +5,7 @@ import { getAccessToken, setAccessToken } from './tokenManager';
 export const baseURL = 'http://localhost:3000/api';
 // Java后端API
 export const JavaBaseURL = 'http://119.29.229.71:8585';
+// export const JavaBaseURL = 'http://localhost:8585';
 
 // 通用请求拦截器
 function requestInterceptor(config: any) {

@@ -14,25 +14,20 @@ import {
 import type { MenuProps } from 'antd';
 import { Dropdown, Spin, Button } from 'antd';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-// src/app/Home/layout.tsx
-// import type { Metadata } from "next";
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import '@/style/globals.css';
 import { useAuth } from '@/contexts/AuthContext';
 import SearchModal from '@/components/common/SearchModal';
 import ContextMenu from '@/components/common/ContextMenu';
 import { useContextMenu } from '@/components/common/useContextMenu';
 import { useDocHeaderStore } from '@/store/docHeaderStore';
-
-// export const metadata: Metadata = {
-//   title: "协同文档系统",
-//   description: "基于 Next.js 和 Ant Design 的协同文档系统",
-// };
+import { getKnowledgeBaseTree } from '@/lib/api/documents';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [docTree, setDocTree] = useState<any[]>([]);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -43,10 +38,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const moreActionsMenu = useDocHeaderStore((state) => state.moreActionsMenu);
   const handleBackToHome = useDocHeaderStore((state) => state.handleBackToHome);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const params = useParams();
+  const knowledgeBaseId = params.knowledgeBaseId as string;
 
+  // 用户菜单项
   const items: MenuProps['items'] = [
     {
       key: 'profile',
@@ -57,44 +52,45 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       key: 'logout',
       label: '退出登录',
       icon: <LogoutOutlined />,
-      onClick: logout,
+      onClick: () => logout(),
     },
   ];
 
-  if (!mounted) {
-    return (
-      <div
-        style={{
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#f0f2f5',
-        }}
-      >
-        <Spin size="large" />
-      </div>
-    );
-  }
+  // 获取文档树数据
+  useEffect(() => {
+    const fetchDocumentTree = async () => {
+      setLoading(true);
+      try {
+        const response = await getKnowledgeBaseTree(knowledgeBaseId);
+        if (response.success && response.data?.tree) {
+          setDocTree(response.data.tree);
+        }
+      } catch (error) {
+        console.error('获取文档树失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const menu = [
-    {
-      path: '/knowledges',
-      name: '文档库',
+    fetchDocumentTree();
+  }, [knowledgeBaseId]);
+
+  // 将文档树转换为菜单结构
+  const convertDocTreeToMenu = (nodes: any[]): any[] => {
+    if (!nodes || !Array.isArray(nodes)) return [];
+    
+    return nodes.map(node => ({
+      key: node.documentId?.toString() || Math.random().toString(),
+      path: `/documents/${node.documentId}`,
+      name: node.title || `未命名文档_${node.documentId}`,
       icon: <FileOutlined />,
-      routes: [
-        {
-          path: '/knowledges/1',
-          name: '文件1',
-        },
-        {
-          path: '/knowledges/2',
-          name: '文件2',
-        },
-      ],
-    },
-  ];
+      routes: node.children?.length > 0 ? convertDocTreeToMenu(node.children) : undefined,
+      documentId: node.documentId,
+      canContextMenu: true,
+    }));
+  };
 
+  // 渲染上下文菜单
   const renderContextMenu = () => (
     <ContextMenu
       visible={contextMenu.visible}
@@ -105,18 +101,20 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     />
   );
 
+  // 渲染菜单项
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
+    const isLeaf = !item.routes || item.routes.length === 0;
     return (
       <div
         onClick={(e) => {
           e.stopPropagation();
-          if (item.path && item.path !== '/knowledges') {
+          if (isLeaf && item.path) {
             router.push(item.path);
           }
         }}
         onContextMenu={
           item.canContextMenu
-            ? (e) => contextMenu.onContextMenu(e, item.key || item.path)
+            ? (e) => contextMenu.onContextMenu(e, item.documentId)
             : undefined
         }
         style={{
@@ -128,6 +126,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       </div>
     );
   };
+
+  // 渲染更多操作下拉菜单
   const renderMoreActionsDropdown = () => {
     if (!moreActionsMenu) return null;
 
@@ -137,9 +137,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       </Dropdown>
     );
   };
+
+  // 渲染在线状态
   const renderOnlineStatus = () => (
     <div
-      className={`flex items-center gap-1 text-sm  cursor-default bg-none ${connected ? 'text-green-500' : 'text-red-500'}`}
+      className={`flex items-center gap-1 text-sm cursor-default bg-none ${connected ? 'text-green-500' : 'text-red-500'}`}
     >
       <div
         className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}
@@ -148,6 +150,23 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       {connected ? `${onlineUsers} 人在线` : '离线'}
     </div>
   );
+
+  // 加载状态显示
+  if (loading) {
+    return (
+      <div
+        style={{
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f0f2f5',
+        }}
+      >
+        <Spin size="large" tip="加载文档树中..." />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -172,10 +191,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         fixSiderbar
         contentWidth="Fluid"
         route={{
-          routes: menu,
+          routes: convertDocTreeToMenu(docTree),
         }}
         menu={{
-          request: async () => menu,
+          request: async () => convertDocTreeToMenu(docTree),
         }}
         menuProps={{
           selectedKeys: [pathname],
@@ -195,20 +214,17 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             >
               返回
             </Button>
-            {/* <div style={{ fontSize: '16px', fontWeight: '500' }}>知识库：{knowledgeTitle}</div> */}
           </div>
         )}
         actionsRender={() => [
-          // 在线人数
           renderOnlineStatus(),
           renderMoreActionsDropdown(),
-          // 搜索
           <SearchOutlined
             key="search"
             className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
             onClick={() => setSearchModalOpen(true)}
           />,
-          <SearchModal open={searchModalOpen} onClose={() => setSearchModalOpen(false)} />,
+          <SearchModal key="search-modal" open={searchModalOpen} onClose={() => setSearchModalOpen(false)} />,
         ]}
         avatarProps={{
           src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
@@ -220,7 +236,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           ),
         }}
       >
-        <Suspense fallback={<Spin size="large" className="global-spin" />}>{children}</Suspense>
+        <Suspense fallback={<Spin size="large" className="global-spin" />}>
+          {children}
+        </Suspense>
       </ProLayout>
     </>
   );

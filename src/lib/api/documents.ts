@@ -40,3 +40,60 @@ export const getDocNtree = async (params: getDocNtreeParams): Promise<getDocNtre
     throw error;
   }
 };
+
+// 知识库文档树
+interface docParams {
+  documentId: number;
+  parentId: number;
+  title: string;
+  children: docParams[];
+}
+// 知识库文档内容
+interface docContent {
+  userId: number;
+  username: string;
+  title: string;
+  content: string;
+  cover: string;
+}
+interface GetKnowledgeBaseTreeResponse {
+  tree: docParams[];
+  permission: number;
+  name: string;
+  docummentContent: docContent;
+}
+/**
+ * 获取知识库文档树
+ * @param knowledgeBaseId 知识库ID
+ * @returns 知识库文档树
+ */
+export const getKnowledgeBaseTree = async (
+  knowledgeBaseId: string
+): Promise<GetKnowledgeBaseTreeResponse> => {
+  try {
+    const res = await javaAxiosInstance.get(`/api/document/tree`, {
+      params: { 'id': `kid${knowledgeBaseId}` },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    // console.log(res)
+    // console.log('获取知识库文档树:', res.data);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const documentSummary = async (
+  documentId: number
+): Promise<any> => {
+  try {
+    const res = await javaAxiosInstance.get(`/api/chat`, {
+      params: { 'documentId': documentId },
+    });
+    // console.log(res)
+    // console.log('获取知识库文档树:', res.data);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
