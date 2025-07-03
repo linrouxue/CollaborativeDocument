@@ -78,8 +78,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // 将文档树转换为菜单结构
   const convertDocTreeToMenu = (nodes: any[]): any[] => {
     if (!nodes || !Array.isArray(nodes)) return [];
-    
-    return nodes.map(node => ({
+
+    return nodes.map((node) => ({
       key: node.documentId?.toString() || Math.random().toString(),
       path: `/documents/${node.documentId}`,
       name: node.title || `未命名文档_${node.documentId}`,
@@ -113,9 +113,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           }
         }}
         onContextMenu={
-          item.canContextMenu
-            ? (e) => contextMenu.onContextMenu(e, item.documentId)
-            : undefined
+          item.canContextMenu ? (e) => contextMenu.onContextMenu(e, item.documentId) : undefined
         }
         style={{
           cursor: 'pointer',
@@ -224,7 +222,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
             onClick={() => setSearchModalOpen(true)}
           />,
-          <SearchModal key="search-modal" open={searchModalOpen} onClose={() => setSearchModalOpen(false)} />,
+          <SearchModal
+            key="search-modal"
+            open={searchModalOpen}
+            onClose={() => setSearchModalOpen(false)}
+          />,
         ]}
         avatarProps={{
           src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
@@ -236,9 +238,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           ),
         }}
       >
-        <Suspense fallback={<Spin size="large" className="global-spin" />}>
-          {children}
-        </Suspense>
+        <Suspense fallback={<Spin size="large" className="global-spin" />}>{children}</Suspense>
       </ProLayout>
     </>
   );
