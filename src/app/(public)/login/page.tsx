@@ -7,7 +7,7 @@ import LoginForm from '../../../components/loginPage/LoginForm';
 import RegisterForm from '../../../components/loginPage/RegisterForm';
 import { StyledLayout, StyledCard, StyledTitle } from './LoginRegister.styles';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSearchParams,useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;

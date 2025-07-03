@@ -31,12 +31,12 @@ export const updateDocumentPermission = async (
 ): Promise<DocumentPermissionResponse> => {
   try {
     const { data } = await javaAxiosInstance.post('/api/document-permission/update', params);
-    console.log("data", data)
+    console.log('data', data);
     return data;
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || '更新文档权限失败');
   }
-}; 
+};
 /**
  * 获取用户对某文档的最大权限值
  * @param documentId 文档ID
@@ -45,7 +45,7 @@ export const updateDocumentPermission = async (
 export const getDocumentPermission = async (documentId: number): Promise<GetPermissionResponse> => {
   try {
     const { data } = await axiosInstance.get('/getPermission', {
-      params: { documentId }
+      params: { documentId },
     });
     return data;
   } catch (error: any) {

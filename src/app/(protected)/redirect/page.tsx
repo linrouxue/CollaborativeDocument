@@ -1,28 +1,28 @@
-"use client";
+'use client';
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { decrypt } from "@/utils/crypto";
+import { decrypt } from '@/utils/crypto';
 import { useAuth } from '@/contexts/AuthContext';
-import {updateDocumentPermission} from '@/lib/api/documentPermission'
+import { updateDocumentPermission } from '@/lib/api/documentPermission';
 import { TokenParser } from '@/utils/jwtUtil';
 import { getAccessToken } from '@/lib/api/tokenManager';
 // 解析字符串"permissionFlag=6+documentId=1"
 const parseCustomParams = (paramString: string) => {
-    console.log(paramString)
-    const params: Record<string, string> = {};
-    
-    // 按 + 分割
-    const pairs = paramString.split('+');
-    
-    pairs.forEach(pair => {
-      const [key, value] = pair.split('=');
-      if (key && value) {
-        params[key] = value;
-      }
-    });
-    
-    return params;
-  };
+  console.log(paramString);
+  const params: Record<string, string> = {};
+
+  // 按 + 分割
+  const pairs = paramString.split('+');
+
+  pairs.forEach((pair) => {
+    const [key, value] = pair.split('=');
+    if (key && value) {
+      params[key] = value;
+    }
+  });
+
+  return params;
+};
 
 export default function RedirectHandler() {
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function RedirectHandler() {
     try {
       const permissionFlag = params.permissionFlag;
       const documentId = params.documentId;
-      
+
       // 验证必要参数
       if (!permissionFlag || !documentId) {
         console.error('Missing required parameters: permissionFlag or documentId');
@@ -65,15 +65,15 @@ export default function RedirectHandler() {
       const result = await updateDocumentPermission({
         documentId: Number(documentId),
         userId: userId,
-        permission: Number(permissionFlag)
+        permission: Number(permissionFlag),
       });
-    
+
       if (result.success == true) {
         console.log('权限更新成功:', result.message);
         // 权限更新成功后，继续处理跳转逻辑
         return true;
       } else {
-        console.log(result)
+        console.log(result);
         console.error('权限更新失败:', result.message);
         router.push('/error?code=permission_update_failed');
         return false;
@@ -84,7 +84,6 @@ export default function RedirectHandler() {
       return false;
     }
   };
-
 
   // 处理跳转逻辑
   const handlerRedirect = (params: Record<string, string>) => {
@@ -113,17 +112,17 @@ export default function RedirectHandler() {
           const path = window.location.pathname + window.location.search;
           router.push(`/login?callback=${encodeURIComponent(path)}`);
         } else {
-          console.log("token:", getAccessToken());
+          console.log('token:', getAccessToken());
           // 已登录：跳转到目标页
           // 解析出目标页的参数
           // const urlParam = params.get('share') || '/';
           // 解析字符串"permissionFlag=6+documentId=1"
           const result = parseCustomParams(decrypted);
           console.log(result);
-          
+
           // 处理权限逻辑
           const permissionSuccess = await handlerPermission(result);
-          
+
           // 只有权限处理成功才进行跳转
           if (permissionSuccess) {
             // 处理跳转逻辑
@@ -132,15 +131,13 @@ export default function RedirectHandler() {
         }
       } catch (error) {
         // 解密失败或参数错误
-        console.log("解密失败", error)
-      //   router.push('/error?code=invalid_link');
+        console.log('解密失败', error);
+        //   router.push('/error?code=invalid_link');
       }
     };
 
     handleRedirect();
   }, [loading, isAuthenticated, router, searchParams]);
 
-  return (
-    <div></div>
-  );
+  return <div></div>;
 }

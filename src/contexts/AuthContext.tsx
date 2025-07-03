@@ -10,11 +10,7 @@ import React, {
   ReactNode,
   useCallback,
 } from 'react';
-import {
-  getCurrentUser,
-  login as loginApi,
-  logout as logoutApi,
-} from '@/lib/api/auth';
+import { getCurrentUser, login as loginApi, logout as logoutApi } from '@/lib/api/auth';
 import { useRouter } from 'next/navigation';
 import { setAccessToken } from '@/lib/api/tokenManager';
 import { useMessage } from '@/hooks/useMessage';

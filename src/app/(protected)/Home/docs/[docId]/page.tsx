@@ -24,7 +24,7 @@ export default function DocPage() {
   const params = useParams();
   const router = useRouter();
   const docId = params.docId as string; // 获取当前文档ID
-  
+
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -36,10 +36,10 @@ export default function DocPage() {
   const [onlineUsers, setOnlineUsers] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // WebSocket 配置
   const websocketUrl = 'ws://localhost:1234';
-  
+
   // 用户信息（示例）
   const userName = 'USER_NAME'; // 这里可以替换为实际的用户名
 
@@ -63,7 +63,7 @@ export default function DocPage() {
       yProvider.on('status', (event: { status: string }) => {
         console.log('Connection status:', event.status);
         setConnected(event.status === 'connected');
-        
+
         if (event.status === 'connected') {
           setLoading(false);
           message.success('已连接到协同服务器');
@@ -144,19 +144,17 @@ export default function DocPage() {
   if (loading) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          background: colorBgContainer 
-        }}>
+        <Content
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: colorBgContainer,
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px' }}>
-              正在连接到协同服务器...
-            </div>
-            <div style={{ fontSize: '14px', color: '#999' }}>
-              文档 ID: {docId}
-            </div>
+            <div style={{ fontSize: '18px', marginBottom: '12px' }}>正在连接到协同服务器...</div>
+            <div style={{ fontSize: '14px', color: '#999' }}>文档 ID: {docId}</div>
           </div>
         </Content>
       </Layout>
@@ -167,26 +165,24 @@ export default function DocPage() {
   if (error) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          background: colorBgContainer 
-        }}>
+        <Content
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: colorBgContainer,
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>
-              {error}
-            </div>
-            <Button 
-              type="primary" 
+            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{error}</div>
+            <Button
+              type="primary"
               onClick={() => window.location.reload()}
               style={{ marginRight: '12px' }}
             >
               重新连接
             </Button>
-            <Button onClick={() => router.push('/Home')}>
-              返回首页
-            </Button>
+            <Button onClick={() => router.push('/Home')}>返回首页</Button>
           </div>
         </Content>
       </Layout>
@@ -217,25 +213,27 @@ export default function DocPage() {
           </Button>
 
           {/* 当前文档信息 */}
-          <span style={{ fontSize: '16px' }}>
-            文档: {docId}
-          </span>
-          
+          <span style={{ fontSize: '16px' }}>文档: {docId}</span>
+
           {/* 连接状态指示器 */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            fontSize: '14px',
-            color: connected ? '#52c41a' : '#ff4d4f'
-          }}>
-            <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: connected ? '#52c41a' : '#ff4d4f',
-              animation: connected ? 'none' : 'blink 1s infinite'
-            }} />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px',
+              color: connected ? '#52c41a' : '#ff4d4f',
+            }}
+          >
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: connected ? '#52c41a' : '#ff4d4f',
+                animation: connected ? 'none' : 'blink 1s infinite',
+              }}
+            />
             {connected ? '已连接' : '连接中...'}
           </div>
         </div>
@@ -332,9 +330,7 @@ export default function DocPage() {
                 justifyContent: 'center',
               }}
             >
-              <p style={{ fontSize: '16px', marginBottom: '8px' }}>
-                正在连接到协同服务器...
-              </p>
+              <p style={{ fontSize: '16px', marginBottom: '8px' }}>正在连接到协同服务器...</p>
               <p style={{ fontSize: '14px' }}>请稍候</p>
             </div>
           )}
@@ -347,8 +343,13 @@ export default function DocPage() {
 
       <style jsx>{`
         @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0;
+          }
         }
       `}</style>
     </Layout>

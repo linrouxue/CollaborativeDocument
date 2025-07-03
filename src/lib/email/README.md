@@ -20,14 +20,12 @@ NEXTAUTH_URL=http://localhost:3000
 ## QQ邮箱配置步骤
 
 1. **开启SMTP服务**
-
    - 登录QQ邮箱
    - 进入"设置" → "账户"
    - 找到"POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV服务"
    - 开启"POP3/SMTP服务"
 
 2. **获取授权码**
-
    - 开启服务后，点击"生成授权码"
    - 按照提示操作，获取16位授权码
    - 将授权码填入 `SMTP_PASS` 环境变量

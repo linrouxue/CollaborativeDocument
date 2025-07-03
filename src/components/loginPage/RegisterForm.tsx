@@ -59,9 +59,7 @@ export default function RegisterForm({ mode, onBackToLogin }: RegisterFormProps)
         }
       }
     } catch (error: any) {
-      message.error(
-        error?.message || (isForgotMode ? '密码重置失败，请重试' : '注册失败，请重试')
-      );
+      message.error(error?.message || (isForgotMode ? '密码重置失败，请重试' : '注册失败，请重试'));
     } finally {
       setLoading(false);
     }

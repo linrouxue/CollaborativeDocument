@@ -52,8 +52,8 @@ const documents: TreeDataNode[] = [
 ];
 // 知识库映射
 const knowledgeBaseMap: Record<string, TreeDataNode[]> = {
-  '前端知识库': documents,
-  '后端知识库': [
+  前端知识库: documents,
+  后端知识库: [
     {
       title: 'Java 基础',
       key: 'java',
@@ -65,7 +65,7 @@ const knowledgeBaseMap: Record<string, TreeDataNode[]> = {
       isLeaf: true,
     },
   ],
-  '数据库知识库': [
+  数据库知识库: [
     {
       title: 'MySQL 教程',
       key: 'mysql',
@@ -375,9 +375,7 @@ export default function KnowledgeEditorLayout() {
                   justifyContent: 'center',
                 }}
               >
-                <p style={{ fontSize: '16px', marginBottom: '8px' }}>
-                  正在连接到协同服务器...
-                </p>
+                <p style={{ fontSize: '16px', marginBottom: '8px' }}>正在连接到协同服务器...</p>
                 <p style={{ fontSize: '14px' }}>请稍候</p>
               </div>
             ) : (
