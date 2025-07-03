@@ -32,18 +32,12 @@ const EditorContentArea: React.FC<EditorContentAreaProps> = ({
 }) => {
   const [pendingCommentRange, setPendingCommentRange] = useState<Range | null>(null);
   return (
-    <div className="flex-1 flex border-l border-r overflow-hidden">
+    <div className="flex-1 flex overflow-hidden">
       <div className="flex-1 overflow-auto" style={{ position: 'relative' }}>
-        <SlateEditor
-          editor={editor}
-          decorate={decorate}
-          renderLeaf={renderLeaf}
-        />
-        <FloatingToolbar
-          onComment={(range) => setPendingCommentRange(range)}
-        />
+        <SlateEditor editor={editor} decorate={decorate} renderLeaf={renderLeaf} />
+        <FloatingToolbar onComment={(range) => setPendingCommentRange(range)} />
       </div>
-      <div className="w-80 border-l bg-gray-50">
+      <div className="w-80">
         <CommentsPanel
           threads={threads}
           currentUser={currentUser}

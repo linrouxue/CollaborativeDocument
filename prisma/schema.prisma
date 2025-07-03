@@ -13,9 +13,9 @@ model t_document {
   knowledge_base_id Int
   parent_id         Int
   user_id           Int
-  title             String   @db.VarChar(200)
+  title             String?  @db.VarChar(200)
   cover             String?  @db.VarChar(255)
-  content           String   @db.LongText
+  content           Bytes?   @db.MediumBlob
   create_time       DateTime @db.DateTime(0)
   update_time       DateTime @db.DateTime(0)
   del_flag          Int
@@ -75,7 +75,7 @@ model t_knowledge_base_permission {
   id                Int       @id @default(autoincrement())
   knowledge_base_id Int?
   user_id           Int?
-  permission        String?   @db.VarChar(255)
+  permission        Int?
   create_time       DateTime? @db.DateTime(0)
   update_time       DateTime? @db.DateTime(0)
   del_flag          Int?

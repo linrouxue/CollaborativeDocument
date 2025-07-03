@@ -50,6 +50,7 @@
     "slate-history": "^0.113.1",
     "slate-react": "^0.117.1",
     "styled-components": "^6.1.19",
+    "uuid": "^11.1.0",
     "ws": "^8.18.2",
     "y-websocket": "^2.0.0",
     "yjs": "^13.6.27",

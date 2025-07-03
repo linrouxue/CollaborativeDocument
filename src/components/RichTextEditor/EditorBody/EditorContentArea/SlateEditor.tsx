@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Slate, Editable, withReact, useSlate } from 'slate-react';
+import { Slate, Editable, withReact, useSlate, useSlateStatic } from 'slate-react';
 import { createEditor, Descendant, Editor } from 'slate';
 import {
   BoldOutlined,
@@ -10,7 +10,7 @@ import {
   UndoOutlined,
   RedoOutlined,
 } from '@ant-design/icons';
-import { RenderLeafProps } from 'slate-react';
+import { RenderLeafProps, RenderElementProps, ReactEditor } from 'slate-react';
 import FloatingToolbar from './FloatingToolbar';
 
 interface SlateEditorProps {
@@ -28,8 +28,25 @@ const initialValue: Descendant[] = [
 
 const SlateEditor: React.FC<SlateEditorProps> = ({ editor, decorate, renderLeaf }) => {
   // 支持自定义块类型的渲染
-  const renderElement = useCallback((props) => {
+  const headingIndexRef = React.useRef(0);
+  // 在每次Editable渲染前重置headingIndexRef
+  useEffect(() => {
+    headingIndexRef.current = 0;
+  });
+  const renderElement = useCallback((props: RenderElementProps) => {
     const { element, attributes, children } = props;
+    let headingId = undefined;
+    if (
+      element.type === 'heading-one' ||
+      element.type === 'heading-two' ||
+      element.type === 'heading-three' ||
+      element.type === 'heading-four' ||
+      element.type === 'heading-five' ||
+      element.type === 'heading-six'
+    ) {
+      headingId = element.headingId;
+      (attributes as any)['data-heading-id'] = headingId;
+    }
     switch (element.type) {
       case 'heading-one':
         return (
@@ -42,6 +59,30 @@ const SlateEditor: React.FC<SlateEditorProps> = ({ editor, decorate, renderLeaf 
           <h2 {...attributes} style={{ fontSize: '1.2em', fontWeight: 600 }}>
             {children}
           </h2>
+        );
+      case 'heading-three':
+        return (
+          <h3 {...attributes} style={{ fontSize: '1.1em', fontWeight: 600 }}>
+            {children}
+          </h3>
+        );
+      case 'heading-four':
+        return (
+          <h4 {...attributes} style={{ fontSize: '1em', fontWeight: 600 }}>
+            {children}
+          </h4>
+        );
+      case 'heading-five':
+        return (
+          <h5 {...attributes} style={{ fontSize: '0.95em', fontWeight: 600 }}>
+            {children}
+          </h5>
+        );
+      case 'heading-six':
+        return (
+          <h6 {...attributes} style={{ fontSize: '0.9em', fontWeight: 600 }}>
+            {children}
+          </h6>
         );
       case 'bulleted-list':
         return (

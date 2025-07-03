@@ -100,7 +100,7 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
         </div>
       )}
       <div className="flex-1 overflow-auto space-y-3 mb-4">
-        {threads.length === 0 && <p className="text-gray-500 italic">暂无评论</p>}
+        {!threads ||  threads.length === 0 && <p className="text-gray-500 italic">暂无评论</p>}
         {threads.map(([threadId, thread]) => (
           <div key={threadId} className="p-2 bg-white rounded shadow-sm mb-4">
             <div className="font-bold mb-1 truncate" title={thread.comments[0]?.content}>

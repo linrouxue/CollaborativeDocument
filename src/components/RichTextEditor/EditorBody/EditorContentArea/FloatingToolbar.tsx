@@ -10,6 +10,7 @@ import {
   RedoOutlined,
   MessageOutlined,
 } from '@ant-design/icons';
+import { debounce } from 'lodash';
 
 interface FloatingToolbarProps {
   onComment?: (range: Range) => void;
@@ -43,15 +44,17 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ onComment }) => {
       });
       setShow(true);
     };
-    document.addEventListener('selectionchange', update);
-    window.addEventListener('scroll', update);
-    window.addEventListener('resize', update);
+    const debouncedUpdate = debounce(update, 300);
+    document.addEventListener('selectionchange', debouncedUpdate);
+    window.addEventListener('scroll', debouncedUpdate);
+    window.addEventListener('resize', debouncedUpdate);
     // 初始也执行一次
-    update();
+    debouncedUpdate();
     return () => {
-      document.removeEventListener('selectionchange', update);
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
+      document.removeEventListener('selectionchange', debouncedUpdate);
+      window.removeEventListener('scroll', debouncedUpdate);
+      window.removeEventListener('resize', debouncedUpdate);
+      debouncedUpdate.cancel && debouncedUpdate.cancel();
     };
   }, [editor]);
 

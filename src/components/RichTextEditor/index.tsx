@@ -12,6 +12,7 @@ import {
 } from 'slate';
 import { Slate, withReact, ReactEditor, Editable } from 'slate-react';
 import { HistoryEditor, withHistory } from 'slate-history';
+import { v4 as uuidv4 } from 'uuid';
 
 import EditorHeaderToolbar from './EditorHeaderToolbar';
 import EditorFooter from './EditorFooter';
@@ -104,7 +105,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return e;
   }, [sharedType, provider, userName, randomColor]);
 
-  const [value, setValue] = useState<Descendant[]>(initialValue);
+  const [value, setValue] = useState(assignHeadingIds(initialValue));
 
   // 评论协同
   const ydoc = useMemo(() => provider.doc, [provider]);
@@ -205,17 +206,34 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // 侧边栏数据
   const threads = Array.from(yThreadsMap.entries());
 
+  const handleClick = (node: OutlineNode) => {
+    const dom = node.dom;
+    const container = editorRoot.current;
+    if (dom && container) {
+      const domRect = dom.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const scrollTop = container.scrollTop + (domRect.top - containerRect.top) - 20;
+      container.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth',
+      });
+      setActiveKey(node.key);
+    }
+  };
+
   return (
-    <div className="border rounded-lg bg-white p-4 min-h-[400px]">
-      <Slate editor={editor} initialValue={value} onChange={setValue}>
+    <div className="bg-white p-4 min-h-[400px]">
+      <Slate
+        editor={editor}
+        initialValue={value}
+        onChange={(val) => setValue(assignHeadingIds(val))}
+      >
         <EditorHeaderToolbar />
-        <div style={{ marginBottom: 8 }}>
-          <button onClick={handleAddComment}>添加评论</button>
-        </div>
-        <EditorContentArea
+        <EditorBody
           editor={editor}
           decorate={decorate}
           renderLeaf={renderLeaf}
+          editorValue={value}
           threads={threads}
           currentUser={String(userName)}
           onReply={replyToThread}
@@ -259,6 +277,32 @@ function RichEditable({
       <EditorBody editor={editor} decorate={decorate} renderLeaf={renderLeaf} editorValue={value} />
     </>
   );
+}
+
+function assignHeadingIds(nodes) {
+  return nodes.map((node) => {
+    if (
+      node.type &&
+      (node.type === 'heading-one' ||
+        node.type === 'heading-two' ||
+        node.type === 'heading-three' ||
+        node.type === 'heading-four' ||
+        node.type === 'heading-five' ||
+        node.type === 'heading-six')
+    ) {
+      return {
+        ...node,
+        headingId: node.headingId || `heading-${uuidv4()}`,
+        children: assignHeadingIds(node.children || []),
+      };
+    } else if (node.children) {
+      return {
+        ...node,
+        children: assignHeadingIds(node.children),
+      };
+    }
+    return node;
+  });
 }
 
 export default RichTextEditor;
