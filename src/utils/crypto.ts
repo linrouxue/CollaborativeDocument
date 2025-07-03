@@ -1,11 +1,11 @@
 // utils/crypto.js
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
-const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY as string
+const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY as string;
 // 初始化密钥
 const KEY = Buffer.from(ENCRYPTION_KEY, 'utf8'); // 32字节密钥
 
 // 加密（返回Base64URL）
-export function encrypt(data : string) {
+export function encrypt(data: string) {
   const iv = randomBytes(12); // GCM推荐12字节
   const cipher = createCipheriv('aes-256-gcm', KEY, iv);
   let encrypted = cipher.update(data, 'utf8', 'base64');
@@ -19,7 +19,7 @@ export function encrypt(data : string) {
 }
 
 // 解密
-export function decrypt(encrypted : string) {
+export function decrypt(encrypted: string) {
   const data = Buffer.from(encrypted.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
   const iv = data.subarray(0, 12);
   const tag = data.subarray(12, 28);

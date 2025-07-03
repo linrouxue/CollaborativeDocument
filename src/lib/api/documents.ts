@@ -72,7 +72,7 @@ export const getKnowledgeBaseTree = async (
 ): Promise<GetKnowledgeBaseTreeResponse> => {
   try {
     const res = await javaAxiosInstance.get(`/api/document/tree`, {
-      params: { 'id': `kid${knowledgeBaseId}` },
+      params: { id: `kid${knowledgeBaseId}` },
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     // console.log(res)
@@ -83,12 +83,10 @@ export const getKnowledgeBaseTree = async (
   }
 };
 
-export const documentSummary = async (
-  documentId: number
-): Promise<any> => {
+export const documentSummary = async (documentId: number): Promise<any> => {
   try {
     const res = await javaAxiosInstance.get(`/api/chat`, {
-      params: { 'documentId': documentId },
+      params: { documentId: documentId },
     });
     // console.log(res)
     // console.log('获取知识库文档树:', res.data);

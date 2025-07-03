@@ -1,6 +1,6 @@
 'use client';
 import { Table, Tag, Button, Popconfirm, message, Avatar, Space, Tooltip, Modal } from 'antd';
-import { useMemo, useState, useEffect  } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import styles from './RecentTable.module.css';
 import { CloudOutlined } from '@ant-design/icons';
@@ -126,19 +126,18 @@ export default function Home() {
     }
   };
 
-  const handleBatchDelete = async() => {
+  const handleBatchDelete = async () => {
     console.log('批量删除，选中的keys:', selectedRowKeys);
     // 记录要删除的keys
     const recordsToDelete = selectedRowKeys;
     console.log('要删除的记录:', recordsToDelete);
     // 调用删除接口
-    const result = await deleteRecentAccess(recordsToDelete.map(key => Number(key)));
+    const result = await deleteRecentAccess(recordsToDelete.map((key) => Number(key)));
     if (result && result.success) {
       message.success('批量删除成功');
       await fetchRecentAccess();
     }
   };
-
 
   const [shareVisible, setShareVisible] = useState(false);
   const [shareRecord, setShareRecord] = useState<RecentAccessItem | null>(null);
@@ -179,21 +178,20 @@ export default function Home() {
       render: (_: string, record: any) => (
         <div>
           <div className="font-bold">{record.name}</div>
-          <div className="text-xs text-gray-500" style={{marginTop: 4}}>
-            
+          <div className="text-xs text-gray-500" style={{ marginTop: 4 }}>
             {record.knowledgeBaseId && (
               <div>
-              <CloudOutlined style={{marginRight: 4, color: '#1890ff'}}/>
-              <Link
-              href={`/Home/knowledge/${record.knowledgeBaseId || record.knowledgeBaseName}`}
-              style={{ color: '#1890ff', textDecoration: 'none', cursor: 'pointer' }}
-              onClick={e => e.stopPropagation()}
-            >
-              {record.knowledgeBaseName}
-            </Link>
-            </div>)}
+                <CloudOutlined style={{ marginRight: 4, color: '#1890ff' }} />
+                <Link
+                  href={`/Home/knowledge/${record.knowledgeBaseId || record.knowledgeBaseName}`}
+                  style={{ color: '#1890ff', textDecoration: 'none', cursor: 'pointer' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {record.knowledgeBaseName}
+                </Link>
+              </div>
+            )}
           </div>
-          
         </div>
       ),
     },
@@ -204,7 +202,7 @@ export default function Home() {
       align: 'center',
       render: (members: string[]) => {
         // 封装成组件
-        
+
         // if (!members || members.length === 0) return '-';
         // const name = members[0];
         // const colorList = ['#f56a00', '#7265e6', '#ffbf00', '#00a2ae', '#1890ff'];
@@ -235,28 +233,28 @@ export default function Home() {
       align: 'center',
       render: (_: any, record: any) => (
         <div>
-        <Popconfirm
-          title="确定要删除这条记录吗？"
-          onConfirm={() => handleDelete(record.key.toString())}
-          okText="删除"
-          cancelText="取消"
-        >
-        <Tooltip title="删除">
-        <Button type="link" icon={<DeleteOutlined />} onClick={e => e.stopPropagation()}/>
-        </Tooltip>
-        </Popconfirm>
-        
-        <Tooltip title="分享" >
-        <Button
-          type="link"
-          icon={<ExportOutlined />}
-          onClick={e => {
-          e.stopPropagation();
-          handleShare(record);
-  }}
-/>
-        </Tooltip>
-      </div>
+          <Popconfirm
+            title="确定要删除这条记录吗？"
+            onConfirm={() => handleDelete(record.key.toString())}
+            okText="删除"
+            cancelText="取消"
+          >
+            <Tooltip title="删除">
+              <Button type="link" icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
+            </Tooltip>
+          </Popconfirm>
+
+          <Tooltip title="分享">
+            <Button
+              type="link"
+              icon={<ExportOutlined />}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShare(record);
+              }}
+            />
+          </Tooltip>
+        </div>
       ),
     },
   ];
@@ -296,7 +294,7 @@ export default function Home() {
             // window.location.href = `/Home/docs/${record.key}`;
             window.location.href = `/documents/${record.documentId}`;
           },
-          style: { cursor: 'pointer' }
+          style: { cursor: 'pointer' },
         })}
       />
       <ShareDocument
@@ -304,7 +302,6 @@ export default function Home() {
         documentId={shareRecord?.documentId || 0}
         onCancel={() => setShareVisible(false)}
       />
-      
     </div>
   );
 }

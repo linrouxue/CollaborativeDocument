@@ -15,7 +15,6 @@ import { useMessage } from '@/hooks/useMessage';
 import { getAccessToken } from '@/lib/api/tokenManager';
 import { documentSummary } from '@/lib/api/documents';
 
-
 export default function DocPage() {
   const params = useParams();
   const router = useRouter();
@@ -24,7 +23,7 @@ export default function DocPage() {
   const token = getAccessToken();
 
   // 固定写死的SSE和触发URL
-  const SSE_URL = "http://119.29.229.71:8585/api/sse/connect/9/1";
+  const SSE_URL = 'http://119.29.229.71:8585/api/sse/connect/9/1';
   // const SUMMARY_TRIGGER_URL = "http://localhost:8585/api/chat?documentId=1";
 
   const {
@@ -38,7 +37,7 @@ export default function DocPage() {
   const [onlineUsers, setOnlineUsers] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // 文档总结状态
   const [summary, setSummary] = useState('');
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
@@ -101,19 +100,19 @@ export default function DocPage() {
       try {
         // 1. 创建EventSource连接
         eventSourceRef.current = new EventSource(SSE_URL, {
-          withCredentials: true // 允许跨域凭证
+          withCredentials: true, // 允许跨域凭证
         });
-        
+
         // 2. 处理接收到的消息
         eventSourceRef.current.onmessage = (event) => {
           try {
-            setSummary(prev => prev + event.data);
+            setSummary((prev) => prev + event.data);
             setIsSummaryLoading(false); // 收到数据后停止加载状态
           } catch (parseError) {
             console.error('SSE数据解析错误:', parseError);
           }
         };
-        
+
         // 3. 错误处理
         eventSourceRef.current.onerror = (error) => {
           console.error('SSE连接错误:', error);
@@ -129,7 +128,7 @@ export default function DocPage() {
         setIsSummaryLoading(false);
       }
     }
-    
+
     // 组件卸载时关闭连接
     return () => {
       eventSourceRef.current?.close();
@@ -147,10 +146,10 @@ export default function DocPage() {
     setIsSummaryLoading(true);
     setSummary('');
     setSummaryError(null);
-    
+
     // 触发文档总结生成
     // fetch(SUMMARY_TRIGGER_URL, {
-    //   headers: { 
+    //   headers: {
     //     'Content-Type': 'application/json',
     //     'Authorization': `Bearer ${getAccessToken()}`
     //   }
@@ -163,7 +162,7 @@ export default function DocPage() {
     //   setSummaryError('无法启动文档总结');
     //   setIsSummaryLoading(false);
     // });
-    documentSummary(1)
+    documentSummary(1);
   };
 
   // 重试获取文档总结
@@ -199,7 +198,14 @@ export default function DocPage() {
   if (loading) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: colorBgContainer }}>
+        <Content
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: colorBgContainer,
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '18px', marginBottom: '12px' }}>正在连接到协同服务器...</div>
           </div>
@@ -212,10 +218,21 @@ export default function DocPage() {
   if (error) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
-        <Content style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: colorBgContainer }}>
+        <Content
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: colorBgContainer,
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{error}</div>
-            <Button type="primary" onClick={() => window.location.reload()} style={{ marginRight: '12px' }}>
+            <Button
+              type="primary"
+              onClick={() => window.location.reload()}
+              style={{ marginRight: '12px' }}
+            >
               重新连接
             </Button>
             <Button onClick={handleBackToHome}>返回主页</Button>
@@ -228,13 +245,15 @@ export default function DocPage() {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Content style={{ margin: '16px', marginTop: '10px' }}>
-        <div style={{
-          height: 'calc(100vh - 112px)',
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
+        <div
+          style={{
+            height: 'calc(100vh - 112px)',
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           {/* 文档编辑器区域 */}
           {connected && sharedType && provider ? (
             <div style={{ flex: 1, minHeight: '60%' }}>
@@ -246,35 +265,41 @@ export default function DocPage() {
               />
             </div>
           ) : (
-            <div style={{ 
-              flex: 1, 
-              display: 'flex', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              color: '#999' 
-            }}>
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                color: '#999',
+              }}
+            >
               <p>正在连接到协同服务器...</p>
             </div>
           )}
-          
+
           {/* 文档总结区域 */}
-          <div style={{ 
-            borderTop: '1px solid #f0f0f0',
-            padding: '16px',
-            backgroundColor: '#fafafa',
-            maxHeight: '40%',
-            overflowY: 'auto'
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              marginBottom: '12px'
-            }}>
+          <div
+            style={{
+              borderTop: '1px solid #f0f0f0',
+              padding: '16px',
+              backgroundColor: '#fafafa',
+              maxHeight: '40%',
+              overflowY: 'auto',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+              }}
+            >
               <h3 style={{ margin: 0 }}>文档总结</h3>
               <div>
-                <Button 
-                  type="primary" 
+                <Button
+                  type="primary"
                   onClick={triggerSummaryRequest}
                   size="small"
                   style={{ marginRight: '8px' }}
@@ -282,9 +307,9 @@ export default function DocPage() {
                 >
                   {summary ? '重新生成' : '生成总结'}
                 </Button>
-                <Button 
-                  size="small" 
-                  icon={<CloseOutlined />} 
+                <Button
+                  size="small"
+                  icon={<CloseOutlined />}
                   onClick={() => {
                     setIsSummaryLoading(false);
                     setSummary('');
@@ -293,18 +318,14 @@ export default function DocPage() {
                 />
               </div>
             </div>
-            
+
             {summaryError ? (
-              <Alert 
-                message={summaryError} 
-                type="error" 
+              <Alert
+                message={summaryError}
+                type="error"
                 showIcon
                 action={
-                  <Button 
-                    size="small" 
-                    type="primary"
-                    onClick={handleRetrySummary}
-                  >
+                  <Button size="small" type="primary" onClick={handleRetrySummary}>
                     重试
                   </Button>
                 }
@@ -315,21 +336,21 @@ export default function DocPage() {
                 <span>正在生成文档总结...</span>
               </div>
             ) : summary ? (
-              <div style={{ 
-                whiteSpace: 'pre-wrap',
-                lineHeight: 1.6,
-                padding: '8px',
-                borderRadius: '4px',
-                backgroundColor: '#fff',
-                border: '1px solid #eee'
-              }}>
+              <div
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.6,
+                  padding: '8px',
+                  borderRadius: '4px',
+                  backgroundColor: '#fff',
+                  border: '1px solid #eee',
+                }}
+              >
                 {summary}
               </div>
             ) : (
               <div style={{ color: '#999', textAlign: 'center', padding: '16px' }}>
-                {sseConnected 
-                  ? "请点击上方按钮生成文档总结" 
-                  : "正在建立SSE连接..."}
+                {sseConnected ? '请点击上方按钮生成文档总结' : '正在建立SSE连接...'}
               </div>
             )}
           </div>

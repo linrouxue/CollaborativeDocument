@@ -2,10 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkPermission } from '@/utils/permissionCheck';
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   // 1. 权限校验
   const { pass, response } = await checkPermission(request);
   if (!pass) return response;
@@ -22,7 +19,7 @@ export async function POST(
     // 3. 保存到数据库
     await prisma.t_document.update({
       where: { id },
-      data: { content: buffer, update_time: new Date() }
+      data: { content: buffer, update_time: new Date() },
     });
 
     // 4. 返回保存结果

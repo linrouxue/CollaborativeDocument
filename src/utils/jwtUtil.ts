@@ -8,8 +8,8 @@ export class TokenParser {
   constructor(requestOrToken: Request | string) {
     if (typeof requestOrToken === 'string') {
       // 直接传入 token 字符串
-      this.token = requestOrToken.startsWith('Bearer ') 
-        ? requestOrToken.substring(7) 
+      this.token = requestOrToken.startsWith('Bearer ')
+        ? requestOrToken.substring(7)
         : requestOrToken;
     } else {
       // 传入 Request 对象
@@ -18,9 +18,7 @@ export class TokenParser {
         : (requestOrToken.headers.get('Authorization') as string | undefined) || null;
 
       // 去除 Bearer 前缀
-      this.token = rawToken?.startsWith('Bearer ') 
-        ? rawToken.substring(7) 
-        : rawToken;
+      this.token = rawToken?.startsWith('Bearer ') ? rawToken.substring(7) : rawToken;
     }
   }
 
@@ -32,17 +30,17 @@ export class TokenParser {
     // console.log('this.token', this.token);
     if (this.token == null) return null;
     try {
-        // console.log("开始解析token")
-        // console.log("密钥：", process.env.JWT_SECRET)
-        const JWT_SECRET = "iEarbO7cnmDMqcUxVeojNChxlEYHcrdiyDDzL5QZ7Es="
-        // const JWT_SECRET = process.env.JWT_SECRET;
+      // console.log("开始解析token")
+      // console.log("密钥：", process.env.JWT_SECRET)
+      const JWT_SECRET = 'iEarbO7cnmDMqcUxVeojNChxlEYHcrdiyDDzL5QZ7Es=';
+      // const JWT_SECRET = process.env.JWT_SECRET;
       const secret = new TextEncoder().encode(JWT_SECRET as string);
-    //   console.log("secret", secret);
+      //   console.log("secret", secret);
       const { payload } = await jwtVerify(this.token, secret);
-    //   console.log('payload', payload);
+      //   console.log('payload', payload);
       return payload.userId as number;
     } catch (e) {
-        console.log("解析token失败", e)
+      console.log('解析token失败', e);
       return null;
     }
   }

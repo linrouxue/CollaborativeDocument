@@ -2,10 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkPermission } from '@/utils/permissionCheck';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   // 校验权限
   const { pass, response, user, minPermission, document } = await checkPermission(request);
   // 不通过直接返回
@@ -17,7 +14,7 @@ export async function GET(
     }
     const doc = await prisma.t_document.findUnique({
       where: { id },
-      select: { content: true }
+      select: { content: true },
     });
 
     if (!doc || !doc.content) {
@@ -28,8 +25,8 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="doc-${id}.bin"`
-      }
+        'Content-Disposition': `attachment; filename="doc-${id}.bin"`,
+      },
     });
   } catch (e) {
     console.error('Error fetching document binary:', e);

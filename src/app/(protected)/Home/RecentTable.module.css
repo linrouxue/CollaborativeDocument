@@ -19,4 +19,3 @@
 .recentTable :global(.ant-table-row-selected > td) {
   background: rgb(228 242 255 / 69%) !important;
 }
-

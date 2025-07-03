@@ -37,11 +37,7 @@ const EditorBody: React.FC<EditorBodyProps> = ({
         toggleCollapsed={toggleSidebar}
         editorValue={editorValue || []}
       />
-      <EditorContentArea
-        editor={editor}
-        decorate={decorate}
-        renderLeaf={renderLeaf}
-      />
+      <EditorContentArea editor={editor} decorate={decorate} renderLeaf={renderLeaf} />
     </div>
   );
 };
