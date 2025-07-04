@@ -288,6 +288,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   }, [knowledgeBaseId, documentId]);
 
   // 初始化Yjs协同编辑（只在有documentId时）
+  //  新增全局同步块Yjs文档的状态
+  const [syncBlockMap, setSyncBlockMap] = useState<Y.Map<any> | null>(null);
+  const [syncBlockProvider, setSyncBlockProvider] = useState<WebsocketProvider | null>(null);
   useEffect(() => {
     if (!documentId) {
       // 重置编辑器状态
@@ -537,6 +540,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 isSaving={isSaving}
                 hasUnsavedChanges={hasUnsavedChanges}
                 lastSavedTime={lastSavedTime}
+                syncBlockMap={syncBlockMap}
               />
             </div>
           ) : (
