@@ -59,6 +59,11 @@ interface RichTextEditorProps {
   provider: WebsocketProvider;
   onlineUsers: number;
   connected: boolean;
+  initialContent?: Descendant[];
+  onContentChange?: (content: Descendant[]) => void;
+  isSaving?: boolean;
+  hasUnsavedChanges?: boolean;
+  lastSavedTime?: Date | null;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -66,6 +71,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   provider,
   onlineUsers,
   connected,
+  initialContent,
+  onContentChange,
+  isSaving,
+  hasUnsavedChanges,
+  lastSavedTime,
 }) => {
   const { user } = useAuth();
 
@@ -100,24 +110,39 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return e;
   }, [sharedType, provider, userName, randomColor]);
 
-  const [value, setValue] = useState<Descendant[]>(initialValue);
+  const [value, setValue] = useState<Descendant[]>(initialContent);
+
+  // 处理内容变化并通知父组件
+  const handleChange = useCallback((newValue: Descendant[]) => {
+    setValue(newValue);
+    if (onContentChange) {
+      onContentChange(newValue);
+    }
+  }, [onContentChange]);
+
 
   // 连接编辑器
   useEffect(() => {
     YjsEditor.connect(editor);
     // 只在 Yjs 文档为空时插入初始值
     if (sharedType.toString().length === 0) {
-      Transforms.insertNodes(editor, initialValue, { at: [0] });
+      Transforms.insertNodes(editor, initialContent, { at: [0] });
     }
     return () => YjsEditor.disconnect(editor);
   }, [editor, sharedType]);
 
   return (
     <div className="border rounded-lg bg-white p-4 min-h-[400px]">
-      <Slate editor={editor} initialValue={value} onChange={setValue}>
+      <Slate editor={editor} initialValue={value} onChange={handleChange}>
         <EditorHeaderToolbar />
         <RichEditable editor={editor} value={value} />
-        <EditorFooter connected={connected} onlineUsers={onlineUsers} />
+        <EditorFooter 
+          connected={connected} 
+          onlineUsers={onlineUsers}
+          isSaving={isSaving}
+          hasUnsavedChanges={hasUnsavedChanges}
+          lastSavedTime={lastSavedTime}
+        />
       </Slate>
     </div>
   );

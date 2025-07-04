@@ -95,3 +95,35 @@ export const documentSummary = async (documentId: number): Promise<any> => {
     throw error;
   }
 };
+
+export const getDocumentContentById = async (
+  documentId: number
+): Promise<any> => {
+  try {
+    const res = await javaAxiosInstance.get(`/api/document/${documentId}`, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export const saveDocumentContentById = async (
+  documentId: number,
+  content: string
+): Promise<any> => {
+  try {
+    const res = await javaAxiosInstance.put(`/api/document/update`, {
+      documentId: documentId,
+      content: content,
+      title: '',
+      cover: ''
+    }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+} 

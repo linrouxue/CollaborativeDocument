@@ -75,6 +75,13 @@ export async function checkPermission(request: NextRequest) {
   // 5. 查文档
   const document = await prisma.t_document.findUnique({
     where: { id: parseInt(documentId) },
+    select: {
+      id: true,
+      parent_id: true,
+      knowledge_base_id: true,
+      user_id: true,
+      // 不选择 title 和 content 字段，只获取权限检查需要的字段
+    },
   });
   console.log('[权限校验] 查询文档:', document);
   if (!document) {
@@ -92,6 +99,13 @@ export async function checkPermission(request: NextRequest) {
     ancestorDocumentId.push(tempDocument.parent_id);
     const parentDoc = await prisma.t_document.findUnique({
       where: { id: tempDocument.parent_id, user_id: userId },
+      select: {
+        id: true,
+        parent_id: true,
+        knowledge_base_id: true,
+        user_id: true,
+        // 只选择必要的字段，避免content和title的null问题
+      },
     });
     if (!parentDoc) break;
     tempDocument = parentDoc;
