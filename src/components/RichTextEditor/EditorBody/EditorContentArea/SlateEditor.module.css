@@ -1,0 +1,32 @@
+.syncBlockContainer {
+  border: 2px solid #1890ff;
+  background: #e6f7ff;
+  border-radius: 6px;
+  padding: 8px;
+  margin: 8px 0;
+  position: relative;
+  transition: box-shadow 0.2s;
+}
+.syncBlockFocused {
+  box-shadow: 0 0 0 2px #91d5ff;
+  outline: none;
+}
+.syncBlockToolbar {
+  position: absolute;
+  top: -18px;
+  right: 8px;
+  z-index: 10;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 2px 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.syncBlockToolbarBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}

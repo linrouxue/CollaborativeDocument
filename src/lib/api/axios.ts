@@ -26,6 +26,28 @@ function responseInterceptor(response: AxiosResponse) {
   return response;
 }
 
+// 刷新token带重试
+async function refreshAccessTokenWithRetry(retryCount = 3, delay = 1000) {
+  let lastError;
+  for (let i = 0; i < retryCount; i++) {
+    try {
+      const res = await axiosInstance.post('/auth/refresh');
+      const newToken = res.data?.accessToken;
+      setAccessToken(newToken);
+      return newToken;
+    } catch (err: any) {
+      lastError = err;
+      // 只对网络错误/超时重试，401/403 直接 break
+      if (err.response && [401, 403].includes(err.response.status)) {
+        break;
+      }
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  setAccessToken(null);
+  return Promise.reject(lastError);
+}
+
 // 全局唯一的刷新标志
 const refreshFlag = {
   isRefreshing: false,
@@ -46,9 +68,8 @@ async function errorInterceptor(error: AxiosError, instance: any) {
       refreshFlag.isRefreshing = true;
       refreshFlag.refreshPromise = (async () => {
         try {
-          const res = await axiosInstance.post('/auth/refresh');
-          const newToken = res.data?.accessToken;
-          setAccessToken(newToken);
+          // 用重试机制
+          const newToken = await refreshAccessTokenWithRetry(3, 1000);
           return newToken;
         } catch (refreshError) {
           setAccessToken(null);

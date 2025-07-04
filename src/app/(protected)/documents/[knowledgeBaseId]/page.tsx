@@ -45,6 +45,10 @@ export default function DocPage() {
   const [sseConnected, setSseConnected] = useState(false); // 新增状态：跟踪SSE连接状态
   const eventSourceRef = useRef<EventSource | null>(null);
 
+  //  新增全局同步块Yjs文档的状态
+  const [syncBlockMap, setSyncBlockMap] = useState<Y.Map<any> | null>(null);
+  const [syncBlockProvider, setSyncBlockProvider] = useState<WebsocketProvider | null>(null);
+
   const message = useMessage();
 
   // 返回主页
@@ -58,6 +62,7 @@ export default function DocPage() {
     setError(null);
 
     try {
+      // 普通文档的Yjs连接
       const yDoc = new Y.Doc();
       const yXmlText = yDoc.get('slate', Y.XmlText);
       const yProvider = new WebsocketProvider('ws://localhost:1234', knowledgeBaseId, yDoc);
@@ -82,10 +87,27 @@ export default function DocPage() {
       setSharedType(yXmlText);
       setProvider(yProvider);
 
+      // 连接全局同步块Yjs文档（global-sync-blocks房间）
+      // 原理：所有文档页面都连接这个房间，实现跨文档同步块共享
+      const syncBlockDoc = new Y.Doc();
+      const syncBlockProvider = new WebsocketProvider(
+        'ws://localhost:1234',
+        'global-sync-blocks',
+        syncBlockDoc
+      );
+      // 用Y.Map存储所有同步块
+      const syncBlockMap = syncBlockDoc.getMap('syncBlocks');
+      setSyncBlockMap(syncBlockMap);
+      setSyncBlockProvider(syncBlockProvider);
+
+      // 清理函数
       return () => {
         awareness.off('change', updateOnlineUsers);
         yProvider.destroy();
         yDoc.destroy();
+        // 清理全局同步块连接
+        syncBlockProvider.destroy();
+        syncBlockDoc.destroy();
       };
     } catch (err) {
       setError('初始化协同编辑器失败');
@@ -262,6 +284,7 @@ export default function DocPage() {
                 provider={provider}
                 onlineUsers={onlineUsers}
                 connected={connected}
+                syncBlockMap={syncBlockMap}
               />
             </div>
           ) : (
