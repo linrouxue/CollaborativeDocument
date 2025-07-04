@@ -95,3 +95,18 @@ export const documentSummary = async (documentId: number): Promise<any> => {
     throw error;
   }
 };
+
+
+export const documentAdd = async (documentId: number): Promise<any> => {
+  try {
+    const obj={
+      "parentId": documentId
+    }
+    const res = await javaAxiosInstance.post(`/api/document/add`, obj);
+    // console.log(res)
+    // console.log('获取知识库文档树:', res.data);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};

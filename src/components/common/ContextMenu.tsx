@@ -1,10 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 
+import { documentAdd } from '@/lib/api/documents';
+// import { showAlert } from '@/lib/utils/alert';
+
 interface ContextMenuProps {
   visible: boolean;
   x: number;
   y: number;
-  docId: string;
+  docId: number;
   onClose: () => void;
 }
 
@@ -24,8 +27,10 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose
 
   if (!visible) return null;
 
-  const addDocs = (docId: string) => {
+  const addDocs = (docId: number) => {
     console.log('新建');
+    documentAdd(docId)
+    // showAlert('新建文档成功');
   };
   const deleteDocs = (docId: string) => {
     console.log('删除');
