@@ -26,11 +26,11 @@ import {
 } from '@slate-yjs/react';
 import { addAlpha } from '@/utils/addAlpha';
 import { useAuth } from '@/contexts/AuthContext';
+import { nanoid } from 'nanoid';
 
-type CustomElement = {
-  type: 'paragraph';
-  children: CustomText[];
-};
+type CustomElement =
+  | { type: 'paragraph'; children: CustomText[] }
+  | { type: 'sync-block'; syncBlockId: string; children: CustomText[] };
 
 type CustomText = {
   text: string;
@@ -64,6 +64,7 @@ interface RichTextEditorProps {
   isSaving?: boolean;
   hasUnsavedChanges?: boolean;
   lastSavedTime?: Date | null;
+  syncBlockMap?: any;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -76,6 +77,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   isSaving,
   hasUnsavedChanges,
   lastSavedTime,
+  syncBlockMap,
 }) => {
   const { user } = useAuth();
 
@@ -131,11 +133,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => YjsEditor.disconnect(editor);
   }, [editor, sharedType]);
 
+  // 插入同步块按钮逻辑
+  const handleInsertSyncBlock = () => {
+    if (!syncBlockMap) return;
+    // 1. 生成唯一ID
+    const syncBlockId = `syncBlock-${nanoid(8)}`;
+    // 2. 在syncBlockMap中创建内容
+    const yMap = new Y.Map();
+    yMap.set('content', new Y.Text());
+    syncBlockMap.set(syncBlockId, yMap);
+    // 3. 插入sync-block节点
+    Transforms.insertNodes(editor, {
+      type: 'sync-block',
+      syncBlockId,
+      children: [{ text: '' }],
+    });
+  };
+
   return (
     <div className="border rounded-lg bg-white p-4 min-h-[400px]">
       <Slate editor={editor} initialValue={value} onChange={handleChange}>
-        <EditorHeaderToolbar />
-        <RichEditable editor={editor} value={value} />
+        <EditorHeaderToolbar onInsertSyncBlock={handleInsertSyncBlock} />
+        <RichEditable editor={editor} value={value} syncBlockMap={syncBlockMap} />
         <EditorFooter 
           connected={connected} 
           onlineUsers={onlineUsers}
@@ -149,7 +168,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 };
 
 // 新增子組件 RichEditable，放在 <Slate> 裡面調用 hooks
-function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }) {
+function RichEditable({
+  editor,
+  value,
+  syncBlockMap,
+}: {
+  editor: Editor;
+  value: Descendant[];
+  syncBlockMap?: any;
+}) {
   const decorate = useDecorateRemoteCursors();
   const renderLeaf = useCallback((props: any) => {
     getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
@@ -225,7 +252,13 @@ function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }
         `,
         }}
       />
-      <EditorBody editor={editor} decorate={decorate} renderLeaf={renderLeaf} editorValue={value} />
+      <EditorBody
+        editor={editor}
+        decorate={decorate}
+        renderLeaf={renderLeaf}
+        editorValue={value}
+        syncBlockMap={syncBlockMap}
+      />
     </>
   );
 }

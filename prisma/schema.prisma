@@ -35,7 +35,7 @@ model t_document_comment {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model t_document_permission {
-  id          Int      @id
+  id          Int      @id @default(autoincrement())
   user_id     Int
   document_id Int
   permission  Int
