@@ -7,12 +7,15 @@ import LoginForm from '../../../components/loginPage/LoginForm';
 import RegisterForm from '../../../components/loginPage/RegisterForm';
 import { StyledLayout, StyledCard, StyledTitle } from './LoginRegister.styles';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
 
 export default function LoginPage() {
+  // 获取callback参数
+  const searchParams = useSearchParams();
+  const callback = searchParams.get('callback');
   const [formType, setFormType] = useState<'login' | 'register' | 'forgot'>('login');
   const [mounted, setMounted] = useState(false);
   const { isAuthenticated, loading } = useAuth();
@@ -24,7 +27,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (mounted && !loading && isAuthenticated) {
-      router.replace('/Home');
+      // router.replace('/Home');
     }
   }, [mounted, loading, isAuthenticated, router]);
 

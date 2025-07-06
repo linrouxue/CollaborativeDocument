@@ -21,6 +21,7 @@ interface EditorBodyProps {
   onDelete: (threadId: string) => void;
   onAddThread: (range: Range, content: string) => void;
   onToggleCollapse?: (collapsed: boolean) => void;
+  ydoc?: any;
 }
 
 const EditorBody: React.FC<EditorBodyProps> = ({
@@ -35,6 +36,7 @@ const EditorBody: React.FC<EditorBodyProps> = ({
   onDelete,
   onAddThread,
   onToggleCollapse,
+  ydoc,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 

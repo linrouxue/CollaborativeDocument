@@ -9,17 +9,11 @@ import React, {
   useEffect,
   ReactNode,
   useCallback,
-  useRef,
 } from 'react';
-import {
-  getCurrentUser,
-  login as loginApi,
-  logout as logoutApi,
-  refreshAccessToken,
-} from '@/lib/api/auth';
+import { getCurrentUser, login as loginApi, logout as logoutApi } from '@/lib/api/auth';
 import { useRouter } from 'next/navigation';
 import { setAccessToken } from '@/lib/api/tokenManager';
-import { useAlert } from '@/contexts/AlertContext';
+import { useMessage } from '@/hooks/useMessage';
 
 interface User {
   id: number;
@@ -31,9 +25,9 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, callback?: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  // refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,109 +35,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hasTriedRefresh, setHasTriedRefresh] = useState(false);
   const router = useRouter();
-  const { showAlert } = useAlert();
-  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const message = useMessage();
 
-  // 清除定時器
-  const clearRefreshTimer = () => {
-    if (refreshTimerRef.current) {
-      clearTimeout(refreshTimerRef.current);
-      refreshTimerRef.current = null;
-    }
-  };
-
-  // 設置定時刷新 token（每 14 分鐘刷新一次，確保在 15 分鐘過期前刷新）
-  const setupTokenRefresh = useCallback(() => {
-    clearRefreshTimer();
-    // 每 14 分鐘刷新一次 token
-    refreshTimerRef.current = setTimeout(async () => {
-      try {
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-          console.log('✅ Token 自動刷新成功');
-          // 重新設置定時器
-          setupTokenRefresh();
-        } else {
-          console.log('❌ Token 自動刷新失敗');
-          // 如果刷新失敗，嘗試獲取用戶信息
-          await refreshUser();
-        }
-      } catch (error) {
-        console.error('Token 自動刷新錯誤:', error);
-        await refreshUser();
-      }
-    }, 14 * 60 * 1000); // 14 分鐘
-  }, []);
-
-  // 刷新 token 並獲取用戶信息
-  const refreshUser = useCallback(async () => {
-    setLoading(true);
-    try {
-      // 自動刷新 accessToken
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        // 拿到新 token 后獲取用戶信息
-        const res = await getCurrentUser();
-        if (res && res.success && res.data && res.data.user) {
-          setUser(res.data.user);
-          // 設置定時刷新
-          setupTokenRefresh();
-        } else {
-          // 只有在已經嘗試過刷新且確實無法獲取用戶信息時才清空
-          if (hasTriedRefresh) {
-            setUser(null);
-            showAlert('登錄已失效，請重新登錄', 'warning');
-            router.push('/login');
-          }
-        }
-      } else {
-        // 只有在已經嘗試過刷新且確實無法獲取新 token 時才清空
-        if (hasTriedRefresh) {
-          setUser(null);
-          showAlert('登錄已失效，請重新登錄', 'warning');
-          router.push('/login');
-        }
-      }
-    } catch (error) {
-      // 只有在已經嘗試過刷新且確實發生錯誤時才清空
-      if (hasTriedRefresh) {
-        setUser(null);
-        showAlert('登錄已失效，請重新登錄', 'warning');
-        router.push('/login');
-      }
-    } finally {
-      setHasTriedRefresh(true);
-      setLoading(false);
-    }
-  }, [router, hasTriedRefresh, showAlert, setupTokenRefresh]);
-
-  // 登錄
-  const login = async (email: string, password: string) => {
+  // 登录
+  const login = async (email: string, password: string, callback?: string) => {
     setLoading(true);
     try {
       const res = await loginApi({ email, password });
       if (res && res.data && res.data.accessToken) {
-        // 登錄成功后用 accessToken 獲取用戶信息
+        // 登录成功后用 accessToken 获取用户信息
         const userRes = await getCurrentUser();
         if (userRes && userRes.data && userRes.data.user) {
           setUser(userRes.data.user);
-          // 設置定時刷新
-          setupTokenRefresh();
-          showAlert('登錄成功', 'success');
-          router.push('/Home');
+          message.success('登录成功');
+          // 根据callback跳转
+          if (callback) {
+            router.push(callback);
+          } else {
+            router.push('/Home');
+          }
         } else {
           setUser(null);
-          showAlert('獲取用戶信息失敗', 'error');
+          message.error('获取用户信息失败');
         }
       } else {
         setUser(null);
-        showAlert(res?.message || '登錄失敗', 'error');
+        message.error(res?.message || '登录失败');
       }
     } catch (error: any) {
       setUser(null);
-      showAlert(error?.message || '登錄失敗，請重試', 'error');
+      message.error(error?.message || '登录失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -156,35 +78,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await logoutApi();
       setUser(null);
       setAccessToken(null);
-      // 清除定時器
-      clearRefreshTimer();
-      showAlert('已退出登錄', 'info');
+      message.info('已退出登录');
       router.push('/login');
     } catch (error) {
-      showAlert('登出失敗，請重試', 'error');
+      message.error('登出失败，请重试');
     } finally {
       setLoading(false);
     }
   };
 
-  // 初始化時自動刷新 token 並獲取用戶信息
+  // // 初始化时自动刷新 token 并获取用户信息
+  // useEffect(() => {
+  //   refreshUser();
+  //   // eslint-disable-next-line
+  // }, []);
+
   useEffect(() => {
-    refreshUser();
-    
-    // 組件卸載時清除定時器
-    return () => {
-      clearRefreshTimer();
-    };
+    setLoading(true);
+    getCurrentUser()
+      .then((res) => {
+        if (res && res.success && res.data && res.data.user) {
+          setUser(res.data.user);
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
     // eslint-disable-next-line
   }, []);
-
   const value: AuthContextType = {
     user,
     loading,
     isAuthenticated: !!user,
     login,
     logout,
-    refreshUser,
+    // refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

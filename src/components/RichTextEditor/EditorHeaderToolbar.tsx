@@ -15,6 +15,7 @@ import {
   CodeOutlined,
   MinusOutlined,
   FontSizeOutlined,
+  PlusSquareOutlined,
 } from '@ant-design/icons';
 import { Transforms, Element as SlateElement, Range } from 'slate';
 
@@ -78,7 +79,7 @@ const toggleBlock = (editor: Editor, format: string) => {
     match: (n) =>
       !Editor.isEditor(n) &&
       SlateElement.isElement(n) &&
-      (n.type === 'numbered-list' || n.type === 'bulleted-list'),
+      ['numbered-list', 'bulleted-list'].includes((n as any).type),
     split: true,
   });
 
@@ -114,7 +115,15 @@ type CustomElement =
   | { type: 'code'; children: CustomText[] }
   | { type: 'divider'; children: CustomText[] };
 
-const EditorHeaderToolbar: React.FC = () => {
+interface EditorHeaderToolbarProps {
+  onInsertSyncBlock?: () => void;
+  onInsertRefBlock?: () => void;
+}
+
+const EditorHeaderToolbar: React.FC<EditorHeaderToolbarProps> = ({
+  onInsertSyncBlock,
+  onInsertRefBlock,
+}) => {
   const editor = useSlate();
 
   return (
@@ -202,6 +211,26 @@ const EditorHeaderToolbar: React.FC = () => {
         }}
         icon={<MinusOutlined style={{ fontSize: 18 }} />}
         title="分割线"
+      />
+      {/* 插入主块 */}
+      <ToolbarButton
+        active={false}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          if (onInsertSyncBlock) onInsertSyncBlock();
+        }}
+        icon={<PlusSquareOutlined style={{ fontSize: 18 }} />}
+        title="插入主块"
+      />
+      {/* 插入引用块 */}
+      <ToolbarButton
+        active={false}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          if (onInsertRefBlock) onInsertRefBlock();
+        }}
+        icon={<PlusSquareOutlined style={{ fontSize: 18 }} />}
+        title="插入引用块"
       />
       {/* 撤销/重做 */}
       <ToolbarButton

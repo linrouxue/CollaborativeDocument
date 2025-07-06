@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   createEditor,
   Descendant,
@@ -8,6 +8,7 @@ import {
   Transforms,
   Element as SlateElement,
   BaseEditor,
+  Node,
   Range,
 } from 'slate';
 import { Slate, withReact, ReactEditor, Editable } from 'slate-react';
@@ -32,10 +33,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useThreadedComments } from './comments/useThreadedComments';
 import CommentsSidebar from './comments/CommentsSidebar';
 
-type CustomElement = {
-  type: 'paragraph';
-  children: CustomText[];
-};
+import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
+import BlockSelector from './BlockSelector';
+import SyncBlockListener from './SyncBlockListener';
+import { useSyncBlockManager } from './useSyncBlockManager';
+
+type CustomElement =
+  | { type: 'paragraph'; children: CustomText[] }
+  | { type: 'sync-block'; syncBlockId: string; children: CustomText[] };
 
 type CustomText = {
   text: string;
@@ -64,6 +69,12 @@ interface RichTextEditorProps {
   provider: WebsocketProvider;
   onlineUsers: number;
   connected: boolean;
+  initialContent?: Descendant[];
+  onContentChange?: (content: Descendant[]) => void;
+  isSaving?: boolean;
+  hasUnsavedChanges?: boolean;
+  lastSavedTime?: Date | null;
+  documentId?: string; // 当前文档ID
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -71,6 +82,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   provider,
   onlineUsers,
   connected,
+  initialContent,
+  onContentChange,
+  isSaving,
+  hasUnsavedChanges,
+  lastSavedTime,
+  documentId,
 }) => {
   const { user } = useAuth();
 
@@ -105,34 +122,139 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return e;
   }, [sharedType, provider, userName, randomColor]);
 
-  const [value, setValue] = useState(assignHeadingIds(initialValue));
+  const [value, setValue] = useState<Descendant[]>(initialContent || []);
 
-  // 评论协同
-  const ydoc = useMemo(() => provider.doc, [provider]);
-  const { yThreadsMap, addThread, replyToThread, updateComment, deleteThread, getDecorations } =
-    useThreadedComments(editor, ydoc, String(userName));
+  const syncTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // 集成同步块 Hook
+  const {
+    handleInsertSyncBlock,
+    handleInsertRefBlock,
+    handleBlockSelect,
+    activeBlockId,
+    setActiveBlockId,
+    blockSelectorVisible,
+    setBlockSelectorVisible,
+  } = useSyncBlockManager(editor, documentId);
+
+  // 内容同步机制 - 使用全局管理器
+  const handleEditorSync = useCallback(() => {
+    if (!activeBlockId) return;
+
+    // 获取当前活跃块的内容
+    let activeContent = '';
+    for (const [node] of Node.nodes(editor)) {
+      if ((node as any).type === 'sync-block' && (node as any).syncBlockId === activeBlockId) {
+        activeContent = Node.string(node);
+        break;
+      }
+    }
+
+    if (activeContent) {
+      // 检查内容是否真的发生了变化
+      const currentGlobalContent = globalBlockManager.getBlockContent(activeBlockId);
+      if (currentGlobalContent !== activeContent) {
+        // 更新全局管理器中的内容
+        globalBlockManager.updateBlockContent(activeBlockId, activeContent);
+      }
+    }
+  }, [editor, activeBlockId]);
+
+  const debouncedSync = useCallback(() => {
+    if (syncTimeout.current) clearTimeout(syncTimeout.current);
+    syncTimeout.current = setTimeout(() => {
+      handleEditorSync();
+    }, 1000);
+  }, [handleEditorSync]);
+
+  // 统一的 onChange 处理函数
+  const handleChange = useCallback(
+    (newValue: Descendant[]) => {
+      setValue(newValue);
+
+      // 通知父组件
+      if (onContentChange) {
+        onContentChange(newValue);
+      }
+
+      // 同步块逻辑：记录当前活跃块ID
+      const { selection } = editor;
+      if (selection) {
+        for (const [node] of Editor.nodes(editor, { at: selection })) {
+          if ((node as any).type === 'sync-block') {
+            const blockId = (node as any).syncBlockId;
+            if (blockId !== activeBlockId) {
+              setActiveBlockId(blockId);
+            }
+            break;
+          } else {
+            setActiveBlockId(null);
+          }
+        }
+      }
+
+      // 只有在有活跃块时才同步
+      if (activeBlockId) {
+        debouncedSync();
+      }
+    },
+    [onContentChange, editor, activeBlockId, setActiveBlockId, debouncedSync]
+  );
+
+  // 初始化全局同步块管理器
+  useEffect(() => {
+    const initGlobalManager = async () => {
+      try {
+        await globalBlockManager.initialize();
+      } catch (error) {
+        console.error('全局同步块管理器初始化失败:', error);
+      }
+    };
+    initGlobalManager();
+  }, []);
 
   // 连接编辑器
   useEffect(() => {
     YjsEditor.connect(editor);
     // 只在 Yjs 文档为空时插入初始值
-    if (sharedType.toString().length === 0) {
-      Transforms.insertNodes(editor, initialValue, { at: [0] });
+    if (sharedType.toString().length === 0 && initialContent) {
+      Transforms.insertNodes(editor, initialContent, { at: [0] });
     }
     return () => YjsEditor.disconnect(editor);
-  }, [editor, sharedType]);
+  }, [editor, sharedType, initialContent]);
 
-  // 合并 decorate
-  const decorate = useCallback(
-    (entry: [any, any]) => {
-      const cursorDecorations = useDecorateRemoteCursors()(entry);
-      const commentDecorations = getDecorations(entry);
-      return [...cursorDecorations, ...commentDecorations];
-    },
-    [getDecorations]
+  return (
+    <div className="border rounded-lg bg-white p-4 min-h-[400px]">
+      <Slate editor={editor} initialValue={value} onChange={handleChange}>
+        <EditorHeaderToolbar
+          onInsertSyncBlock={handleInsertSyncBlock}
+          onInsertRefBlock={handleInsertRefBlock}
+        />
+        <RichEditable editor={editor} value={value} />
+        <EditorFooter
+          connected={connected}
+          onlineUsers={onlineUsers}
+          isSaving={isSaving}
+          hasUnsavedChanges={hasUnsavedChanges}
+          lastSavedTime={lastSavedTime}
+        />
+        {/* 同步块内容监听器 */}
+        <SyncBlockListener editor={editor} />
+      </Slate>
+
+      <BlockSelector
+        visible={blockSelectorVisible}
+        onCancel={() => setBlockSelectorVisible(false)}
+        onSelect={handleBlockSelect}
+        currentDocumentId={documentId || ''}
+      />
+    </div>
   );
+};
 
-  // 合并 renderLeaf
+// 重构 RichEditable 组件，回归官方推荐方案
+function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }) {
+  const decorate = useDecorateRemoteCursors();
   const renderLeaf = useCallback((props: any) => {
     let children = props.children;
     // 评论高亮
@@ -245,7 +367,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </Slate>
     </div>
   );
-};
+}
 
 // 修改 RichEditable 以支持外部传入 decorate/renderLeaf
 function RichEditable({

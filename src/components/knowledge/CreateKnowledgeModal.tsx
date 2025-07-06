@@ -1,8 +1,11 @@
-import { Modal, Form, Input, Upload, Tabs } from 'antd';
+import { Modal, Form, Input, Upload, Tabs, Button } from 'antd';
 import { useState, useEffect } from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import PermissionManagement from './PermissionManagement';
+import { newKnowledgeBase, updateKnowledgeBase } from '@/lib/api/knowledgeBase';
+import { uploadImage } from '@/lib/api/uploadImg';
+import { useMessage } from '@/hooks/useMessage';
 
 interface KnowledgeData {
   id?: string;
@@ -17,6 +20,7 @@ interface CreateKnowledgeModalProps {
   onSuccess: () => void;
   mode: 'create' | 'edit';
   initialData?: KnowledgeData;
+  knowledgeBaseId?: string | number;
 }
 
 export default function CreateKnowledgeModal({
@@ -25,10 +29,12 @@ export default function CreateKnowledgeModal({
   onSuccess,
   mode,
   initialData,
+  knowledgeBaseId,
 }: CreateKnowledgeModalProps) {
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [activeTab, setActiveTab] = useState('basic');
+  const message = useMessage();
 
   useEffect(() => {
     if (open && mode === 'edit' && initialData) {
@@ -56,17 +62,42 @@ export default function CreateKnowledgeModal({
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
+      let coverUrl = fileList[0]?.url || fileList[0]?.thumbUrl || '';
+      // 如果有新上传的图片，先上传图片
+      if (fileList[0]?.originFileObj) {
+        try {
+          coverUrl = await uploadImage(fileList[0].originFileObj as File);
+        } catch (e) {
+          throw e;
+        }
+      }
       const formData = {
         ...values,
-        cover: fileList[0]?.url || fileList[0]?.thumbUrl,
+        cover: coverUrl,
       };
-
-      console.log('表单值:', formData);
-      // TODO: 这里添加创建/编辑知识库的API调用
+      if (mode === 'create') {
+        // 创建知识库
+        await newKnowledgeBase({
+          name: formData.title,
+          description: formData.description,
+          img: formData.cover || '',
+        });
+        message.success('知识库创建成功');
+      } else if (mode === 'edit' && initialData?.id) {
+        // 编辑知识库
+        await updateKnowledgeBase({
+          knowledgeBaseId: Number(initialData.id),
+          name: formData.title,
+          description: formData.description,
+          img: formData.cover || '',
+        });
+        message.success('知识库编辑成功');
+      }
       handleCancel();
       onSuccess();
     } catch (error) {
-      console.error('表单验证失败:', error);
+      message.error(mode === 'create' ? '知识库创建失败' : '知识库编辑失败');
+      console.error('表单验证失败或知识库操作失败:', error);
     }
   };
 
@@ -132,12 +163,15 @@ export default function CreateKnowledgeModal({
         </Form>
       ),
     },
-    {
+  ];
+
+  if (mode === 'edit') {
+    items.push({
       key: 'permission',
       label: '权限管理',
-      children: <PermissionManagement />,
-    },
-  ];
+      children: <PermissionManagement knowledgeBaseId={Number(knowledgeBaseId)} />,
+    });
+  }
 
   return (
     <Modal
@@ -149,6 +183,18 @@ export default function CreateKnowledgeModal({
       cancelText="取消"
       width={800}
       maskClosable={false}
+      footer={
+        activeTab === 'basic'
+          ? [
+              <Button key="cancel" onClick={handleCancel}>
+                取消
+              </Button>,
+              <Button key="ok" type="primary" onClick={handleOk}>
+                {mode === 'create' ? '创建' : '保存'}
+              </Button>,
+            ]
+          : null
+      }
     >
       <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} />
     </Modal>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useState, useRef } from 'react';
+import React, { Suspense, useEffect, useState, useRef, useMemo } from 'react';
 import { ProLayout } from '@ant-design/pro-components';
 import {
   LogoutOutlined,
@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import SearchModal from '@/components/common/SearchModal';
 import ContextMenu from '@/components/common/ContextMenu';
 import { useContextMenu } from '@/components/common/useContextMenu';
+import { useKnowledgeBaseStore } from '@/store/knowledgeBaseStore';
 
 // export const metadata: Metadata = {
 //   title: "协同文档系统",
@@ -38,6 +39,27 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const { logout } = useAuth();
 
   const contextMenu = useContextMenu();
+
+  // 只取原始 list，避免 selector 里 map
+  const knowledgeBaseList = useKnowledgeBaseStore((state) => state.list);
+  const fetchKnowledgeBaseList = useKnowledgeBaseStore((state) => state.fetchList);
+
+  // 用 useMemo 派生菜单数据，保证引用稳定
+  const knowledgeMenus = useMemo(
+    () =>
+      knowledgeBaseList.map((item: any) => ({
+        path: `/documents/${item.knowledgeBaseId}`,
+        name: item.name,
+        key: `/documents/${item.knowledgeBaseId}`,
+        canContextMenu: false,
+      })),
+    [knowledgeBaseList]
+  );
+
+  // 页面初始化时拉取知识库列表
+  useEffect(() => {
+    fetchKnowledgeBaseList();
+  }, [fetchKnowledgeBaseList]);
 
   useEffect(() => {
     setMounted(true);
@@ -95,35 +117,22 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       path: '/Home/knowledge',
       name: '知识库',
       icon: <AppstoreOutlined />,
-      routes: [
-        {
-          path: '/documents/1',
-          name: '知识库1',
-        },
-        {
-          path: '/documents/2',
-          name: '知识库2',
-        },
-        {
-          path: '/documents/3',
-          name: '知识库3',
-        },
-      ],
+      routes: knowledgeMenus,
     },
     {
-      path: '/Home/docs',
+      path: '/documents/0',
       name: '文档库',
       icon: <FileOutlined />,
-      routes: [
-        {
-          path: '/documents/doc1',
-          name: '文件1',
-        },
-        {
-          path: '/documents/doc2',
-          name: '文件2',
-        },
-      ],
+      // routes: [
+      //   {
+      //     path: '/documents/doc1',
+      //     name: '文件1',
+      //   },
+      //   {
+      //     path: '/documents/doc2',
+      //     name: '文件2',
+      //   },
+      // ],
     },
   ];
 
@@ -140,17 +149,18 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   // 右键事件只需调用hook的onContextMenu
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
-    const isDocNode = item.path && item.path.startsWith('/Home/docs/');
     return (
       <div
         onClick={(e) => {
           e.stopPropagation();
-          if (item.path && item.path !== '/Home/docs') {
+          if (item.path && item.path !== '/documents') {
             router.push(item.path);
           }
         }}
         onContextMenu={
-          isDocNode ? (e) => contextMenu.onContextMenu(e, item.key || item.path) : undefined
+          item.canContextMenu
+            ? (e) => contextMenu.onContextMenu(e, item.key || item.path)
+            : undefined
         }
         style={{
           cursor: 'pointer',
@@ -187,9 +197,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         route={{
           routes: menu,
         }}
-        menu={{
-          request: async () => menu,
-        }}
+        // menu={{
+        //   request: async () => menu,
+        // }}
         menuProps={{
           selectedKeys: [pathname],
           openKeys: openKeys,

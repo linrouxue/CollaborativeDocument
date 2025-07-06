@@ -1,3 +1,4 @@
+// src/app/api/auth/refresh/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
@@ -35,53 +36,24 @@ export async function POST(request: NextRequest) {
     // 2. 对 refreshToken 做哈希
     const hashedToken = hashToken(refreshToken);
 
-    // 3. 查找数据库
-    const tokenRecord = await prisma.t_refresh_token.findUnique({
-      where: { hashed_token: hashedToken },
+    // 查找数据库，允许多条未吊销、未过期的 token
+    const tokenRecord = await prisma.t_refresh_token.findFirst({
+      where: {
+        hashed_token: hashedToken,
+        is_revoked: false,
+        expires_at: { gt: new Date() },
+      },
       include: { t_user: true },
     });
 
-    // 4. 判断是否存在
     if (!tokenRecord) {
       return NextResponse.json(
-        { success: false, message: 'Refresh token not found' },
+        { success: false, message: 'Refresh token not found or expired' },
         { status: 401 }
       );
     }
 
-    // 5. 校验 jti 一致性
-    if (!decoded.jti || decoded.jti !== tokenRecord.jti) {
-      return NextResponse.json(
-        { success: false, message: 'Refresh token jti mismatch' },
-        { status: 401 }
-      );
-    }
-
-    // 判断是否已吊销
-    if (tokenRecord.is_revoked) {
-      // 安全事件：吊销所有令牌
-      await prisma.t_refresh_token.updateMany({
-        where: { user_id: tokenRecord.user_id },
-        data: { is_revoked: true },
-      });
-      return NextResponse.json(
-        { success: false, message: '检测到令牌重用，所有会话已终止，请重新登录' },
-        { status: 401 }
-      );
-    }
-
-    // 判断是否过期
-    if (new Date(tokenRecord.expires_at) < new Date()) {
-      return NextResponse.json({ success: false, message: '刷新令牌已过期' }, { status: 401 });
-    }
-
-    // 6. 正常流程：吊销旧 token
-    await prisma.t_refresh_token.update({
-      where: { id: tokenRecord.id },
-      data: { is_revoked: true },
-    });
-
-    // 7. 生成新 accessToken 和 refreshToken
+    // 生成新 accessToken 和 refreshToken
     const user = tokenRecord.t_user;
     const newAccessToken = jwt.sign(
       {
@@ -96,21 +68,45 @@ export async function POST(request: NextRequest) {
       }
     );
     const newJti = crypto.randomUUID();
-    const newRefreshToken = jwt.sign({ userId: user.id, jti: newJti }, REFRESH_TOKEN_SECRET, {
-      expiresIn: '7d',
-    });
+    const newRefreshToken = jwt.sign(
+      {
+        userId: user.id,
+        jti: newJti,
+      },
+      REFRESH_TOKEN_SECRET,
+      {
+        expiresIn: '7d',
+      }
+    );
+
+    // 计算新刷新令牌的哈希值
     const newHashedToken = hashToken(newRefreshToken);
 
-    // 8. 存入数据库
+    // 创建新令牌记录（不吊销旧的）
     await prisma.t_refresh_token.create({
       data: {
         hashed_token: newHashedToken,
         user_id: user.id,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         jti: newJti,
+        is_revoked: false,
       },
     });
 
+    // 限制每个用户最多保留10条未过期、未吊销的 refreshToken，超出部分删除
+    const tokens = await prisma.t_refresh_token.findMany({
+      where: {
+        user_id: user.id,
+        is_revoked: false,
+        expires_at: { gt: new Date() },
+      },
+      orderBy: { expires_at: 'asc' },
+      select: { id: true },
+    });
+    if (tokens.length > 10) {
+      const deleteIds = tokens.slice(0, tokens.length - 10).map((t) => t.id);
+      await prisma.t_refresh_token.deleteMany({ where: { id: { in: deleteIds } } });
+    }
     // 创建响应
     const response = NextResponse.json(
       {

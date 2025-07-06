@@ -1,7 +1,18 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { Layout, Tree, Card, Spin, Empty, Button } from 'antd';
+import { FileOutlined, FolderOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { getKnowledgeBaseTree } from '@/lib/api/documents';
+
+const { Content } = Layout;
+
+interface DocumentNode {
+  documentId: number;
+  title: string;
+  children?: DocumentNode[];
+}
 import { Layout, Button, theme, Space, Avatar, Dropdown, message } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -20,9 +31,12 @@ import DocEditor from '@/components/RichTextEditor';
 
 const { Header, Content, Footer } = Layout;
 
-export default function DocPage() {
+export default function KnowledgeBasePage() {
   const params = useParams();
   const router = useRouter();
+  const knowledgeBaseId = params.knowledgeBaseId as string;
+  
+  const [docTree, setDocTree] = useState<DocumentNode[]>([]);
   const knowledgeBaseId = params.knowledgeBaseId as string; // 获取当前知识库ID
 
   const {
@@ -37,6 +51,20 @@ export default function DocPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 获取第一个可用的文档ID
+  const getFirstDocumentId = (nodes: DocumentNode[]): number | null => {
+    for (const node of nodes) {
+      if (node.documentId) {
+        return node.documentId;
+      }
+      if (node.children?.length > 0) {
+        const childDocId = getFirstDocumentId(node.children);
+        if (childDocId) return childDocId;
+      }
+    }
+    return null;
+  };
+
   // WebSocket 配置
   const websocketUrl = 'ws://localhost:1234';
 
@@ -45,8 +73,31 @@ export default function DocPage() {
     router.push('/Home');
   };
 
-  // 初始化 Yjs 文档与连接
+  // 获取文档树
   useEffect(() => {
+    const fetchDocumentTree = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await getKnowledgeBaseTree(knowledgeBaseId);
+        if (response.success && response.data?.tree) {
+          setDocTree(response.data.tree);
+          
+          // 自动跳转到第一个文档
+          const firstDocId = getFirstDocumentId(response.data.tree);
+          if (firstDocId) {
+            router.push(`/documents/${knowledgeBaseId}/${firstDocId}`);
+          } else {
+            setError('该知识库暂无文档');
+          }
+        } else {
+          setError('获取文档树失败');
+        }
+      } catch (error) {
+        console.error('获取文档树失败:', error);
+        setError('加载文档树时发生错误');
+      } finally {
     if (!knowledgeBaseId) {
       setError('知識庫 ID 不能為空');
       setLoading(false);
@@ -79,99 +130,37 @@ export default function DocPage() {
         console.error('WebSocket error:', error);
         setError('連接協同服務器失敗');
         setLoading(false);
-        message.error('連接協同服務器失敗');
-      });
+      }
+    };
 
-      // 在线人数监听
-      const awareness = yProvider.awareness;
-      const updateOnlineUsers = () => {
-        const states = awareness.getStates();
-        setOnlineUsers(states.size);
-        console.log('Online users:', Array.from(states.values()));
-      };
+    fetchDocumentTree();
+  }, [knowledgeBaseId, router]);
 
-      awareness.on('change', updateOnlineUsers);
-      updateOnlineUsers();
-
-      // 监听 Yjs 文档的 update 事件，打印协议内容和文本格式
-      yDoc.on('update', (update, origin) => {
-        // 1. 打印原始协议内容
-        console.log('[Yjs 协议 update] 原始协议内容:', update);
-
-        // 2. 打印十六进制
-        const hex = Array.from(update)
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join(' ');
-        console.log('[Yjs 协议 update] 十六进制:', hex);
-
-        // 3. 解码 update，获得结构化变更内容
-        try {
-          const decoded = Y.decodeUpdate(update);
-          console.log('[Yjs 协议 update] 解码内容:', decoded);
-        } catch (e) {
-          console.log('Yjs update 解码失败', e);
-        }
-
-        // 4. 打印当前文档内容
-        if (yXmlText) {
-          console.log('[Yjs 文本内容] 当前内容:', yXmlText.toString());
-          // 如果你想要结构化内容
-          try {
-            console.log('[Yjs 文本内容] JSON:', yXmlText.toJSON());
-          } catch (e) {}
-        }
-      });
-
-      setSharedType(yXmlText);
-      setProvider(yProvider);
-
-      return () => {
-        awareness.off('change', updateOnlineUsers);
-        yProvider.destroy();
-        yDoc.destroy();
-      };
-    } catch (err) {
-      console.error('初始化 Yjs 失敗:', err);
-      setError('初始化協同編輯器失敗');
-      setLoading(false);
-      message.error('初始化協同編輯器失敗');
-    }
-  }, [websocketUrl, knowledgeBaseId]);
-
-  // 更多操作菜单
-  const moreActionsMenu = {
-    items: [
-      {
-        key: 'download',
-        icon: <DownloadOutlined />,
-        label: '下載文檔',
-        onClick: () => {
-          message.info(`下載文檔：${knowledgeBaseId}`);
-          // 实现下载逻辑
-        },
-      },
-      {
-        key: 'history',
-        icon: <HistoryOutlined />,
-        label: '查看歷史記錄',
-        onClick: () => {
-          message.info('歷史記錄功能待實現');
-          // 实现查看历史版本逻辑
-        },
-      },
-      {
-        key: 'notifications',
-        icon: <BellOutlined />,
-        label: '通知中心',
-        onClick: () => {
-          message.info('打開通知中心');
-          // 实现通知弹窗逻辑
-        },
-      },
-    ],
+  // 转换文档树为Tree组件需要的格式
+  const convertToTreeData = (nodes: DocumentNode[]): any[] => {
+    return nodes.map((node) => ({
+      key: node.documentId.toString(),
+      title: node.title || `未命名文档_${node.documentId}`,
+      icon: node.children?.length > 0 ? <FolderOutlined /> : <FileOutlined />,
+      children: node.children?.length > 0 ? convertToTreeData(node.children) : undefined,
+      isLeaf: !node.children?.length,
+      documentId: node.documentId,
+    }));
   };
 
-  // 渲染加载状态
+  // 处理文档选择
+  const handleDocumentSelect = (selectedKeys: React.Key[]) => {
+    if (selectedKeys.length > 0) {
+      const documentId = selectedKeys[0];
+      router.push(`/documents/${knowledgeBaseId}/${documentId}`);
+    }
+  };
+
+  // 返回首页
+  const handleBackToHome = () => {
+    router.push('/Home');
+  };
+
   if (loading) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
@@ -180,19 +169,15 @@ export default function DocPage() {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            background: colorBgContainer,
+            background: '#f0f2f5',
           }}
         >
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px' }}>正在連接到協同服務器...</div>
-            <div style={{ fontSize: '14px', color: '#999' }}>知識庫 ID: {knowledgeBaseId}</div>
-          </div>
+          <Spin size="large" tip="正在加载文档树..." />
         </Content>
       </Layout>
     );
   }
 
-  // 渲染错误状态
   if (error) {
     return (
       <Layout style={{ minHeight: '100vh' }}>
@@ -201,19 +186,16 @@ export default function DocPage() {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            background: colorBgContainer,
+            background: '#f0f2f5',
           }}
         >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{error}</div>
-            <Button
-              type="primary"
-              onClick={() => window.location.reload()}
-              style={{ marginRight: '12px' }}
-            >
-              重新連接
+            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>
+              {error}
+            </div>
+            <Button type="primary" onClick={() => window.location.reload()}>
+              重新加载
             </Button>
-            <Button onClick={handleBackToHome}>返回主頁</Button>
           </div>
         </Content>
       </Layout>
@@ -222,101 +204,45 @@ export default function DocPage() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* 頂部導航欄 */}
-      <Header
-        style={{
-          background: colorBgContainer,
-          padding: '0 16px',
-          borderBottom: '1px solid #f0f0f0',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+      <Content style={{ padding: '24px', background: '#f0f2f5' }}>
+        <div style={{ marginBottom: '16px' }}>
           <Button
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={handleBackToHome}
-            style={{ marginRight: '16px' }}
+            style={{ marginBottom: '8px' }}
           >
-            返回主頁
+            返回首页
           </Button>
-          <div style={{ fontSize: '16px', fontWeight: '500' }}>知識庫：{knowledgeBaseId}</div>
+          <h1 style={{ margin: 0, fontSize: '24px' }}>
+            知识库文档 (ID: {knowledgeBaseId})
+          </h1>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '14px',
-              color: connected ? '#52c41a' : '#ff4d4f',
-            }}
-          >
-            <div
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: connected ? '#52c41a' : '#ff4d4f',
-                animation: connected ? 'none' : 'blink 1.5s infinite',
-              }}
-            />
-            {connected ? `${onlineUsers} 人在線` : '離線'}
-          </div>
-
-          <Dropdown menu={moreActionsMenu} placement="bottomRight">
-            <Button type="text" icon={<EllipsisOutlined />} />
-          </Dropdown>
-        </div>
-      </Header>
-
-      <Content style={{ margin: '16px', marginTop: '10px' }}>
-        <div
+        <Card
+          title="文档树"
           style={{
-            height: 'calc(100vh - 112px)',
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
+            maxWidth: 800,
+            margin: '0 auto',
+            minHeight: 400,
           }}
         >
-          {connected && sharedType && provider ? (
-            <DocEditor
-              sharedType={sharedType}
-              provider={provider}
-              onlineUsers={onlineUsers}
-              connected={connected}
+          {docTree.length > 0 ? (
+            <Tree
+              showIcon
+              defaultExpandAll
+              treeData={convertToTreeData(docTree)}
+              onSelect={handleDocumentSelect}
+              style={{ fontSize: '16px' }}
             />
           ) : (
-            <div
-              style={{
-                textAlign: 'center',
-                color: '#999',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
-            >
-              <p style={{ fontSize: '16px', marginBottom: '8px' }}>正在連接到協同服務器...</p>
-              <p style={{ fontSize: '14px' }}>請稍候</p>
-            </div>
+            <Empty
+              description="暂无文档"
+              style={{ padding: '40px 0' }}
+            />
           )}
-        </div>
+        </Card>
       </Content>
-
-      <style jsx>{`
-        @keyframes blink {
-          0%,
-          100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0;
-          }
-        }
-      `}</style>
     </Layout>
   );
 }

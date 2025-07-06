@@ -1,5 +1,5 @@
 'use client';
-import { Skeleton, Row, Col, Input, message } from 'antd';
+import { Skeleton, Row, Col, Input } from 'antd';
 import { useEffect, useState } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import KnowledgeCard from '@/components/knowledge/KnowledgeCard';
@@ -7,8 +7,14 @@ import CreateKnowledgeModal from '@/components/knowledge/CreateKnowledgeModal';
 import DeleteKnowledgeModal from '@/components/knowledge/DeleteKnowledgeModal';
 import type { SearchProps } from 'antd/es/input';
 import { useRouter } from 'next/navigation';
-import { firstGetKnowledgeBase } from '@/lib/api/knowledgeBase';
+import {
+  getAllKnowledgeBase,
+  deleteKnowledgeBase,
+  getFuzzyKnowledgeBase,
+} from '@/lib/api/knowledgeBase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMessage } from '@/hooks/useMessage';
+import { useKnowledgeBaseStore } from '@/store/knowledgeBaseStore';
 
 const DEFAULT_IMAGE = '/book.webp';
 
@@ -19,20 +25,6 @@ interface KnowledgeData {
   cover?: string;
 }
 
-// const know: KnowledgeData[] = [
-//   {
-//     id: '1',
-//     title: '知识库2',
-//     description: '知识库2的描述信息',
-//     cover: 'https://os.alipayobjects.com/rmsportal/QBnOOoLaAfKPirc.png',
-//   },
-//   {
-//     id: '2',
-//     title: '知识库3',
-//     description: '知识库3的描述信息',
-//   },
-// ];
-
 export default function Knowledge() {
   const [loading, setLoading] = useState<boolean>(false);
   const [searchText, setSearchText] = useState<string>('');
@@ -42,40 +34,60 @@ export default function Knowledge() {
   const [currentKnowledge, setCurrentKnowledge] = useState<KnowledgeData | undefined>();
   const [know, setKnowledgeList] = useState<KnowledgeData[]>([]);
   const router = useRouter();
-  const onSearch: SearchProps['onSearch'] = (value: string) => {
+  const message = useMessage();
+  const onSearch: SearchProps['onSearch'] = async (value: string) => {
     setSearchText(value);
-    console.log('搜索内容:', value);
+    if (!value) {
+      // 关键词为空时，显示全部
+      fetchKnowledgeList();
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await getFuzzyKnowledgeBase(value);
+      const data = Array.isArray(response.data?.data) ? response.data.data : [];
+      const convertedData: KnowledgeData[] = data.map((item: any) => ({
+        id: item.knowledgeBaseId?.toString() || '',
+        title: item.name,
+        description: item.description,
+        cover: item.img,
+      }));
+      setKnowledgeList(convertedData);
+    } catch (error) {
+      message.error('搜索失败');
+    } finally {
+      setLoading(false);
+    }
   };
-  const {user} = useAuth();
+  const { user } = useAuth();
 
-  // 獲取知識庫列表
+  // 获取知识库列表
   const fetchKnowledgeList = async () => {
     try {
       setLoading(true);
-      const response = await firstGetKnowledgeBase({size: '20', userId: user?.id || 0}); // 獲取前20個知識庫
-      const data = response.data;
-      console.log(response);
-     // 轉換數據格式
-     const convertedData: KnowledgeData[] = data.map((item: any) => ({
-      id: item.knowledgeBaseId.toString(),
-      title: item.name,
-      description: item.description,
-      cover: item.img
-    }));
-    setKnowledgeList(convertedData);
+      const response = await getAllKnowledgeBase();
+      // 兼容后端返回格式，保证 data 一定为数组
+      const data = Array.isArray(response.data) ? response.data : [];
+      // 转换数据格式，img 为空时用默认图片
+      const convertedData: KnowledgeData[] = data.map((item: any) => ({
+        id: item.knowledgeBaseId?.toString() || '',
+        title: item.name,
+        description: item.description,
+        cover: item.img,
+      }));
+      setKnowledgeList(convertedData);
     } catch (error) {
-      console.error('獲取知識庫列表失敗:', error);
-      // alert('獲取知識庫列表失敗');
+      message.error('获取知识库列表失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // 組件加載時獲取數據
+  // 组件加载时获取数据
   useEffect(() => {
     fetchKnowledgeList();
   }, []);
-  
+
   const showCreateModal = () => {
     setModalMode('create');
     setCurrentKnowledge(undefined);
@@ -99,12 +111,18 @@ export default function Knowledge() {
     }
   };
 
-  const handleDeleteConfirm = () => {
-    // TODO: 调用删除API
-    console.log('删除知识库:', currentKnowledge?.id);
-    message.success('删除成功');
-    setIsDeleteModalOpen(false);
-    setCurrentKnowledge(undefined);
+  const handleDeleteConfirm = async () => {
+    if (!currentKnowledge?.id) return;
+    try {
+      await deleteKnowledgeBase(Number(currentKnowledge.id));
+      message.success('删除成功');
+      setIsDeleteModalOpen(false);
+      setCurrentKnowledge(undefined);
+      fetchKnowledgeList(); // 删除后刷新列表
+      await useKnowledgeBaseStore.getState().fetchList(); // 同步刷新侧边栏
+    } catch (error) {
+      message.error('删除失败');
+    }
   };
 
   const handleModalCancel = () => {
@@ -112,13 +130,16 @@ export default function Knowledge() {
     setCurrentKnowledge(undefined);
   };
 
-  const handleModalSuccess = () => {
-    // TODO: 刷新知识库列表
-    console.log('知识库操作成功，需要刷新列表');
+  const handleModalSuccess = async (data?: any) => {
+    // 新建成功或其他情况，直接刷新列表
+    setIsModalOpen(false);
+    setCurrentKnowledge(undefined);
+    fetchKnowledgeList();
+    await useKnowledgeBaseStore.getState().fetchList(); // 同步刷新侧边栏
   };
 
   const handleClick = (id: string) => {
-    router.push(`/knowledges/${id}`);
+    router.push(`/documents/${id}`);
   };
 
   return (
@@ -167,6 +188,7 @@ export default function Knowledge() {
         onSuccess={handleModalSuccess}
         mode={modalMode}
         initialData={currentKnowledge}
+        knowledgeBaseId={currentKnowledge?.id}
       />
 
       <DeleteKnowledgeModal
