@@ -46,6 +46,8 @@
     "nodemailer": "^7.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-window": "^1.8.11",
+    "react-window-infinite-loader": "^1.0.10",
     "slate": "^0.117.0",
     "slate-history": "^0.113.1",
     "slate-react": "^0.117.1",
@@ -62,6 +64,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-window": "^1.8.8",
+    "@types/react-window-infinite-loader": "^1.0.9",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
     "eslint": "^9",
@@ -72,6 +76,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "prettier": "^3.2.5",
     "prisma": "^6.10.0",
+    "react-virtualized-auto-sizer": "^1.0.26",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

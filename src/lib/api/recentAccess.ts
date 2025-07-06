@@ -9,9 +9,9 @@ interface ApiResponse {
 interface RecentAccessItem {
   key: number;
   documentId: number;
-  knowledgeBaseId: number;
+  knowledgeBaseId: number | null;
   knowledgeBaseName: string;
-  name: string;
+  name: string | null;
   // description: string;
   // 所属成员
   members: string[];
@@ -24,20 +24,31 @@ interface DeleteResponse {
     deletedCount: number;
   };
 }
-export const getRecentAccess = async (): Promise<ApiResponse | null> => {
+
+interface GetRecentAccessParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export async function getRecentAccess(params?: GetRecentAccessParams) {
   try {
-    const { data } = await axiosInstance.get('/document/getRecentAccess');
-    if (data) {
-      console.log('data', data);
-      return data as ApiResponse;
-      // return data.accessToken;
-    }
-    return null;
+    const { data } = await axiosInstance.get('/document/getRecentAccess', {
+      params: {
+        page: params?.page,
+        pageSize: params?.pageSize
+      }
+    });
+    return data;
   } catch (error) {
-    console.error('获取最近访问文档记录失败', error);
-    return null;
+    console.error('获取最近访问记录失败', error);
+    return {
+      success: false,
+      data: [],
+      total: 0
+    };
   }
-};
+}
+
 /**
  * 批量删除最近访问记录
  * @param documentIds 要删除的文档ID数组
