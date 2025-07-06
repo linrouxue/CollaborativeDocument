@@ -1,6 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 import { documentAdd } from '@/lib/api/documents';
+import ShareDocument from '@/components/documentShare/share';
 // import { showAlert } from '@/lib/utils/alert';
 
 interface ContextMenuProps {
@@ -13,6 +14,7 @@ interface ContextMenuProps {
 
 const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -25,18 +27,20 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose
     return () => document.removeEventListener('mousedown', handleClick);
   }, [visible, onClose]);
 
-  if (!visible) return null;
+  if (!visible && !shareModalOpen) return null;
 
   const addDocs = (docId: number) => {
     console.log('新建');
     documentAdd(docId)
     // showAlert('新建文档成功');
   };
-  const deleteDocs = (docId: string) => {
+  const deleteDocs = (docId: number) => {
     console.log('删除');
   };
-  const shareDocs = (docId: string) => {
+  const shareDocs = (docId: number) => {
     console.log('分享');
+    setShareModalOpen(true);
+    onClose(); // 关闭右键菜单
   };
   const items = [
     { label: '新建文档', onClick: () => addDocs(docId) },
@@ -45,23 +49,35 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose
   ].filter(Boolean) as { label: string; onClick: () => void }[];
 
   return (
-    <div
-      ref={ref}
-      className="fixed z-[9999] bg-white border border-[#eee] shadow-[0_2px_8px_rgba(0,0,0,0.15)] rounded-lg min-w-[120px]"
-      style={{ top: y, left: x }}
-      onClick={onClose}
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      {items.map((item) => (
+    <>
+      {visible && (
         <div
-          key={item.label}
-          className="px-4 py-2 cursor-pointer rounded hover:bg-gray-100 select-none"
-          onClick={item.onClick}
+          ref={ref}
+          className="fixed z-[9999] bg-white border border-[#eee] shadow-[0_2px_8px_rgba(0,0,0,0.15)] rounded-lg min-w-[120px]"
+          style={{ top: y, left: x }}
+          onClick={onClose}
+          onContextMenu={(e) => e.preventDefault()}
         >
-          {item.label}
+          {items.map((item) => (
+            <div
+              key={item.label}
+              className="px-4 py-2 cursor-pointer rounded hover:bg-gray-100 select-none"
+              onClick={item.onClick}
+            >
+              {item.label}
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+      
+      {shareModalOpen && (
+        <ShareDocument 
+          documentId={docId} 
+          open={shareModalOpen} 
+          onCancel={() => setShareModalOpen(false)} 
+        />
+      )}
+    </>
   );
 };
 
