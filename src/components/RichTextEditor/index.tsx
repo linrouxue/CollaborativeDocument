@@ -92,9 +92,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const { user } = useAuth();
 
   // 從 AuthContext 獲取用戶名，如果沒有則使用默認值
-  const userName = useMemo(() => {
+  const userName: string = useMemo(() => {
     console.log('try to get user name', user);
-    return user?.username || user?.email || user?.id || 'Anonymous';
+    return String(user?.username || user?.email || user?.id || 'Anonymous');
   }, [user]);
 
   const randomColor = useMemo(() => {
@@ -230,7 +230,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onInsertSyncBlock={handleInsertSyncBlock}
           onInsertRefBlock={handleInsertRefBlock}
         />
-        <RichEditable editor={editor} value={value} />
+        <RichEditable
+          editor={editor}
+          value={value}
+          ydoc={sharedType.doc}
+          userName={userName}
+          connected={connected}
+          onlineUsers={onlineUsers}
+          setValue={setValue}
+        />
         <EditorFooter
           connected={connected}
           onlineUsers={onlineUsers}
@@ -252,74 +260,105 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   );
 };
 
-// 重构 RichEditable 组件，回归官方推荐方案
-function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }) {
-  const decorate = useDecorateRemoteCursors();
-  const renderLeaf = useCallback((props: any) => {
-    let children = props.children;
-    // 评论高亮
-    if (props.leaf.threadId) {
-      children = <span style={{ backgroundColor: 'rgba(255,229,100,0.6)' }}>{children}</span>;
-    }
-    // 协同光标高亮
-    getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
-      if (cursor.data) {
-        children = (
-          <span style={{ backgroundColor: addAlpha(cursor.data.color as string, 0.5) }}>
-            {children}
-          </span>
-        );
+// 合并后的 RichEditable 组件，支持外部传入 decorate/renderLeaf，同时保留完整功能和样式注入
+function RichEditable({
+  editor,
+  value,
+  decorate: externalDecorate,
+  renderLeaf: externalRenderLeaf,
+  ydoc,
+  userName,
+  connected,
+  onlineUsers,
+  setValue,
+}: {
+  editor: Editor;
+  value: Descendant[];
+  decorate?: any;
+  renderLeaf?: any;
+  ydoc: any;
+  userName: string;
+  connected: boolean;
+  onlineUsers: number;
+  setValue: (v: Descendant[]) => void;
+}) {
+  // 评论相关 hooks
+  const { yThreadsMap, addThread, replyToThread, updateComment, deleteThread } =
+    useThreadedComments(editor, ydoc, userName);
+
+  // 默认 decorate
+  const decorate = externalDecorate || useDecorateRemoteCursors();
+
+  // 默认 renderLeaf
+  const renderLeaf = useCallback(
+    (props: { element: any; attributes: any; children: React.ReactNode }) => {
+      if (externalRenderLeaf) return externalRenderLeaf(props);
+      let children = props.children;
+      // 评论高亮
+      if (props.leaf.threadId) {
+        children = <span style={{ backgroundColor: 'rgba(255,229,100,0.6)' }}>{children}</span>;
       }
-    });
-    getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
-      if (caret.data) {
-        children = (
-          <span style={{ position: 'relative' }}>
-            <span
-              contentEditable={false}
-              style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: -1,
-                width: 2,
-                backgroundColor: caret.data.color as string,
-                animation: 'blink 1s step-end infinite',
-              }}
-            />
-            <span
-              contentEditable={false}
-              style={{
-                position: 'absolute',
-                left: -1,
-                top: 0,
-                fontSize: '0.75rem',
-                color: '#fff',
-                backgroundColor: caret.data.color as string,
-                borderRadius: 4,
-                padding: '0 4px',
-                transform: 'translateY(-100%)',
-                zIndex: 10,
-                opacity: 0,
-                transition: 'opacity 0.2s',
-                pointerEvents: 'none',
-              }}
-              className="caret-name"
-            >
-              {caret.data.name as string}
+      // 协同光标高亮
+      getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
+        if (cursor.data) {
+          children = (
+            <span style={{ backgroundColor: addAlpha(cursor.data.color as string, 0.5) }}>
+              {children}
             </span>
-            {children}
-          </span>
-        );
-      }
-    });
-    return <span {...props.attributes}>{children}</span>;
-  }, []);
+          );
+        }
+      });
+      getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
+        if (caret.data) {
+          children = (
+            <span style={{ position: 'relative' }}>
+              <span
+                contentEditable={false}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: -1,
+                  width: 2,
+                  backgroundColor: caret.data.color as string,
+                  animation: 'blink 1s step-end infinite',
+                }}
+              />
+              <span
+                contentEditable={false}
+                style={{
+                  position: 'absolute',
+                  left: -1,
+                  top: 0,
+                  fontSize: '0.75rem',
+                  color: '#fff',
+                  backgroundColor: caret.data.color as string,
+                  borderRadius: 4,
+                  padding: '0 4px',
+                  transform: 'translateY(-100%)',
+                  zIndex: 10,
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  pointerEvents: 'none',
+                }}
+                className="caret-name"
+              >
+                {caret.data.name as string}
+              </span>
+              {children}
+            </span>
+          );
+        }
+      });
+      return <span {...props.attributes}>{children}</span>;
+    },
+    [externalRenderLeaf]
+  );
 
   // 添加评论按钮
   const handleAddComment = () => {
     const { selection } = editor;
-    if (selection && selection && !Range.isCollapsed(selection)) {
+    if (selection && !Range.isCollapsed(selection)) {
       const text = prompt('请输入评论内容');
       if (text) addThread(selection, text);
     }
@@ -328,61 +367,8 @@ function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }
   // 侧边栏数据
   const threads = Array.from(yThreadsMap.entries());
 
-  const handleClick = (node: OutlineNode) => {
-    const dom = node.dom;
-    const container = editorRoot.current;
-    if (dom && container) {
-      const domRect = dom.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      const scrollTop = container.scrollTop + (domRect.top - containerRect.top) - 20;
-      container.scrollTo({
-        top: scrollTop,
-        behavior: 'smooth',
-      });
-      setActiveKey(node.key);
-    }
-  };
-
   return (
     <div className="bg-white p-4 min-h-[400px]">
-      <Slate
-        editor={editor}
-        initialValue={value}
-        onChange={(val) => setValue(assignHeadingIds(val))}
-      >
-        <EditorHeaderToolbar />
-        <EditorBody
-          editor={editor}
-          decorate={decorate}
-          renderLeaf={renderLeaf}
-          editorValue={value}
-          threads={threads}
-          currentUser={String(userName)}
-          onReply={replyToThread}
-          onEdit={updateComment}
-          onDelete={deleteThread}
-          onAddThread={addThread}
-        />
-        <EditorFooter connected={connected} onlineUsers={onlineUsers} />
-      </Slate>
-    </div>
-  );
-}
-
-// 修改 RichEditable 以支持外部传入 decorate/renderLeaf
-function RichEditable({
-  editor,
-  value,
-  decorate,
-  renderLeaf,
-}: {
-  editor: Editor;
-  value: Descendant[];
-  decorate: any;
-  renderLeaf: any;
-}) {
-  return (
-    <>
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -396,13 +382,32 @@ function RichEditable({
         `,
         }}
       />
-      <EditorBody editor={editor} decorate={decorate} renderLeaf={renderLeaf} editorValue={value} />
-    </>
+      <Slate
+        editor={editor}
+        initialValue={value}
+        onChange={(val) => setValue(assignHeadingIds(val))}
+      >
+       
+        <EditorBody
+          editor={editor}
+          decorate={decorate}
+          renderLeaf={renderLeaf}
+          editorValue={value}
+          threads={threads}
+          currentUser={String(userName)}
+          onReply={replyToThread}
+          onEdit={updateComment}
+          onDelete={deleteThread}
+          onAddThread={addThread}
+        />
+        
+      </Slate>
+    </div>
   );
 }
 
-function assignHeadingIds(nodes) {
-  return nodes.map((node) => {
+function assignHeadingIds(nodes: any): any {
+  return nodes.map((node: any) => {
     if (
       node.type &&
       (node.type === 'heading-one' ||

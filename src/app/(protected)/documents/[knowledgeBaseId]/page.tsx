@@ -13,41 +13,13 @@ interface DocumentNode {
   title: string;
   children?: DocumentNode[];
 }
-import { Layout, Button, theme, Space, Avatar, Dropdown, message } from 'antd';
-import {
-  ArrowLeftOutlined,
-  UserOutlined,
-  EllipsisOutlined,
-  ShareAltOutlined,
-  HistoryOutlined,
-  DownloadOutlined,
-  BellOutlined,
-  LockOutlined,
-} from '@ant-design/icons';
-import * as Y from 'yjs';
-import { WebsocketProvider } from 'y-websocket';
-
-import DocEditor from '@/components/RichTextEditor';
-
-const { Header, Content, Footer } = Layout;
 
 export default function KnowledgeBasePage() {
   const params = useParams();
   const router = useRouter();
   const knowledgeBaseId = params.knowledgeBaseId as string;
-  
+
   const [docTree, setDocTree] = useState<DocumentNode[]>([]);
-  const knowledgeBaseId = params.knowledgeBaseId as string; // 获取当前知识库ID
-
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-
-  // Yjs 相關狀態
-  const [connected, setConnected] = useState(false);
-  const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
-  const [provider, setProvider] = useState<WebsocketProvider | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,25 +37,17 @@ export default function KnowledgeBasePage() {
     return null;
   };
 
-  // WebSocket 配置
-  const websocketUrl = 'ws://localhost:1234';
-
-  // 返回主頁
-  const handleBackToHome = () => {
-    router.push('/Home');
-  };
-
   // 获取文档树
   useEffect(() => {
     const fetchDocumentTree = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const response = await getKnowledgeBaseTree(knowledgeBaseId);
         if (response.success && response.data?.tree) {
           setDocTree(response.data.tree);
-          
+
           // 自动跳转到第一个文档
           const firstDocId = getFirstDocumentId(response.data.tree);
           if (firstDocId) {
@@ -98,37 +62,6 @@ export default function KnowledgeBasePage() {
         console.error('获取文档树失败:', error);
         setError('加载文档树时发生错误');
       } finally {
-    if (!knowledgeBaseId) {
-      setError('知識庫 ID 不能為空');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const yDoc = new Y.Doc();
-      const yXmlText = yDoc.get('slate', Y.XmlText);
-      const yProvider = new WebsocketProvider(websocketUrl, knowledgeBaseId, yDoc);
-
-      // 连接状态监听
-      yProvider.on('status', (event: { status: string }) => {
-        console.log('Connection status:', event.status);
-        setConnected(event.status === 'connected');
-
-        if (event.status === 'connected') {
-          setLoading(false);
-          message.success('已連接到協同服務器');
-        } else if (event.status === 'disconnected') {
-          message.warning('與協同服務器斷開連接');
-        }
-      });
-
-      // 错误处理
-      yProvider.on('connection-error', (error: any) => {
-        console.error('WebSocket error:', error);
-        setError('連接協同服務器失敗');
         setLoading(false);
       }
     };
@@ -190,9 +123,7 @@ export default function KnowledgeBasePage() {
           }}
         >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>
-              {error}
-            </div>
+            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{error}</div>
             <Button type="primary" onClick={() => window.location.reload()}>
               重新加载
             </Button>
@@ -214,9 +145,7 @@ export default function KnowledgeBasePage() {
           >
             返回首页
           </Button>
-          <h1 style={{ margin: 0, fontSize: '24px' }}>
-            知识库文档 (ID: {knowledgeBaseId})
-          </h1>
+          <h1 style={{ margin: 0, fontSize: '24px' }}>知识库文档 (ID: {knowledgeBaseId})</h1>
         </div>
 
         <Card
@@ -236,10 +165,7 @@ export default function KnowledgeBasePage() {
               style={{ fontSize: '16px' }}
             />
           ) : (
-            <Empty
-              description="暂无文档"
-              style={{ padding: '40px 0' }}
-            />
+            <Empty description="暂无文档" style={{ padding: '40px 0' }} />
           )}
         </Card>
       </Content>

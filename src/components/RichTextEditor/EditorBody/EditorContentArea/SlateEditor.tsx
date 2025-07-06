@@ -72,25 +72,26 @@ const SlateEditor = ({ editor, decorate, renderLeaf }: SlateEditorProps) => {
     headingIndexRef.current = 0;
   });
   const renderElement = useCallback(
-    (props: RenderElementProps: { element: any; attributes: any; children: React.ReactNode }) => {
+    (props: RenderElementProps) => {
       const { element, attributes, children } = props;
-    let headingId = undefined;
-    if (
-      element.type === 'heading-one' ||
-      element.type === 'heading-two' ||
-      element.type === 'heading-three' ||
-      element.type === 'heading-four' ||
-      element.type === 'heading-five' ||
-      element.type === 'heading-six'
-    ) {
-      headingId = element.headingId;
-      (attributes as any)['data-heading-id'] = headingId;
-    }
-      if (element.type === 'sync-block') {
+      let headingId = undefined;
+      const el = element as any;
+      if (
+        el.type === 'heading-one' ||
+        el.type === 'heading-two' ||
+        el.type === 'heading-three' ||
+        el.type === 'heading-four' ||
+        el.type === 'heading-five' ||
+        el.type === 'heading-six'
+      ) {
+        headingId = el.headingId;
+        (attributes as any)['data-heading-id'] = headingId;
+      }
+      if (el.type === 'sync-block') {
         return (
           <SyncBlockElement
             editor={editor}
-            element={element}
+            element={el}
             attributes={attributes}
             children={children}
             focusedSyncBlockId={focusedSyncBlockId}
@@ -99,7 +100,7 @@ const SlateEditor = ({ editor, decorate, renderLeaf }: SlateEditorProps) => {
           />
         );
       }
-      switch (element.type) {
+      switch (el.type) {
         case 'heading-one':
           return (
             <h1 {...attributes} style={{ fontSize: '1.5em', fontWeight: 700 }}>
@@ -112,30 +113,30 @@ const SlateEditor = ({ editor, decorate, renderLeaf }: SlateEditorProps) => {
               {children}
             </h2>
           );
-      case 'heading-three':
-        return (
-          <h3 {...attributes} style={{ fontSize: '1.1em', fontWeight: 600 }}>
-            {children}
-          </h3>
-        );
-      case 'heading-four':
-        return (
-          <h4 {...attributes} style={{ fontSize: '1em', fontWeight: 600 }}>
-            {children}
-          </h4>
-        );
-      case 'heading-five':
-        return (
-          <h5 {...attributes} style={{ fontSize: '0.95em', fontWeight: 600 }}>
-            {children}
-          </h5>
-        );
-      case 'heading-six':
-        return (
-          <h6 {...attributes} style={{ fontSize: '0.9em', fontWeight: 600 }}>
-            {children}
-          </h6>
-        );
+        case 'heading-three':
+          return (
+            <h3 {...attributes} style={{ fontSize: '1.1em', fontWeight: 600 }}>
+              {children}
+            </h3>
+          );
+        case 'heading-four':
+          return (
+            <h4 {...attributes} style={{ fontSize: '1em', fontWeight: 600 }}>
+              {children}
+            </h4>
+          );
+        case 'heading-five':
+          return (
+            <h5 {...attributes} style={{ fontSize: '0.95em', fontWeight: 600 }}>
+              {children}
+            </h5>
+          );
+        case 'heading-six':
+          return (
+            <h6 {...attributes} style={{ fontSize: '0.9em', fontWeight: 600 }}>
+              {children}
+            </h6>
+          );
         case 'bulleted-list':
           return (
             <ul {...attributes} style={{ paddingLeft: 24 }}>

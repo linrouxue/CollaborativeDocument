@@ -1,6 +1,6 @@
 import React from 'react';
 import { Editor, Transforms } from 'slate';
-import { ReactEditor } from 'slate-react';
+import { ReactEditor, RenderElementProps } from 'slate-react';
 import { CommentThread } from './types';
 
 export default function CommentsSidebar({ editor, threads, onReply, onEdit, onDelete }) {
