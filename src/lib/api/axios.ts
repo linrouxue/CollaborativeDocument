@@ -27,7 +27,7 @@ function responseInterceptor(response: AxiosResponse) {
 }
 
 // 刷新token带重试
-async function refreshAccessTokenWithRetry(retryCount = 3, delay = 1000) {
+export async function refreshAccessTokenWithRetry(retryCount = 3, delay = 1000) {
   let lastError;
   for (let i = 0; i < retryCount; i++) {
     try {

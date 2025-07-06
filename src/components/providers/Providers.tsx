@@ -4,7 +4,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { App } from 'antd';
 import { AlertProvider } from '@/contexts/AlertContext';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { refreshAccessToken } from '@/lib/api/auth';
+import { refreshAccessTokenWithRetry } from '@/lib/api/axios';
 import { useRouter } from 'next/navigation';
 
 interface ProvidersProps {
@@ -21,7 +21,7 @@ export const Providers: React.FC<ProvidersProps> = ({ children }) => {
 
     const checkToken = async () => {
       try {
-        const token = await refreshAccessToken();
+        const token = await refreshAccessTokenWithRetry(3, 1000);
         if (!token && isMounted) {
           redirectTimeout = setTimeout(() => {
             router.replace('/login');

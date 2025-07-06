@@ -49,6 +49,7 @@
     "slate": "^0.117.0",
     "slate-history": "^0.113.1",
     "slate-react": "^0.117.1",
+    "slate-yjs": "^3.2.0",
     "styled-components": "^6.1.19",
     "ws": "^8.18.2",
     "y-websocket": "^2.0.0",

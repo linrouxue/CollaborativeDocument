@@ -117,9 +117,13 @@ type CustomElement =
 
 interface EditorHeaderToolbarProps {
   onInsertSyncBlock?: () => void;
+  onInsertRefBlock?: () => void;
 }
 
-const EditorHeaderToolbar: React.FC<EditorHeaderToolbarProps> = ({ onInsertSyncBlock }) => {
+const EditorHeaderToolbar: React.FC<EditorHeaderToolbarProps> = ({
+  onInsertSyncBlock,
+  onInsertRefBlock,
+}) => {
   const editor = useSlate();
 
   return (
@@ -208,7 +212,7 @@ const EditorHeaderToolbar: React.FC<EditorHeaderToolbarProps> = ({ onInsertSyncB
         icon={<MinusOutlined style={{ fontSize: 18 }} />}
         title="分割线"
       />
-      {/* 插入同步块 */}
+      {/* 插入主块 */}
       <ToolbarButton
         active={false}
         onMouseDown={(e) => {
@@ -216,7 +220,17 @@ const EditorHeaderToolbar: React.FC<EditorHeaderToolbarProps> = ({ onInsertSyncB
           if (onInsertSyncBlock) onInsertSyncBlock();
         }}
         icon={<PlusSquareOutlined style={{ fontSize: 18 }} />}
-        title="插入同步块"
+        title="插入主块"
+      />
+      {/* 插入引用块 */}
+      <ToolbarButton
+        active={false}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          if (onInsertRefBlock) onInsertRefBlock();
+        }}
+        icon={<PlusSquareOutlined style={{ fontSize: 18 }} />}
+        title="插入引用块"
       />
       {/* 撤销/重做 */}
       <ToolbarButton

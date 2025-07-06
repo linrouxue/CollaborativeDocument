@@ -30,3 +30,112 @@
   cursor: pointer;
   font-weight: 500;
 }
+
+/* 主块样式 */
+.mainBlock {
+  border-color: #52c41a;
+  background: #f6ffed;
+}
+
+/* 引用块样式 */
+.refBlock {
+  border-color: #faad14;
+  background: #fffbe6;
+}
+
+/* 块类型指示器 */
+.blockTypeIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 块类型标签 */
+.blockTypeLabel {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mainLabel {
+  background: #52c41a;
+  color: white;
+}
+
+.refLabel {
+  background: #faad14;
+  color: white;
+}
+
+/* 主块ID标签 */
+.mainIdLabel {
+  color: #666;
+  font-size: 11px;
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* 引用数量标签 */
+.refsCountLabel {
+  color: #52c41a;
+  font-size: 11px;
+  background: #f6ffed;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #b7eb8f;
+}
+
+/* 块内容区域 */
+.blockContent {
+  min-height: 20px;
+  padding: 4px 0;
+}
+
+/* 同步状态样式 */
+.syncStatus {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.syncStatusSyncing {
+  background: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+  animation: pulse 1.5s infinite;
+}
+
+.syncStatusSynced {
+  background: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.syncStatusError {
+  background: #fff2f0;
+  color: #ff4d4f;
+  border: 1px solid #ffccc7;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

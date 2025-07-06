@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   createEditor,
   Descendant,
@@ -8,6 +8,7 @@ import {
   Transforms,
   Element as SlateElement,
   BaseEditor,
+  Node,
 } from 'slate';
 import { Slate, withReact, ReactEditor, Editable } from 'slate-react';
 import { HistoryEditor, withHistory } from 'slate-history';
@@ -26,7 +27,11 @@ import {
 } from '@slate-yjs/react';
 import { addAlpha } from '@/utils/addAlpha';
 import { useAuth } from '@/contexts/AuthContext';
-import { nanoid } from 'nanoid';
+
+import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
+import BlockSelector from './BlockSelector';
+import SyncBlockListener from './SyncBlockListener';
+import { useSyncBlockManager } from './useSyncBlockManager';
 
 type CustomElement =
   | { type: 'paragraph'; children: CustomText[] }
@@ -59,7 +64,7 @@ interface RichTextEditorProps {
   provider: WebsocketProvider;
   onlineUsers: number;
   connected: boolean;
-  syncBlockMap?: any;
+  documentId?: string; // 当前文档ID
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -67,7 +72,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   provider,
   onlineUsers,
   connected,
-  syncBlockMap,
+  documentId,
 }) => {
   const { user } = useAuth();
 
@@ -103,6 +108,30 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [sharedType, provider, userName, randomColor]);
 
   const [value, setValue] = useState<Descendant[]>(initialValue);
+  const syncTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // 集成同步块 Hook
+  const {
+    handleInsertSyncBlock,
+    handleInsertRefBlock,
+    handleBlockSelect,
+    activeBlockId,
+    setActiveBlockId,
+    blockSelectorVisible,
+    setBlockSelectorVisible,
+  } = useSyncBlockManager(editor, documentId);
+
+  // 初始化全局同步块管理器
+  useEffect(() => {
+    const initGlobalManager = async () => {
+      try {
+        await globalBlockManager.initialize();
+      } catch (error) {
+        console.error('全局同步块管理器初始化失败:', error);
+      }
+    };
+    initGlobalManager();
+  }, []);
 
   // 连接编辑器
   useEffect(() => {
@@ -114,44 +143,87 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return () => YjsEditor.disconnect(editor);
   }, [editor, sharedType]);
 
-  // 插入同步块按钮逻辑
-  const handleInsertSyncBlock = () => {
-    if (!syncBlockMap) return;
-    // 1. 生成唯一ID
-    const syncBlockId = `syncBlock-${nanoid(8)}`;
-    // 2. 在syncBlockMap中创建内容
-    const yMap = new Y.Map();
-    yMap.set('content', new Y.Text());
-    syncBlockMap.set(syncBlockId, yMap);
-    // 3. 插入sync-block节点
-    Transforms.insertNodes(editor, {
-      type: 'sync-block',
-      syncBlockId,
-      children: [{ text: '' }],
-    });
-  };
+  // 内容同步机制 - 使用全局管理器
+  const handleEditorSync = useCallback(() => {
+    if (!activeBlockId) return;
+
+    // 获取当前活跃块的内容
+    let activeContent = '';
+    for (const [node] of Node.nodes(editor)) {
+      if ((node as any).type === 'sync-block' && (node as any).syncBlockId === activeBlockId) {
+        activeContent = Node.string(node);
+        break;
+      }
+    }
+
+    if (activeContent) {
+      // 检查内容是否真的发生了变化
+      const currentGlobalContent = globalBlockManager.getBlockContent(activeBlockId);
+      if (currentGlobalContent !== activeContent) {
+        // 更新全局管理器中的内容
+        globalBlockManager.updateBlockContent(activeBlockId, activeContent);
+      }
+    }
+  }, [editor, activeBlockId]);
+
+  const debouncedSync = useCallback(() => {
+    if (syncTimeout.current) clearTimeout(syncTimeout.current);
+    syncTimeout.current = setTimeout(() => {
+      handleEditorSync();
+    }, 1000);
+  }, [handleEditorSync]);
 
   return (
     <div className="border rounded-lg bg-white p-4 min-h-[400px]">
-      <Slate editor={editor} initialValue={value} onChange={setValue}>
-        <EditorHeaderToolbar onInsertSyncBlock={handleInsertSyncBlock} />
-        <RichEditable editor={editor} value={value} syncBlockMap={syncBlockMap} />
+      <Slate
+        editor={editor}
+        initialValue={value}
+        onChange={(val) => {
+          setValue(val);
+          // 记录当前活跃块ID
+          const { selection } = editor;
+          if (selection) {
+            for (const [node] of Editor.nodes(editor, { at: selection })) {
+              if ((node as any).type === 'sync-block') {
+                const blockId = (node as any).syncBlockId;
+                if (blockId !== activeBlockId) {
+                  setActiveBlockId(blockId);
+                }
+                break;
+              } else {
+                setActiveBlockId(null);
+              }
+            }
+          }
+          // 只有在有活跃块时才同步
+          if (activeBlockId) {
+            debouncedSync();
+          }
+        }}
+      >
+        <EditorHeaderToolbar
+          onInsertSyncBlock={handleInsertSyncBlock}
+          onInsertRefBlock={handleInsertRefBlock}
+        />
+        <RichEditable editor={editor} value={value} />
         <EditorFooter connected={connected} onlineUsers={onlineUsers} />
+
+        {/* 同步块内容监听器 */}
+        <SyncBlockListener editor={editor} />
       </Slate>
+
+      <BlockSelector
+        visible={blockSelectorVisible}
+        onCancel={() => setBlockSelectorVisible(false)}
+        onSelect={handleBlockSelect}
+        currentDocumentId={documentId || ''}
+      />
     </div>
   );
 };
 
-// 新增子組件 RichEditable，放在 <Slate> 裡面調用 hooks
-function RichEditable({
-  editor,
-  value,
-  syncBlockMap,
-}: {
-  editor: Editor;
-  value: Descendant[];
-  syncBlockMap?: any;
-}) {
+// 重构 RichEditable 组件，回归官方推荐方案
+function RichEditable({ editor, value }: { editor: Editor; value: Descendant[] }) {
   const decorate = useDecorateRemoteCursors();
   const renderLeaf = useCallback((props: any) => {
     getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
@@ -227,13 +299,7 @@ function RichEditable({
         `,
         }}
       />
-      <EditorBody
-        editor={editor}
-        decorate={decorate}
-        renderLeaf={renderLeaf}
-        editorValue={value}
-        syncBlockMap={syncBlockMap}
-      />
+      <EditorBody editor={editor} decorate={decorate} renderLeaf={renderLeaf} editorValue={value} />
     </>
   );
 }
