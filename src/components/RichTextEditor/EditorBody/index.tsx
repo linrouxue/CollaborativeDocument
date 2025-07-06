@@ -14,7 +14,7 @@ interface EditorBodyProps {
   // 编辑器值
   editorValue?: any;
   onToggleCollapse?: (collapsed: boolean) => void;
-  syncBlockMap?: any;
+  ydoc?: any;
 }
 
 const EditorBody: React.FC<EditorBodyProps> = ({
@@ -23,7 +23,7 @@ const EditorBody: React.FC<EditorBodyProps> = ({
   renderLeaf,
   editorValue,
   onToggleCollapse,
-  syncBlockMap,
+  ydoc,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -39,12 +39,7 @@ const EditorBody: React.FC<EditorBodyProps> = ({
         toggleCollapsed={toggleSidebar}
         editorValue={editorValue || []}
       />
-      <EditorContentArea
-        editor={editor}
-        decorate={decorate}
-        renderLeaf={renderLeaf}
-        syncBlockMap={syncBlockMap}
-      />
+      <EditorContentArea editor={editor} decorate={decorate} renderLeaf={renderLeaf} />
     </div>
   );
 };

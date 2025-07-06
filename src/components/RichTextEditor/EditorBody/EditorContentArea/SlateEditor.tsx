@@ -1,94 +1,84 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Slate, Editable, withReact, useSlate } from 'slate-react';
-import { createEditor, Descendant, Editor } from 'slate';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Editable } from 'slate-react';
 import { RenderLeafProps } from 'slate-react';
-import { Transforms, Node, Editor as SlateEditorCore, Path, BaseElement } from 'slate';
-import { findSyncBlockPath, slateToYContent } from './syncBlockUtils';
-import { debounce } from 'lodash';
-import styles from './SlateEditor.module.css';
+import { Editor, Transforms, Node, Range } from 'slate';
+import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
+import SyncBlockElement from './SyncBlockElement';
 
 interface SlateEditorProps {
   editor: Editor;
   decorate: any;
   renderLeaf: any;
-  syncBlockMap: Map<string, any>;
 }
 
-const SlateEditor = ({ editor, decorate, renderLeaf, syncBlockMap }: SlateEditorProps) => {
-  const [focusedSyncBlockId, setFocusedSyncBlockId] = useState<string | null>(null);
-  const [value, setValue] = useState<Descendant[]>(editor.children as Descendant[]);
-
-  const debouncedSyncBlock = useCallback(
-    debounce((editor, syncBlockMap, focusedSyncBlockId) => {
-      const path = findSyncBlockPath(editor, focusedSyncBlockId);
-      if (path) {
-        const fragment = SlateEditorCore.fragment(editor, path) as Descendant[];
-        const yMap = syncBlockMap.get(focusedSyncBlockId);
-        if (yMap) {
-          const yContent = yMap.get('content');
-          slateToYContent(yContent, fragment);
+// 提取同步块相关的 onKeyDown 逻辑
+function handleSyncBlockKeyDown(editor: Editor) {
+  return (event: React.KeyboardEvent) => {
+    const { selection } = editor;
+    if (selection) {
+      for (const [node] of Editor.nodes(editor, { at: selection })) {
+        if ((node as any).type === 'sync-block') {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            if (selection && Range.isCollapsed(selection)) {
+              const { anchor } = selection;
+              // 插入换行符
+              Transforms.insertText(editor, '\n', { at: anchor });
+              // 手动设置 selection 到新位置
+              const newOffset = anchor.offset + 1;
+              Transforms.select(editor, {
+                path: anchor.path,
+                offset: newOffset,
+              });
+            }
+            return;
+          }
         }
       }
-    }, 300), // 300ms防抖
-    [editor, syncBlockMap]
-  );
+    }
+  };
+}
 
-  // 操作栏：复制ID
-  const handleCopyId = useCallback((blockId: string) => {
-    navigator.clipboard.writeText(blockId);
-  }, []);
-
-  // 操作栏：删除同步块
-  const handleDeleteSyncBlock = useCallback(
-    (blockId: string) => {
-      const path = findSyncBlockPath(editor, blockId);
-      if (path) {
-        Transforms.removeNodes(editor, { at: path });
+// 提取同步块相关的 onSelect 逻辑
+function handleSyncBlockSelect(editor: Editor, setFocusedSyncBlockId: (id: string | null) => void) {
+  return () => {
+    const { selection } = editor;
+    if (selection) {
+      let inSyncBlock = false;
+      for (const [node] of Editor.nodes(editor, { at: selection })) {
+        if ((node as any).type === 'sync-block') {
+          inSyncBlock = true;
+          break;
+        }
       }
-      if (syncBlockMap.has(blockId)) {
-        syncBlockMap.delete(blockId);
+      if (!inSyncBlock) {
+        setFocusedSyncBlockId(null);
       }
-    },
-    [editor, syncBlockMap]
-  );
+    } else {
+      setFocusedSyncBlockId(null);
+    }
+  };
+}
 
-  // renderElement集成操作栏和点击聚焦
+const SlateEditor = ({ editor, decorate, renderLeaf }: SlateEditorProps) => {
+  const [focusedSyncBlockId, setFocusedSyncBlockId] = useState<string | null>(null);
+
   const renderElement = useCallback(
     (props: { element: any; attributes: any; children: React.ReactNode }) => {
       const { element, attributes, children } = props;
       if (element.type === 'sync-block') {
-        const isFocused = focusedSyncBlockId === element.syncBlockId;
         return (
-          <div
-            {...attributes}
-            tabIndex={0}
-            className={styles.syncBlockContainer + (isFocused ? ' ' + styles.syncBlockFocused : '')}
-          >
-            {/* 操作栏，仅聚焦时显示 */}
-            {isFocused && (
-              <div className={styles.syncBlockToolbar}>
-                <button
-                  style={{ color: '#1890ff' }}
-                  className={styles.syncBlockToolbarBtn}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleCopyId(element.syncBlockId)}
-                >
-                  复制ID
-                </button>
-                <button
-                  style={{ color: '#ff4d4f' }}
-                  className={styles.syncBlockToolbarBtn}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleDeleteSyncBlock(element.syncBlockId)}
-                >
-                  删除
-                </button>
-              </div>
-            )}
-            {children}
-          </div>
+          <SyncBlockElement
+            editor={editor}
+            element={element}
+            attributes={attributes}
+            children={children}
+            focusedSyncBlockId={focusedSyncBlockId}
+            setFocusedSyncBlockId={setFocusedSyncBlockId}
+            globalBlockManager={globalBlockManager}
+          />
         );
       }
       switch (element.type) {
@@ -151,7 +141,7 @@ const SlateEditor = ({ editor, decorate, renderLeaf, syncBlockMap }: SlateEditor
           return <p {...attributes}>{children}</p>;
       }
     },
-    [focusedSyncBlockId, handleCopyId, handleDeleteSyncBlock, editor]
+    [focusedSyncBlockId, setFocusedSyncBlockId, editor]
   );
 
   // 行内样式渲染：加粗、斜体、下划线
@@ -170,44 +160,15 @@ const SlateEditor = ({ editor, decorate, renderLeaf, syncBlockMap }: SlateEditor
   }, []);
 
   return (
-    <div className="slate-editor-root">
-      <Slate
-        editor={editor}
-        initialValue={value}
-        onChange={(val) => {
-          setValue(val);
-          if (focusedSyncBlockId) {
-            debouncedSyncBlock(editor, syncBlockMap, focusedSyncBlockId);
-          }
-        }}
-      >
-        <Editable
-          decorate={decorate}
-          renderLeaf={renderLeafWithMarks}
-          renderElement={renderElement}
-          placeholder="请开始输入..."
-          spellCheck
-          autoFocus
-          className="min-h-[300px] outline-none p-2 bg-white"
-          onSelect={() => {
-            if (!editor.selection) {
-              setFocusedSyncBlockId(null);
-              return;
-            }
-            const [match] = Editor.nodes(editor, {
-              at: editor.selection,
-              match: (n) => (n as any).type === 'sync-block',
-            });
-            if (match) {
-              const [node] = match;
-              setFocusedSyncBlockId((node as any).syncBlockId);
-            } else {
-              setFocusedSyncBlockId(null);
-            }
-          }}
-        />
-      </Slate>
-    </div>
+    <Editable
+      decorate={decorate}
+      renderLeaf={renderLeafWithMarks}
+      renderElement={renderElement}
+      className="p-4 min-h-[400px] focus:outline-none"
+      placeholder="开始输入内容..."
+      onKeyDown={handleSyncBlockKeyDown(editor)}
+      onSelect={handleSyncBlockSelect(editor, setFocusedSyncBlockId)}
+    />
   );
 };
 
