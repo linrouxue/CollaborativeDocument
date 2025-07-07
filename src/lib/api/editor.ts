@@ -133,6 +133,7 @@ export const saveDocumentContent = async (
     const yjsContent = encodeSlateContentToYjs(content);
     
     const response = await saveDocumentContentById(documentId, yjsContent);
+    console.log('saveDocumentContentById response:', response);
     
     if (response.success) {
       return { success: true };

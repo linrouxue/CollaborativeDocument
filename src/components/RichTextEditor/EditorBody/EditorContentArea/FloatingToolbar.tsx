@@ -23,38 +23,52 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ onComment }) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
-    const update = () => {
-      const { selection } = editor;
-      if (
-        !selection ||
-        !ReactEditor.isFocused(editor) ||
-        Range.isCollapsed(selection) ||
-        Editor.string(editor, selection) === ''
-      ) {
-        setShow(false);
-        return;
-      }
-      const domSelection = window.getSelection();
-      if (!domSelection || domSelection.rangeCount === 0) return;
-      const range = domSelection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      setPosition({
-        top: rect.top + window.scrollY - 10, // 40px 上方
-        left: rect.left + rect.width / 2 + window.scrollX,
+    const handler = () => {
+      console.log('handler触发');
+      window.requestAnimationFrame(() => {
+        const selection = editor.selection;
+        if (!selection || !ReactEditor.isFocused(editor)|| Editor.string(editor, selection) === '') {
+        // if (
+        //   !selection ||
+        //   !ReactEditor.isFocused(editor) ||
+        //   Range.isCollapsed(selection) ||
+        //   Editor.string(editor, selection) === ''
+        // ) {
+        // {
+        //   !selection ||
+        //   !ReactEditor.isFocused(editor) ||
+        //   Range.isCollapsed(selection) ||
+        //   Editor.string(editor, selection) === ''
+          console.log('悬浮toolbar不显示')
+          console.log('editor.selection:', editor.selection);
+          console.log('editor.selection:', Editor.string(editor, selection as Range));
+          setShow(false);
+          return;
+        }
+  
+        const domSelection = window.getSelection();
+        if (!domSelection || domSelection.rangeCount === 0) return;
+  
+        const domRange = domSelection.getRangeAt(0);
+        const rect = domRange.getBoundingClientRect();
+  
+        setPosition({
+          top: rect.top + window.scrollY - 10,
+          left: rect.left + rect.width / 2 + window.scrollX,
+        });
+        setShow(true);
       });
-      setShow(true);
     };
-    const debouncedUpdate = debounce(update, 300);
-    document.addEventListener('selectionchange', debouncedUpdate);
-    window.addEventListener('scroll', debouncedUpdate);
-    window.addEventListener('resize', debouncedUpdate);
-    // 初始也执行一次
-    debouncedUpdate();
+  
+    document.addEventListener('selectionchange', handler);
+    window.addEventListener('scroll', handler);
+    window.addEventListener('resize', handler);
+    handler(); // 初始触发
+  
     return () => {
-      document.removeEventListener('selectionchange', debouncedUpdate);
-      window.removeEventListener('scroll', debouncedUpdate);
-      window.removeEventListener('resize', debouncedUpdate);
-      debouncedUpdate.cancel && debouncedUpdate.cancel();
+      document.removeEventListener('selectionchange', handler);
+      window.removeEventListener('scroll', handler);
+      window.removeEventListener('resize', handler);
     };
   }, [editor]);
 

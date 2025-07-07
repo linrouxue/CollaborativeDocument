@@ -6,7 +6,6 @@ import { RenderLeafProps, RenderElementProps, ReactEditor } from 'slate-react';
 import { Editor, Transforms, Node, Range } from 'slate';
 import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
 import SyncBlockElement from './SyncBlockElement';
-import FloatingToolbar from './FloatingToolbar';
 
 interface SlateEditorProps {
   editor: Editor;

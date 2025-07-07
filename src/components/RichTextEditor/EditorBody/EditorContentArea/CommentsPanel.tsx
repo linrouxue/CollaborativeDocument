@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { CommentThread } from '@/components/RichTextEditor/comments/types';
-import { Range, Editor } from 'slate';
+import { Range, Editor, Node } from 'slate';
+import { Modal } from 'antd';
 
 interface CommentsPanelProps {
   threads: [string, CommentThread][];
@@ -29,6 +30,9 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
 
   const findThreadByRange = () => {
     if (!pendingCommentRange) return null;
@@ -60,6 +64,43 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
     setInputValue('');
     setPendingCommentRange(null);
   };
+
+  const decorate = useCallback(
+    ([node, path]) => {
+      const ranges: any[] = [];
+      if (editor.selection && Range.isCollapsed(editor.selection) === false) {
+        const { anchor, focus } = editor.selection;
+        const [start, end] = Range.edges(editor.selection);
+        if (
+          Editor.hasPath(editor, path) &&
+          Range.includes(editor.selection, path)
+        ) {
+          ranges.push({
+            anchor: { path, offset: 0 },
+            focus: { path, offset: Node.string(node).length },
+            highlight: true,
+          });
+        }
+      }
+      return ranges;
+    },
+    [editor]
+  );
+
+  const renderLeaf = useCallback(props => {
+    const { leaf, children, attributes } = props;
+    if (leaf.highlight) {
+      return (
+        <span
+          {...attributes}
+          style={{ backgroundColor: '#ffe58f' /* 你喜欢的高亮色 */ }}
+        >
+          {children}
+        </span>
+      );
+    }
+    return <span {...attributes}>{children}</span>;
+  }, []);
 
   return (
     <div className="flex flex-col h-full p-4">
@@ -111,34 +152,60 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-sm font-semibold">👤 {c.author}：</span>
-                    <span
-                      className="text-gray-700 whitespace-pre-wrap truncate max-w-xs"
-                      title={c.content}
-                    >
-                      {c.content}
-                    </span>
+                    {editingCommentId === c.id ? (
+                      <>
+                        <input
+                          className="border rounded px-2 py-1"
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          autoFocus
+                        />
+                        <button
+                          className="ml-2 text-blue-600 hover:underline"
+                          onClick={() => {
+                            onEdit(thread.id, c.id, editValue);
+                            setEditingCommentId(null);
+                          }}
+                        >
+                          保存
+                        </button>
+                        <button
+                          className="ml-2 text-gray-500 hover:underline"
+                          onClick={() => setEditingCommentId(null)}
+                        >
+                          取消
+                        </button>
+                      </>
+                    ) : (
+                      <span
+                        className="text-gray-700 whitespace-pre-wrap truncate max-w-xs"
+                        title={c.content}
+                      >
+                        {c.content}
+                      </span>
+                    )}
                   </div>
                   <div className="flex gap-2 text-xs">
                     {c.author === currentUser && (
-                      <button
-                        className="text-blue-600 hover:underline"
-                        onClick={() => {
-                          const newContent = prompt('编辑评论', c.content);
-                          if (newContent) onEdit(thread.id, c.id, newContent);
-                        }}
-                      >
-                        编辑
-                      </button>
-                    )}
-                    {c.author === currentUser && idx === 0 && (
-                      <button
-                        className="text-red-500 hover:underline"
-                        onClick={() => {
-                          if (confirm('确定删除整个线程？')) onDelete(thread.id);
-                        }}
-                      >
-                        删除线程
-                      </button>
+                      <>
+                        <button
+                          className="text-blue-600 hover:underline"
+                          onClick={() => {
+                            setEditingCommentId(c.id);
+                            setEditValue(c.content);
+                          }}
+                        >
+                          编辑
+                        </button>
+                        {idx === 0 && (
+                          <button
+                            className="text-red-500 hover:underline"
+                            onClick={() => setDeletingThreadId(thread.id)}
+                          >
+                            删除
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -184,6 +251,19 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
             >
               回复
             </button>
+            <Modal
+              title="确认删除"
+              open={deletingThreadId === thread.id}
+              onOk={() => {
+                onDelete(thread.id);
+                setDeletingThreadId(null);
+              }}
+              onCancel={() => setDeletingThreadId(null)}
+              okText="确认"
+              cancelText="取消"
+            >
+              <p>确定要删除整个评论吗？</p>
+            </Modal>
           </div>
         ))}
       </div>
