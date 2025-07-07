@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   createEditor,
   Descendant,
@@ -8,13 +8,17 @@ import {
   Transforms,
   Element as SlateElement,
   BaseEditor,
+  Node,
+  Range,
 } from 'slate';
 import { Slate, withReact, ReactEditor, Editable } from 'slate-react';
 import { HistoryEditor, withHistory } from 'slate-history';
+import { v4 as uuidv4 } from 'uuid';
 
 import EditorHeaderToolbar from './EditorHeaderToolbar';
 import EditorFooter from './EditorFooter';
 import EditorBody from './EditorBody';
+import EditorContentArea from './EditorBody/EditorContentArea';
 
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
@@ -26,7 +30,13 @@ import {
 } from '@slate-yjs/react';
 import { addAlpha } from '@/utils/addAlpha';
 import { useAuth } from '@/contexts/AuthContext';
-import { nanoid } from 'nanoid';
+import { useThreadedComments } from './comments/useThreadedComments';
+import CommentsSidebar from './comments/CommentsSidebar';
+
+import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
+import BlockSelector from './BlockSelector';
+import SyncBlockListener from './SyncBlockListener';
+import { useSyncBlockManager } from './useSyncBlockManager';
 
 type CustomElement =
   | { type: 'paragraph'; children: CustomText[] }
@@ -64,7 +74,7 @@ interface RichTextEditorProps {
   isSaving?: boolean;
   hasUnsavedChanges?: boolean;
   lastSavedTime?: Date | null;
-  syncBlockMap?: any;
+  documentId?: string; // 当前文档ID
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -77,14 +87,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   isSaving,
   hasUnsavedChanges,
   lastSavedTime,
-  syncBlockMap,
+  documentId,
 }) => {
   const { user } = useAuth();
 
   // 從 AuthContext 獲取用戶名，如果沒有則使用默認值
-  const userName = useMemo(() => {
+  const userName: string = useMemo(() => {
     console.log('try to get user name', user);
-    return user?.username || user?.email || user?.id || 'Anonymous';
+    return String(user?.username || user?.email || user?.id || 'Anonymous');
   }, [user]);
 
   const randomColor = useMemo(() => {
@@ -112,133 +122,253 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return e;
   }, [sharedType, provider, userName, randomColor]);
 
-  const [value, setValue] = useState<Descendant[]>(initialContent);
+  const [value, setValue] = useState<Descendant[]>(initialContent || []);
 
-  // 处理内容变化并通知父组件
-  const handleChange = useCallback((newValue: Descendant[]) => {
-    setValue(newValue);
-    if (onContentChange) {
-      onContentChange(newValue);
+  const syncTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // 集成同步块 Hook
+  const {
+    handleInsertSyncBlock,
+    handleInsertRefBlock,
+    handleBlockSelect,
+    activeBlockId,
+    setActiveBlockId,
+    blockSelectorVisible,
+    setBlockSelectorVisible,
+  } = useSyncBlockManager(editor, documentId);
+
+  // 内容同步机制 - 使用全局管理器
+  const handleEditorSync = useCallback(() => {
+    if (!activeBlockId) return;
+
+    // 获取当前活跃块的内容
+    let activeContent = '';
+    for (const [node] of Node.nodes(editor)) {
+      if ((node as any).type === 'sync-block' && (node as any).syncBlockId === activeBlockId) {
+        activeContent = Node.string(node);
+        break;
+      }
     }
-  }, [onContentChange]);
 
+    if (activeContent) {
+      // 检查内容是否真的发生了变化
+      const currentGlobalContent = globalBlockManager.getBlockContent(activeBlockId);
+      if (currentGlobalContent !== activeContent) {
+        // 更新全局管理器中的内容
+        globalBlockManager.updateBlockContent(activeBlockId, activeContent);
+      }
+    }
+  }, [editor, activeBlockId]);
+
+  const debouncedSync = useCallback(() => {
+    if (syncTimeout.current) clearTimeout(syncTimeout.current);
+    syncTimeout.current = setTimeout(() => {
+      handleEditorSync();
+    }, 1000);
+  }, [handleEditorSync]);
+
+  // 统一的 onChange 处理函数
+  const handleChange = useCallback(
+    (newValue: Descendant[]) => {
+      setValue(newValue);
+
+      // 通知父组件
+      if (onContentChange) {
+        onContentChange(newValue);
+      }
+
+      // 同步块逻辑：记录当前活跃块ID
+      const { selection } = editor;
+      if (selection) {
+        for (const [node] of Editor.nodes(editor, { at: selection })) {
+          if ((node as any).type === 'sync-block') {
+            const blockId = (node as any).syncBlockId;
+            if (blockId !== activeBlockId) {
+              setActiveBlockId(blockId);
+            }
+            break;
+          } else {
+            setActiveBlockId(null);
+          }
+        }
+      }
+
+      // 只有在有活跃块时才同步
+      if (activeBlockId) {
+        debouncedSync();
+      }
+    },
+    [onContentChange, editor, activeBlockId, setActiveBlockId, debouncedSync]
+  );
+
+  // 初始化全局同步块管理器
+  useEffect(() => {
+    const initGlobalManager = async () => {
+      try {
+        await globalBlockManager.initialize();
+      } catch (error) {
+        console.error('全局同步块管理器初始化失败:', error);
+      }
+    };
+    initGlobalManager();
+  }, []);
 
   // 连接编辑器
   useEffect(() => {
     YjsEditor.connect(editor);
     // 只在 Yjs 文档为空时插入初始值
-    if (sharedType.toString().length === 0) {
+    if (sharedType.toString().length === 0 && initialContent) {
       Transforms.insertNodes(editor, initialContent, { at: [0] });
     }
     return () => YjsEditor.disconnect(editor);
-  }, [editor, sharedType]);
-
-  // 插入同步块按钮逻辑
-  const handleInsertSyncBlock = () => {
-    if (!syncBlockMap) return;
-    // 1. 生成唯一ID
-    const syncBlockId = `syncBlock-${nanoid(8)}`;
-    // 2. 在syncBlockMap中创建内容
-    const yMap = new Y.Map();
-    yMap.set('content', new Y.Text());
-    syncBlockMap.set(syncBlockId, yMap);
-    // 3. 插入sync-block节点
-    Transforms.insertNodes(editor, {
-      type: 'sync-block',
-      syncBlockId,
-      children: [{ text: '' }],
-    });
-  };
+  }, [editor, sharedType, initialContent]);
 
   return (
     <div className="border rounded-lg bg-white p-4 min-h-[400px]">
       <Slate editor={editor} initialValue={value} onChange={handleChange}>
-        <EditorHeaderToolbar onInsertSyncBlock={handleInsertSyncBlock} />
-        <RichEditable editor={editor} value={value} syncBlockMap={syncBlockMap} />
-        <EditorFooter 
-          connected={connected} 
+        <EditorHeaderToolbar
+          onInsertSyncBlock={handleInsertSyncBlock}
+          onInsertRefBlock={handleInsertRefBlock}
+        />
+        <RichEditable
+          editor={editor}
+          value={value}
+          ydoc={sharedType.doc}
+          userName={userName}
+          connected={connected}
+          onlineUsers={onlineUsers}
+          setValue={setValue}
+        />
+        <EditorFooter
+          connected={connected}
           onlineUsers={onlineUsers}
           isSaving={isSaving}
           hasUnsavedChanges={hasUnsavedChanges}
           lastSavedTime={lastSavedTime}
         />
+        {/* 同步块内容监听器 */}
+        <SyncBlockListener editor={editor} />
       </Slate>
+
+      <BlockSelector
+        visible={blockSelectorVisible}
+        onCancel={() => setBlockSelectorVisible(false)}
+        onSelect={handleBlockSelect}
+        currentDocumentId={documentId || ''}
+      />
     </div>
   );
 };
 
-// 新增子組件 RichEditable，放在 <Slate> 裡面調用 hooks
+// 合并后的 RichEditable 组件，支持外部传入 decorate/renderLeaf，同时保留完整功能和样式注入
 function RichEditable({
   editor,
   value,
-  syncBlockMap,
+  decorate: externalDecorate,
+  renderLeaf: externalRenderLeaf,
+  ydoc,
+  userName,
+  connected,
+  onlineUsers,
+  setValue,
 }: {
   editor: Editor;
   value: Descendant[];
-  syncBlockMap?: any;
+  decorate?: any;
+  renderLeaf?: any;
+  ydoc: any;
+  userName: string;
+  connected: boolean;
+  onlineUsers: number;
+  setValue: (v: Descendant[]) => void;
 }) {
-  const decorate = useDecorateRemoteCursors();
-  const renderLeaf = useCallback((props: any) => {
-    getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
-      if (cursor.data) {
-        props.children = (
-          <span
-            style={{
-              backgroundColor: addAlpha(cursor.data.color as string, 0.5),
-            }}
-          >
-            {props.children}
-          </span>
-        );
+  // 评论相关 hooks
+  const { yThreadsMap, addThread, replyToThread, updateComment, deleteThread } =
+    useThreadedComments(editor, ydoc, userName);
+
+  // 默认 decorate
+  const decorate = externalDecorate || useDecorateRemoteCursors();
+
+  // 默认 renderLeaf
+  const renderLeaf = useCallback(
+    (props: { element: any; attributes: any; children: React.ReactNode }) => {
+      if (externalRenderLeaf) return externalRenderLeaf(props);
+      let children = props.children;
+      // 评论高亮
+      if (props.leaf.threadId) {
+        children = <span style={{ backgroundColor: 'rgba(255,229,100,0.6)' }}>{children}</span>;
       }
-    });
-    getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
-      if (caret.data) {
-        props.children = (
-          <span style={{ position: 'relative' }}>
-            <span
-              contentEditable={false}
-              style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: -1,
-                width: 2,
-                backgroundColor: caret.data.color as string,
-                animation: 'blink 1s step-end infinite',
-              }}
-            />
-            <span
-              contentEditable={false}
-              style={{
-                position: 'absolute',
-                left: -1,
-                top: 0,
-                fontSize: '0.75rem',
-                color: '#fff',
-                backgroundColor: caret.data.color as string,
-                borderRadius: 4,
-                padding: '0 4px',
-                transform: 'translateY(-100%)',
-                zIndex: 10,
-                opacity: 0,
-                transition: 'opacity 0.2s',
-                pointerEvents: 'none',
-              }}
-              className="caret-name"
-            >
-              {caret.data.name as string}
+      // 协同光标高亮
+      getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
+        if (cursor.data) {
+          children = (
+            <span style={{ backgroundColor: addAlpha(cursor.data.color as string, 0.5) }}>
+              {children}
             </span>
-            {props.children}
-          </span>
-        );
-      }
-    });
-    return <span {...props.attributes}>{props.children}</span>;
-  }, []);
+          );
+        }
+      });
+      getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
+        if (caret.data) {
+          children = (
+            <span style={{ position: 'relative' }}>
+              <span
+                contentEditable={false}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: -1,
+                  width: 2,
+                  backgroundColor: caret.data.color as string,
+                  animation: 'blink 1s step-end infinite',
+                }}
+              />
+              <span
+                contentEditable={false}
+                style={{
+                  position: 'absolute',
+                  left: -1,
+                  top: 0,
+                  fontSize: '0.75rem',
+                  color: '#fff',
+                  backgroundColor: caret.data.color as string,
+                  borderRadius: 4,
+                  padding: '0 4px',
+                  transform: 'translateY(-100%)',
+                  zIndex: 10,
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  pointerEvents: 'none',
+                }}
+                className="caret-name"
+              >
+                {caret.data.name as string}
+              </span>
+              {children}
+            </span>
+          );
+        }
+      });
+      return <span {...props.attributes}>{children}</span>;
+    },
+    [externalRenderLeaf]
+  );
+
+  // 添加评论按钮
+  const handleAddComment = () => {
+    const { selection } = editor;
+    if (selection && !Range.isCollapsed(selection)) {
+      const text = prompt('请输入评论内容');
+      if (text) addThread(selection, text);
+    }
+  };
+
+  // 侧边栏数据
+  const threads = Array.from(yThreadsMap.entries());
 
   return (
-    <>
+    <div className="bg-white p-4 min-h-[400px]">
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -252,15 +382,54 @@ function RichEditable({
         `,
         }}
       />
-      <EditorBody
+      <Slate
         editor={editor}
-        decorate={decorate}
-        renderLeaf={renderLeaf}
-        editorValue={value}
-        syncBlockMap={syncBlockMap}
-      />
-    </>
+        initialValue={value}
+        onChange={(val) => setValue(assignHeadingIds(val))}
+      >
+       
+        <EditorBody
+          editor={editor}
+          decorate={decorate}
+          renderLeaf={renderLeaf}
+          editorValue={value}
+          threads={threads}
+          currentUser={String(userName)}
+          onReply={replyToThread}
+          onEdit={updateComment}
+          onDelete={deleteThread}
+          onAddThread={addThread}
+        />
+        
+      </Slate>
+    </div>
   );
+}
+
+function assignHeadingIds(nodes: any): any {
+  return nodes.map((node: any) => {
+    if (
+      node.type &&
+      (node.type === 'heading-one' ||
+        node.type === 'heading-two' ||
+        node.type === 'heading-three' ||
+        node.type === 'heading-four' ||
+        node.type === 'heading-five' ||
+        node.type === 'heading-six')
+    ) {
+      return {
+        ...node,
+        headingId: node.headingId || `heading-${uuidv4()}`,
+        children: assignHeadingIds(node.children || []),
+      };
+    } else if (node.children) {
+      return {
+        ...node,
+        children: assignHeadingIds(node.children),
+      };
+    }
+    return node;
+  });
 }
 
 export default RichTextEditor;

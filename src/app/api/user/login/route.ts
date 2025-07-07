@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       path: '/api/auth',
       maxAge: 60 * 60 * 24 * 7,
     });
-
+    response.headers.set('Access-Control-Allow-Origin', '*'); 
     return response;
   } catch (error) {
     console.error('Login error:', error);

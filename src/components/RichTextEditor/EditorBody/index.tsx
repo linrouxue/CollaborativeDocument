@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import EditorSidebar from './EditorSidebar';
 import EditorContentArea from './EditorContentArea';
+import { Range } from 'slate';
 
 interface EditorBodyProps {
   // 编辑器内容，目录数据等可以按需传入
@@ -13,8 +14,14 @@ interface EditorBodyProps {
   renderLeaf: any;
   // 编辑器值
   editorValue?: any;
+  threads: [string, any][];
+  currentUser: string;
+  onReply: (threadId: string, content: string) => void;
+  onEdit: (threadId: string, commentId: string, newContent: string) => void;
+  onDelete: (threadId: string) => void;
+  onAddThread: (range: Range, content: string) => void;
   onToggleCollapse?: (collapsed: boolean) => void;
-  syncBlockMap?: any;
+  ydoc?: any;
 }
 
 const EditorBody: React.FC<EditorBodyProps> = ({
@@ -22,8 +29,14 @@ const EditorBody: React.FC<EditorBodyProps> = ({
   decorate,
   renderLeaf,
   editorValue,
+  threads,
+  currentUser,
+  onReply,
+  onEdit,
+  onDelete,
+  onAddThread,
   onToggleCollapse,
-  syncBlockMap,
+  ydoc,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -33,18 +46,25 @@ const EditorBody: React.FC<EditorBodyProps> = ({
   };
 
   return (
-    <div className="flex h-full border rounded-md overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       <EditorSidebar
         collapsed={collapsed}
         toggleCollapsed={toggleSidebar}
         editorValue={editorValue || []}
       />
-      <EditorContentArea
-        editor={editor}
-        decorate={decorate}
-        renderLeaf={renderLeaf}
-        syncBlockMap={syncBlockMap}
-      />
+      <div className="flex-1 h-full">
+        <EditorContentArea
+          editor={editor}
+          decorate={decorate}
+          renderLeaf={renderLeaf}
+          threads={threads}
+          currentUser={currentUser}
+          onReply={onReply}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAddThread={onAddThread}
+        />
+      </div>
     </div>
   );
 };

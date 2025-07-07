@@ -1,4 +1,5 @@
 'use client';
+import ReactMarkdown from 'react-markdown';
 
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { ProLayout } from '@ant-design/pro-components';
@@ -33,6 +34,9 @@ import { getDocumentContent, saveDocumentContent } from '@/lib/api/editor';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import DocEditor from '@/components/RichTextEditor';
+import { Drawer,Card, Space, Tooltip } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
+
 
 const { Content } = AntLayout;
 
@@ -63,6 +67,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [sseConnected, setSseConnected] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const [summaryVisible, setSummaryVisible] = useState(false); // 控制弹窗开关
+
 
   // 自动保存相关状态
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -70,7 +76,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastContentRef = useRef<string>('');
-
 
   // --- 拖拽相关 ---
   const [siderWidth, setSiderWidth] = useState(220); // 初始宽度
@@ -115,21 +120,20 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     };
   }, []);
 
-
   // --- 其他原有内容 ---
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user,logout } = useAuth();
   const contextMenu = useContextMenu();
   const message = useMessage();
-  const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
-  
-  // 固定写死的SSE和触发URL
-  const SSE_URL = 'http://119.29.229.71:8585/api/sse/connect/9/1';
-
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
   const params = useParams();
   const knowledgeBaseId = params.knowledgeBaseId as string;
   const documentId = params.documentId as string;
+
+
 
   // 返回主页
   const handleBackToHome = () => {
@@ -140,9 +144,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const loadDocumentContent = async () => {
     try {
       console.log('Loading document content for documentId:', documentId);
-      
+
       const response = await getDocumentContent(parseInt(documentId));
-      
+
       if (response.success && response.content) {
         console.log('Document content loaded successfully:', JSON.stringify(response.content));
         setInitialContent(response.content);
@@ -156,7 +160,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           },
         ]);
       }
-      
+
       setEditorReady(true);
     } catch (error) {
       console.error('Error loading document content:', error);
@@ -174,7 +178,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // 保存文档内容
   const saveDocument = async (content: any) => {
     if (!documentId || isSaving) return;
-    
+
     setIsSaving(true);
     try {
       const result = await saveDocumentContent(parseInt(documentId), content);
@@ -197,24 +201,23 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // 监听编辑器内容变化并触发自动保存
   const handleContentChange = (content: any) => {
     const contentString = JSON.stringify(content);
-    
+
     // 检查内容是否真的发生了变化
     if (contentString !== lastContentRef.current) {
       lastContentRef.current = contentString;
       setHasUnsavedChanges(true);
-      
+
       // 清除之前的定时器
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      
+
       // 设置新的定时器，3秒后保存
       saveTimeoutRef.current = setTimeout(() => {
         saveDocument(content);
       }, 3000);
     }
   };
-
 
   // 触发文档总结生成
   const triggerSummaryRequest = () => {
@@ -233,7 +236,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const handleRetrySummary = () => {
     triggerSummaryRequest();
   };
-
 
   // 更多操作菜单
   const moreActionsMenu = {
@@ -270,7 +272,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         setLoading(false);
         return;
       }
-      
+
       setLoading(true);
       try {
         const response = await getKnowledgeBaseTree(knowledgeBaseId);
@@ -310,7 +312,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     try {
       const yDoc = new Y.Doc();
       const yXmlText = yDoc.get('slate', Y.XmlText);
-      const yProvider = new WebsocketProvider('ws://localhost:1234', `${knowledgeBaseId}-${documentId}`, yDoc);
+      const yProvider = new WebsocketProvider(
+        'ws://localhost:1234',
+        `${knowledgeBaseId}-${documentId}`,
+        yDoc
+      );
 
       yProvider.on('status', (event: { status: string }) => {
         setConnected(event.status === 'connected');
@@ -353,15 +359,25 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     if (connected && documentId) {
       try {
         // 1. 创建EventSource连接
+          const userId =user?.id
+  // 固定写死的SSE和触发URL
+  const SSE_URL = `http://119.29.229.71:8585/api/sse/connect/${userId}/${documentId}`;
+
         eventSourceRef.current = new EventSource(SSE_URL, {
           withCredentials: true, // 允许跨域凭证
         });
 
         // 2. 处理接收到的消息
         eventSourceRef.current.onmessage = (event) => {
+          setIsSummaryLoading( true )
           try {
+            if (event.data === '[DONE]') {
+              setIsSummaryLoading( false )// 结束标志
+              // 仅表示结束，不追加
+              return;
+            }
             setSummary((prev) => prev + event.data);
-            setIsSummaryLoading(false); // 收到数据后停止加载状态
+            setIsSummaryLoading(false); // 只要有数据就可以取消“加载中”状态
           } catch (parseError) {
             console.error('SSE数据解析错误:', parseError);
           }
@@ -501,7 +517,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           }}
         >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{editorError}</div>
+            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>
+              {editorError}
+            </div>
             <Button
               type="primary"
               onClick={() => window.location.reload()}
@@ -527,6 +545,13 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             flexDirection: 'column',
           }}
         >
+          {/* 文档总结弹窗按钮 */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <Button type="primary" onClick={() => setSummaryVisible(true)}>
+          查看文档总结
+            </Button>
+          </div>
+
           {/* 文档编辑器区域 */}
           {connected && sharedType && provider && editorReady ? (
             <div style={{ flex: 1, minHeight: '60%' }}>
@@ -541,6 +566,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 hasUnsavedChanges={hasUnsavedChanges}
                 lastSavedTime={lastSavedTime}
                 syncBlockMap={syncBlockMap}
+                documentId={knowledgeBaseId}
               />
             </div>
           ) : (
@@ -554,15 +580,17 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               }}
             >
               <p>
-                {!connected ? '正在连接到协同服务器...' : 
-                 !editorReady ? '正在加载文档内容...' : 
-                 '正在初始化编辑器...'}
+                {!connected
+                  ? '正在连接到协同服务器...'
+                  : !editorReady
+                    ? '正在加载文档内容...'
+                    : '正在初始化编辑器...'}
               </p>
             </div>
           )}
 
           {/* 文档总结区域 */}
-          <div
+          {/* <div
             style={{
               borderTop: '1px solid #f0f0f0',
               padding: '16px',
@@ -636,8 +664,69 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 {sseConnected ? '请点击上方按钮生成文档总结' : '正在建立SSE连接...'}
               </div>
             )}
-          </div>
+          </div> */}
+
+
+          
         </div>
+          <Drawer
+            title="文档总结"
+            placement="right"
+            onClose={() => setSummaryVisible(false)}
+            open={summaryVisible}
+            width={480}
+          >
+            {summaryError ? (
+              <Alert
+                message={summaryError}
+                type="error"
+                showIcon
+                action={
+                  <Button size="small" type="primary" onClick={handleRetrySummary}>
+                    重试
+                  </Button>
+                }
+              />
+            ) : isSummaryLoading ? (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '8px 0' }}>
+                <Spin size="small" style={{ marginRight: '8px' }} />
+                <span>正在生成文档总结...</span>
+              </div>
+            ) : summary ? (
+              <Card
+                bordered
+                title="文档总结"
+                extra={
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={triggerSummaryRequest}
+                    disabled={isSummaryLoading}
+                  >
+                    重新生成
+                  </Button>
+                }
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.6,
+                  backgroundColor: '#fff',
+                }}
+              >
+                {summary}
+              </Card>
+            ) : (
+              <div style={{ color: '#999', textAlign: 'center', padding: '16px' }}>
+                {sseConnected ? (
+                  <Button type="primary" onClick={triggerSummaryRequest}>
+                    生成文档总结
+                  </Button>
+                ) : (
+                  '正在建立SSE连接...'
+                )}
+              </div>
+            )}
+          </Drawer>
+
       </Content>
     );
   };
@@ -664,7 +753,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <ProLayout
         title="协同文档"
         logo={<TwitterOutlined style={{ fontSize: '24px', color: '#1890ff' }} />}
-        layout={documentId ? "mix" : "top"} // 有documentId时显示侧边栏，否则只显示顶部
+        layout={documentId ? 'mix' : 'top'} // 有documentId时显示侧边栏，否则只显示顶部
         token={{
           sider: {
             colorMenuBackground: 'rgb(245, 246, 247)',
@@ -685,7 +774,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           routes: documentId ? convertDocTreeToMenu(docTree) : [],
         }}
         menu={{
-          request: async () => documentId ? convertDocTreeToMenu(docTree) : [],
+          request: async () => (documentId ? convertDocTreeToMenu(docTree) : []),
         }}
         menuProps={{
           selectedKeys: [pathname],
@@ -707,20 +796,22 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             </Button>
           </div>
         )}
-        actionsRender={() => [
-          documentId ? renderOnlineStatus() : null,
-          documentId ? renderMoreActionsDropdown() : null,
-          <SearchOutlined
-            key="search"
-            className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
-            onClick={() => setSearchModalOpen(true)}
-          />,
-          <SearchModal
-            key="search-modal"
-            open={searchModalOpen}
-            onClose={() => setSearchModalOpen(false)}
-          />,
-        ].filter(Boolean)}
+        actionsRender={() =>
+          [
+            documentId ? renderOnlineStatus() : null,
+            documentId ? renderMoreActionsDropdown() : null,
+            <SearchOutlined
+              key="search"
+              className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
+              onClick={() => setSearchModalOpen(true)}
+            />,
+            <SearchModal
+              key="search-modal"
+              open={searchModalOpen}
+              onClose={() => setSearchModalOpen(false)}
+            />,
+          ].filter(Boolean)
+        }
         avatarProps={{
           src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
           size: 'small',
@@ -748,16 +839,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               onMouseDown={handleMouseDown}
             />
             {/* 右侧编辑器区域 */}
-            <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
-              {renderEditorContent()}
-            </div>
+            <div style={{ flex: 1, minWidth: 0, height: '100%' }}>{renderEditorContent()}</div>
           </div>
         ) : (
           /* 知识库页面：直接显示内容 */
           <div style={{ height: '100%' }}>
-            <Suspense fallback={<Spin size="large" className="global-spin" />}>
-              {children}
-            </Suspense>
+            <Suspense fallback={<Spin size="large" className="global-spin" />}>{children}</Suspense>
           </div>
         )}
       </ProLayout>

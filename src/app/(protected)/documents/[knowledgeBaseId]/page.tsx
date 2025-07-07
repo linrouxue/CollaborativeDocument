@@ -18,7 +18,7 @@ export default function KnowledgeBasePage() {
   const params = useParams();
   const router = useRouter();
   const knowledgeBaseId = params.knowledgeBaseId as string;
-  
+
   const [docTree, setDocTree] = useState<DocumentNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +42,12 @@ export default function KnowledgeBasePage() {
     const fetchDocumentTree = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const response = await getKnowledgeBaseTree(knowledgeBaseId);
         if (response.success && response.data?.tree) {
           setDocTree(response.data.tree);
-          
+
           // 自动跳转到第一个文档
           const firstDocId = getFirstDocumentId(response.data.tree);
           if (firstDocId) {
@@ -123,9 +123,7 @@ export default function KnowledgeBasePage() {
           }}
         >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>
-              {error}
-            </div>
+            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{error}</div>
             <Button type="primary" onClick={() => window.location.reload()}>
               重新加载
             </Button>
@@ -147,9 +145,7 @@ export default function KnowledgeBasePage() {
           >
             返回首页
           </Button>
-          <h1 style={{ margin: 0, fontSize: '24px' }}>
-            知识库文档 (ID: {knowledgeBaseId})
-          </h1>
+          <h1 style={{ margin: 0, fontSize: '24px' }}>知识库文档 (ID: {knowledgeBaseId})</h1>
         </div>
 
         <Card
@@ -169,10 +165,7 @@ export default function KnowledgeBasePage() {
               style={{ fontSize: '16px' }}
             />
           ) : (
-            <Empty
-              description="暂无文档"
-              style={{ padding: '40px 0' }}
-            />
+            <Empty description="暂无文档" style={{ padding: '40px 0' }} />
           )}
         </Card>
       </Content>
