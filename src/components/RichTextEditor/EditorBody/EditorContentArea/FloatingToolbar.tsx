@@ -27,31 +27,33 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ onComment }) => {
       console.log('handler触发');
       window.requestAnimationFrame(() => {
         const selection = editor.selection;
-        if (!selection || !ReactEditor.isFocused(editor)|| Editor.string(editor, selection) === '') {
-        // if (
-        //   !selection ||
-        //   !ReactEditor.isFocused(editor) ||
-        //   Range.isCollapsed(selection) ||
-        //   Editor.string(editor, selection) === ''
-        // ) {
-        // {
-        //   !selection ||
-        //   !ReactEditor.isFocused(editor) ||
-        //   Range.isCollapsed(selection) ||
-        //   Editor.string(editor, selection) === ''
-          console.log('悬浮toolbar不显示')
+        if (!editor.selection || Range.isCollapsed(editor.selection)) {
+          return false
+        }
+        if (
+          !selection ||
+          !ReactEditor.isFocused(editor) ||
+          Range.isCollapsed(selection) ||
+          Editor.string(editor, selection) === ''
+        ) {
+          // {
+          //   !selection ||
+          //   !ReactEditor.isFocused(editor) ||
+          //   Range.isCollapsed(selection) ||
+          //   Editor.string(editor, selection) === ''
+          console.log('悬浮toolbar不显示');
           console.log('editor.selection:', editor.selection);
           console.log('editor.selection:', Editor.string(editor, selection as Range));
           setShow(false);
           return;
         }
-  
+
         const domSelection = window.getSelection();
         if (!domSelection || domSelection.rangeCount === 0) return;
-  
+
         const domRange = domSelection.getRangeAt(0);
         const rect = domRange.getBoundingClientRect();
-  
+
         setPosition({
           top: rect.top + window.scrollY - 10,
           left: rect.left + rect.width / 2 + window.scrollX,
@@ -59,12 +61,12 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ onComment }) => {
         setShow(true);
       });
     };
-  
+
     document.addEventListener('selectionchange', handler);
     window.addEventListener('scroll', handler);
     window.addEventListener('resize', handler);
     handler(); // 初始触发
-  
+
     return () => {
       document.removeEventListener('selectionchange', handler);
       window.removeEventListener('scroll', handler);

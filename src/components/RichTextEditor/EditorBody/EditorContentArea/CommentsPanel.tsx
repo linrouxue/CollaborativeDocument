@@ -66,15 +66,12 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
   };
 
   const decorate = useCallback(
-    ([node, path]) => {
+    ([node, path]: [any, any]) => {
       const ranges: any[] = [];
       if (editor.selection && Range.isCollapsed(editor.selection) === false) {
         const { anchor, focus } = editor.selection;
         const [start, end] = Range.edges(editor.selection);
-        if (
-          Editor.hasPath(editor, path) &&
-          Range.includes(editor.selection, path)
-        ) {
+        if (Editor.hasPath(editor, path) && Range.includes(editor.selection, path)) {
           ranges.push({
             anchor: { path, offset: 0 },
             focus: { path, offset: Node.string(node).length },
@@ -87,14 +84,11 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
     [editor]
   );
 
-  const renderLeaf = useCallback(props => {
+  const renderLeaf = useCallback((props: any) => {
     const { leaf, children, attributes } = props;
     if (leaf.highlight) {
       return (
-        <span
-          {...attributes}
-          style={{ backgroundColor: '#ffe58f' /* 你喜欢的高亮色 */ }}
-        >
+        <span {...attributes} style={{ backgroundColor: '#ffe58f' /* 你喜欢的高亮色 */ }}>
           {children}
         </span>
       );
@@ -105,7 +99,7 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
   return (
     <div className="flex flex-col h-full p-4">
       <h3 className="text-lg font-semibold mb-4">评论</h3>
-      {pendingCommentRange && (
+      {pendingCommentRange && !pendingThread && (
         <div className="mb-4">
           <div
             className="mb-1 text-xs text-gray-500 max-w-full truncate cursor-pointer"
@@ -114,34 +108,38 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
           >
             选中内容：{selectedText}
           </div>
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="输入评论内容"
-            className="border rounded px-2 py-1 w-3/4 mr-2"
-            maxLength={100}
-          />
-          <button
-            onClick={handleSend}
-            className="bg-blue-600 text-white px-3 rounded hover:bg-blue-700"
-          >
-            发送
-          </button>
-          <button
-            onClick={() => {
-              setPendingCommentRange(null);
-              setInputValue('');
-            }}
-            className="ml-2 text-gray-500 hover:underline"
-          >
-            取消
-          </button>
+          <div className="mb-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="输入评论内容"
+              className="border rounded px-2 py-1 w-full"
+              maxLength={100}
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSend}
+              className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            >
+              发送
+            </button>
+            <button
+              onClick={() => {
+                setPendingCommentRange(null);
+                setInputValue('');
+              }}
+              className="text-gray-500 hover:underline"
+            >
+              取消
+            </button>
+          </div>
         </div>
       )}
       <div className="flex-1 overflow-auto space-y-3 mb-4">
-        {!threads ||  threads.length === 0 && <p className="text-gray-500 italic">暂无评论</p>}
+        {!threads || (threads.length === 0 && <p className="text-gray-500 italic">暂无评论</p>)}
         {threads.map(([threadId, thread]) => (
           <div key={threadId} className="p-2 bg-white rounded shadow-sm mb-4">
             <div className="font-bold mb-1 truncate" title={thread.comments[0]?.content}>
@@ -157,7 +155,7 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
                         <input
                           className="border rounded px-2 py-1"
                           value={editValue}
-                          onChange={e => setEditValue(e.target.value)}
+                          onChange={(e) => setEditValue(e.target.value)}
                           autoFocus
                         />
                         <button
