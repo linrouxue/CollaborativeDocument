@@ -117,19 +117,17 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // --- 其他原有内容 ---
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user,logout } = useAuth();
   const contextMenu = useContextMenu();
   const message = useMessage();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-
-  // 固定写死的SSE和触发URL
-  const SSE_URL = 'http://119.29.229.71:8585/api/sse/connect/9/1';
-
   const params = useParams();
   const knowledgeBaseId = params.knowledgeBaseId as string;
   const documentId = params.documentId as string;
+
+
 
   // 返回主页
   const handleBackToHome = () => {
@@ -355,6 +353,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     if (connected && documentId) {
       try {
         // 1. 创建EventSource连接
+          const userId =user?.id
+  // 固定写死的SSE和触发URL
+  const SSE_URL = `http://localhost:8585/api/sse/connect/${userId}/${documentId}`;
+
         eventSourceRef.current = new EventSource(SSE_URL, {
           withCredentials: true, // 允许跨域凭证
         });

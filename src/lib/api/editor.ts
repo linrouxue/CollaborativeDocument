@@ -87,7 +87,9 @@ export const getDocumentContent = async (documentId: number): Promise<DocumentCo
     
     if (response.success && response.data?.content) {
       // 如果有内容，进行Yjs解码
-      const slateContent = decodeYjsContentToSlate(response.data.content);
+      // const slateContent = decodeYjsContentToSlate(response.data.content);
+      const slateContent = JSON.parse(response.data.content);
+      console.log('Decoded Slate content:', slateContent);
       return {
         success: true,
         content: slateContent,
@@ -130,9 +132,11 @@ export const saveDocumentContent = async (
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     // 将Slate内容编码为Yjs格式
+    console.log('content before encoding:', content);
+    console.log('contentString before encoding:', );
     const yjsContent = encodeSlateContentToYjs(content);
     
-    const response = await saveDocumentContentById(documentId, yjsContent);
+    const response = await saveDocumentContentById(documentId, JSON.stringify(content));
     
     if (response.success) {
       return { success: true };
