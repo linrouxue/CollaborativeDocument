@@ -63,7 +63,7 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
 
   return (
     <div className="flex flex-col h-full p-4">
-      <h3 className="text-lg font-semibold mb-4">评论</h3>
+      <h3 className="text-lg font-semibold">评论</h3>
       {pendingCommentRange && (
         <div className="mb-4">
           <div
@@ -100,7 +100,7 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
         </div>
       )}
       <div className="flex-1 overflow-auto space-y-3 mb-4">
-        {!threads ||  threads.length === 0 && <p className="text-gray-500 italic">暂无评论</p>}
+        {!threads || (threads.length === 0 && <p className="text-gray-500 italic">暂无评论</p>)}
         {threads.map(([threadId, thread]) => (
           <div key={threadId} className="p-2 bg-white rounded shadow-sm mb-4">
             <div className="font-bold mb-1 truncate" title={thread.comments[0]?.content}>

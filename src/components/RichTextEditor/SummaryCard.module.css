@@ -1,0 +1,60 @@
+/* SummaryCard.module.css - 仅用于SummaryCard组件的样式 */
+
+.summaryCard {
+  width: 100%;
+  margin: -10px 0 10px 0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 12px;
+  border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+}
+
+.summaryTitle {
+  font-weight: 600;
+  font-size: 16px;
+  margin-left: 8px;
+}
+
+.summaryActions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-right: 8px;
+}
+
+.summaryContent {
+  overflow: hidden;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease;
+  background: #fafbfc;
+  border-radius: 6px;
+  font-size: 15px;
+  color: #222;
+  line-height: 1.7;
+  margin-top: 2px;
+}
+
+.summaryContentCollapsed {
+  max-height: 0;
+  opacity: 0;
+  min-height: 0;
+  padding: 0 10px;
+}
+
+.summaryContentExpanded {
+  max-height: 200px;
+  opacity: 1;
+  min-height: 36px;
+  padding: 10px;
+}

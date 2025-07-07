@@ -207,7 +207,7 @@ const SlateEditor = ({ editor, decorate, renderLeaf }: SlateEditorProps) => {
       decorate={decorate}
       renderLeaf={renderLeafWithMarks}
       renderElement={renderElement}
-      className="p-4 min-h-[400px] focus:outline-none"
+      className="min-h-[400px] focus:outline-none"
       placeholder="开始输入内容..."
       onKeyDown={handleSyncBlockKeyDown(editor)}
       onSelect={handleSyncBlockSelect(editor, setFocusedSyncBlockId)}
