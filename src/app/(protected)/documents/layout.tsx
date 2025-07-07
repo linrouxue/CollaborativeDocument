@@ -1,4 +1,5 @@
 'use client';
+import ReactMarkdown from 'react-markdown';
 
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { ProLayout } from '@ant-design/pro-components';
@@ -33,6 +34,9 @@ import { getDocumentContent, saveDocumentContent } from '@/lib/api/editor';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import DocEditor from '@/components/RichTextEditor';
+import { Drawer,Card, Space, Tooltip } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
+
 
 const { Content } = AntLayout;
 
@@ -63,6 +67,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [sseConnected, setSseConnected] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const [summaryVisible, setSummaryVisible] = useState(false); // 控制弹窗开关
+
 
   // 自动保存相关状态
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -355,7 +361,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         // 1. 创建EventSource连接
           const userId =user?.id
   // 固定写死的SSE和触发URL
-  const SSE_URL = `http://localhost:8585/api/sse/connect/${userId}/${documentId}`;
+  const SSE_URL = `http://119.29.229.71:8585/api/sse/connect/${userId}/${documentId}`;
 
         eventSourceRef.current = new EventSource(SSE_URL, {
           withCredentials: true, // 允许跨域凭证
@@ -363,9 +369,15 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
         // 2. 处理接收到的消息
         eventSourceRef.current.onmessage = (event) => {
+          setIsSummaryLoading( true )
           try {
+            if (event.data === '[DONE]') {
+              setIsSummaryLoading( false )// 结束标志
+              // 仅表示结束，不追加
+              return;
+            }
             setSummary((prev) => prev + event.data);
-            setIsSummaryLoading(false); // 收到数据后停止加载状态
+            setIsSummaryLoading(false); // 只要有数据就可以取消“加载中”状态
           } catch (parseError) {
             console.error('SSE数据解析错误:', parseError);
           }
@@ -533,6 +545,13 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             flexDirection: 'column',
           }}
         >
+          {/* 文档总结弹窗按钮 */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+            <Button type="primary" onClick={() => setSummaryVisible(true)}>
+          查看文档总结
+            </Button>
+          </div>
+
           {/* 文档编辑器区域 */}
           {connected && sharedType && provider && editorReady ? (
             <div style={{ flex: 1, minHeight: '60%' }}>
@@ -571,7 +590,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           )}
 
           {/* 文档总结区域 */}
-          <div
+          {/* <div
             style={{
               borderTop: '1px solid #f0f0f0',
               padding: '16px',
@@ -645,8 +664,69 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 {sseConnected ? '请点击上方按钮生成文档总结' : '正在建立SSE连接...'}
               </div>
             )}
-          </div>
+          </div> */}
+
+
+          
         </div>
+          <Drawer
+            title="文档总结"
+            placement="right"
+            onClose={() => setSummaryVisible(false)}
+            open={summaryVisible}
+            width={480}
+          >
+            {summaryError ? (
+              <Alert
+                message={summaryError}
+                type="error"
+                showIcon
+                action={
+                  <Button size="small" type="primary" onClick={handleRetrySummary}>
+                    重试
+                  </Button>
+                }
+              />
+            ) : isSummaryLoading ? (
+              <div style={{ display: 'flex', alignItems: 'center', padding: '8px 0' }}>
+                <Spin size="small" style={{ marginRight: '8px' }} />
+                <span>正在生成文档总结...</span>
+              </div>
+            ) : summary ? (
+              <Card
+                bordered
+                title="文档总结"
+                extra={
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={triggerSummaryRequest}
+                    disabled={isSummaryLoading}
+                  >
+                    重新生成
+                  </Button>
+                }
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.6,
+                  backgroundColor: '#fff',
+                }}
+              >
+                {summary}
+              </Card>
+            ) : (
+              <div style={{ color: '#999', textAlign: 'center', padding: '16px' }}>
+                {sseConnected ? (
+                  <Button type="primary" onClick={triggerSummaryRequest}>
+                    生成文档总结
+                  </Button>
+                ) : (
+                  '正在建立SSE连接...'
+                )}
+              </div>
+            )}
+          </Drawer>
+
       </Content>
     );
   };
