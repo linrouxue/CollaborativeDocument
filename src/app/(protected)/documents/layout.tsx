@@ -71,7 +71,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastContentRef = useRef<string>('');
 
-
   // --- 拖拽相关 ---
   const [siderWidth, setSiderWidth] = useState(220); // 初始宽度
   const dragging = useRef(false);
@@ -115,15 +114,16 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     };
   }, []);
 
-
   // --- 其他原有内容 ---
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
   const contextMenu = useContextMenu();
   const message = useMessage();
-  const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
-  
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+
   // 固定写死的SSE和触发URL
   const SSE_URL = 'http://119.29.229.71:8585/api/sse/connect/9/1';
 
@@ -140,9 +140,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const loadDocumentContent = async () => {
     try {
       console.log('Loading document content for documentId:', documentId);
-      
+
       const response = await getDocumentContent(parseInt(documentId));
-      
+
       if (response.success && response.content) {
         console.log('Document content loaded successfully:', JSON.stringify(response.content));
         setInitialContent(response.content);
@@ -156,7 +156,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           },
         ]);
       }
-      
+
       setEditorReady(true);
     } catch (error) {
       console.error('Error loading document content:', error);
@@ -174,7 +174,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // 保存文档内容
   const saveDocument = async (content: any) => {
     if (!documentId || isSaving) return;
-    
+
     setIsSaving(true);
     try {
       const result = await saveDocumentContent(parseInt(documentId), content);
@@ -197,24 +197,23 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // 监听编辑器内容变化并触发自动保存
   const handleContentChange = (content: any) => {
     const contentString = JSON.stringify(content);
-    
+
     // 检查内容是否真的发生了变化
     if (contentString !== lastContentRef.current) {
       lastContentRef.current = contentString;
       setHasUnsavedChanges(true);
-      
+
       // 清除之前的定时器
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      
+
       // 设置新的定时器，3秒后保存
       saveTimeoutRef.current = setTimeout(() => {
         saveDocument(content);
       }, 3000);
     }
   };
-
 
   // 触发文档总结生成
   const triggerSummaryRequest = () => {
@@ -233,7 +232,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const handleRetrySummary = () => {
     triggerSummaryRequest();
   };
-
 
   // 更多操作菜单
   const moreActionsMenu = {
@@ -270,7 +268,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         setLoading(false);
         return;
       }
-      
+
       setLoading(true);
       try {
         const response = await getKnowledgeBaseTree(knowledgeBaseId);
@@ -310,7 +308,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     try {
       const yDoc = new Y.Doc();
       const yXmlText = yDoc.get('slate', Y.XmlText);
-      const yProvider = new WebsocketProvider('ws://localhost:1234', `${knowledgeBaseId}-${documentId}`, yDoc);
+      const yProvider = new WebsocketProvider(
+        'ws://localhost:1234',
+        `${knowledgeBaseId}-${documentId}`,
+        yDoc
+      );
 
       yProvider.on('status', (event: { status: string }) => {
         setConnected(event.status === 'connected');
@@ -501,7 +503,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           }}
         >
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{editorError}</div>
+            <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>
+              {editorError}
+            </div>
             <Button
               type="primary"
               onClick={() => window.location.reload()}
@@ -541,6 +545,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 hasUnsavedChanges={hasUnsavedChanges}
                 lastSavedTime={lastSavedTime}
                 syncBlockMap={syncBlockMap}
+                documentId={knowledgeBaseId}
               />
             </div>
           ) : (
@@ -554,9 +559,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               }}
             >
               <p>
-                {!connected ? '正在连接到协同服务器...' : 
-                 !editorReady ? '正在加载文档内容...' : 
-                 '正在初始化编辑器...'}
+                {!connected
+                  ? '正在连接到协同服务器...'
+                  : !editorReady
+                    ? '正在加载文档内容...'
+                    : '正在初始化编辑器...'}
               </p>
             </div>
           )}
@@ -664,7 +671,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <ProLayout
         title="协同文档"
         logo={<TwitterOutlined style={{ fontSize: '24px', color: '#1890ff' }} />}
-        layout={documentId ? "mix" : "top"} // 有documentId时显示侧边栏，否则只显示顶部
+        layout={documentId ? 'mix' : 'top'} // 有documentId时显示侧边栏，否则只显示顶部
         token={{
           sider: {
             colorMenuBackground: 'rgb(245, 246, 247)',
@@ -685,7 +692,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           routes: documentId ? convertDocTreeToMenu(docTree) : [],
         }}
         menu={{
-          request: async () => documentId ? convertDocTreeToMenu(docTree) : [],
+          request: async () => (documentId ? convertDocTreeToMenu(docTree) : []),
         }}
         menuProps={{
           selectedKeys: [pathname],
@@ -707,20 +714,22 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             </Button>
           </div>
         )}
-        actionsRender={() => [
-          documentId ? renderOnlineStatus() : null,
-          documentId ? renderMoreActionsDropdown() : null,
-          <SearchOutlined
-            key="search"
-            className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
-            onClick={() => setSearchModalOpen(true)}
-          />,
-          <SearchModal
-            key="search-modal"
-            open={searchModalOpen}
-            onClose={() => setSearchModalOpen(false)}
-          />,
-        ].filter(Boolean)}
+        actionsRender={() =>
+          [
+            documentId ? renderOnlineStatus() : null,
+            documentId ? renderMoreActionsDropdown() : null,
+            <SearchOutlined
+              key="search"
+              className="text-[20px] relative z-20 text-inherit -mr-2 cursor-pointer"
+              onClick={() => setSearchModalOpen(true)}
+            />,
+            <SearchModal
+              key="search-modal"
+              open={searchModalOpen}
+              onClose={() => setSearchModalOpen(false)}
+            />,
+          ].filter(Boolean)
+        }
         avatarProps={{
           src: 'https://gw.alipayobjects.com/zos/antfincdn/efFD%24IOql2/weixintupian_20170331104822.jpg',
           size: 'small',
@@ -748,16 +757,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               onMouseDown={handleMouseDown}
             />
             {/* 右侧编辑器区域 */}
-            <div style={{ flex: 1, minWidth: 0, height: '100%' }}>
-              {renderEditorContent()}
-            </div>
+            <div style={{ flex: 1, minWidth: 0, height: '100%' }}>{renderEditorContent()}</div>
           </div>
         ) : (
           /* 知识库页面：直接显示内容 */
           <div style={{ height: '100%' }}>
-            <Suspense fallback={<Spin size="large" className="global-spin" />}>
-              {children}
-            </Suspense>
+            <Suspense fallback={<Spin size="large" className="global-spin" />}>{children}</Suspense>
           </div>
         )}
       </ProLayout>
