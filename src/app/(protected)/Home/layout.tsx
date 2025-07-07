@@ -10,7 +10,6 @@ import {
   AppstoreOutlined,
   TwitterOutlined,
   SearchOutlined,
-  CloseOutlined,
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Dropdown, Spin } from 'antd';

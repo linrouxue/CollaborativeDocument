@@ -89,7 +89,7 @@ export default function RedirectHandler() {
   const handlerRedirect = (params: Record<string, string>) => {
     const documentId = params.documentId;
     if (documentId) {
-      router.push(`Home/docs/${documentId}`);
+      router.push(`documents/${documentId}`);
     } else {
       router.push('/');
     }

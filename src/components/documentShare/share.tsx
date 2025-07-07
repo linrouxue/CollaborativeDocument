@@ -77,16 +77,16 @@ const ShareDocument: React.FC<ShareDocumentProps> = ({ open, documentId, onCance
     }
   };
   const shareIcons = [
-    {
-      icon: <WechatOutlined style={{ fontSize: '20px' }} />,
-      title: '微信分享',
-      onClick: copyLink,
-    },
-    {
-      icon: <QrcodeOutlined style={{ fontSize: '20px' }} />,
-      title: '二维码分享',
-      onClick: copyLink,
-    },
+    // {
+    //   icon: <WechatOutlined style={{ fontSize: '20px' }} />,
+    //   title: '微信分享',
+    //   onClick: copyLink,
+    // },
+    // {
+    //   icon: <QrcodeOutlined style={{ fontSize: '20px' }} />,
+    //   title: '二维码分享',
+    //   onClick: copyLink,
+    // },
     {
       icon: <LinkOutlined style={{ fontSize: '20px' }} />,
       title: '复制链接',
