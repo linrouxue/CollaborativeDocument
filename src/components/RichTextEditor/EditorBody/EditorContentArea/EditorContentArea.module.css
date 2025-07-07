@@ -1,0 +1,46 @@
+.container {
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+  display: flex;
+  align-items: flex-start;
+  min-height: 480px;
+  overflow: visible;
+}
+
+.main {
+  flex: 1;
+  min-width: 100px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: none;
+  border-right: 1px solid #f0f0f0;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comments {
+  width: 220px;
+  padding: 2px;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    max-width: 98vw !important;
+    gap: 16px !important;
+  }
+}
+@media (max-width: 900px) {
+  .container {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .container > div {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}

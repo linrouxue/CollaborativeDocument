@@ -31,7 +31,6 @@ import {
 import { addAlpha } from '@/utils/addAlpha';
 import { useAuth } from '@/contexts/AuthContext';
 import { useThreadedComments } from './comments/useThreadedComments';
-import CommentsSidebar from './comments/CommentsSidebar';
 
 import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
 import BlockSelector from './BlockSelector';
@@ -91,7 +90,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const { user } = useAuth();
 
-  // 從 AuthContext 獲取用戶名，如果沒有則使用默認值
   const userName: string = useMemo(() => {
     console.log('try to get user name', user);
     return String(user?.username || user?.email || user?.id || 'Anonymous');
@@ -224,11 +222,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [editor, sharedType, initialContent]);
 
   return (
-    <div className="border rounded-lg bg-white p-4 min-h-[400px]">
+    <div className="rounded-lg bg-white p-4 min-h-[400px] w-full">
       <Slate editor={editor} initialValue={value} onChange={handleChange}>
         <EditorHeaderToolbar
           onInsertSyncBlock={handleInsertSyncBlock}
           onInsertRefBlock={handleInsertRefBlock}
+          isSaving={isSaving}
+          hasUnsavedChanges={hasUnsavedChanges}
+          lastSavedTime={lastSavedTime}
         />
         <RichEditable
           editor={editor}
@@ -238,13 +239,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           connected={connected}
           onlineUsers={onlineUsers}
           setValue={setValue}
-        />
-        <EditorFooter
-          connected={connected}
-          onlineUsers={onlineUsers}
-          isSaving={isSaving}
-          hasUnsavedChanges={hasUnsavedChanges}
-          lastSavedTime={lastSavedTime}
         />
         {/* 同步块内容监听器 */}
         <SyncBlockListener editor={editor} />
@@ -368,7 +362,7 @@ function RichEditable({
   const threads = Array.from(yThreadsMap.entries());
 
   return (
-    <div className="bg-white p-4 min-h-[400px]">
+    <div className="bg-white min-h-[400px]">
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -387,7 +381,6 @@ function RichEditable({
         initialValue={value}
         onChange={(val) => setValue(assignHeadingIds(val))}
       >
-       
         <EditorBody
           editor={editor}
           decorate={decorate}
@@ -400,7 +393,6 @@ function RichEditable({
           onDelete={deleteThread}
           onAddThread={addThread}
         />
-        
       </Slate>
     </div>
   );

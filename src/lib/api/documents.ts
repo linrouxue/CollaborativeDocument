@@ -67,9 +67,7 @@ interface GetKnowledgeBaseTreeResponse {
  * @param knowledgeBaseId 知识库ID
  * @returns 知识库文档树
  */
-export const getKnowledgeBaseTree = async (
-  knowledgeBaseId: string
-): Promise<any> => {
+export const getKnowledgeBaseTree = async (knowledgeBaseId: string): Promise<any> => {
   try {
     const res = await javaAxiosInstance.get(`/api/document/tree`, {
       params: { id: `kid${knowledgeBaseId}` },
@@ -96,44 +94,45 @@ export const documentSummary = async (documentId: number): Promise<any> => {
   }
 };
 
-export const getDocumentContentById = async (
-  documentId: number
-): Promise<any> => {
+export const getDocumentContentById = async (documentId: number): Promise<any> => {
   try {
     const res = await javaAxiosInstance.get(`/api/document/${documentId}`, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     return res.data;
   } catch (error) {
     throw error;
   }
-}
+};
 
 export const saveDocumentContentById = async (
   documentId: number,
   content: string
 ): Promise<any> => {
   try {
-    const res = await javaAxiosInstance.put(`/api/document/update`, {
-      documentId: documentId,
-      content: content,
-      title: '',
-      cover: ''
-    }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const res = await javaAxiosInstance.put(
+      `/api/document/update`,
+      {
+        documentId: documentId,
+        content: content,
+        title: '',
+        cover: '',
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
     return res.data;
   } catch (error) {
     throw error;
   }
-} 
-
+};
 
 export const documentAdd = async (documentId: number): Promise<any> => {
   try {
-    const obj={
-      "parentId": documentId
-    }
+    const obj = {
+      parentId: documentId,
+    };
     const res = await javaAxiosInstance.post(`/api/document/add`, obj);
     // console.log(res)
     // console.log('获取知识库文档树:', res.data);

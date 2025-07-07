@@ -16,7 +16,11 @@ import {
   MinusOutlined,
   FontSizeOutlined,
   PlusSquareOutlined,
+  CheckCircleFilled,
+  ExclamationCircleFilled,
+  LoadingOutlined,
 } from '@ant-design/icons';
+import { Button, Tooltip, Divider } from 'antd';
 import { Transforms, Element as SlateElement, Range } from 'slate';
 
 type CustomText = {
@@ -36,14 +40,14 @@ const ToolbarButton = ({
   title: string;
 }) => {
   return (
-    <button
-      onMouseDown={onMouseDown}
-      className={`p-2 rounded hover:bg-gray-100 ${active ? 'bg-gray-100' : ''}`}
-      title={title}
-      type="button"
-    >
-      {icon}
-    </button>
+    <Tooltip title={title}>
+      <Button
+        type={active ? 'primary' : 'default'}
+        shape="circle"
+        icon={icon}
+        onMouseDown={onMouseDown}
+      />
+    </Tooltip>
   );
 };
 
@@ -118,16 +122,22 @@ type CustomElement =
 interface EditorHeaderToolbarProps {
   onInsertSyncBlock?: () => void;
   onInsertRefBlock?: () => void;
+  isSaving?: boolean;
+  hasUnsavedChanges?: boolean;
+  lastSavedTime?: Date | null;
 }
 
 const EditorHeaderToolbar: React.FC<EditorHeaderToolbarProps> = ({
   onInsertSyncBlock,
   onInsertRefBlock,
+  isSaving,
+  hasUnsavedChanges,
+  lastSavedTime,
 }) => {
   const editor = useSlate();
 
   return (
-    <div className="mb-2 flex gap-2 border-b pb-2">
+    <div className="flex items-center mt-1 ml-2 p-2 gap-1 fixed top-0 z-100">
       {/* 标题按钮组 */}
       <ToolbarButton
         active={isBlockActive(editor, 'heading-one')}
@@ -212,26 +222,7 @@ const EditorHeaderToolbar: React.FC<EditorHeaderToolbarProps> = ({
         icon={<MinusOutlined style={{ fontSize: 18 }} />}
         title="分割线"
       />
-      {/* 插入主块 */}
-      <ToolbarButton
-        active={false}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          if (onInsertSyncBlock) onInsertSyncBlock();
-        }}
-        icon={<PlusSquareOutlined style={{ fontSize: 18 }} />}
-        title="插入主块"
-      />
-      {/* 插入引用块 */}
-      <ToolbarButton
-        active={false}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          if (onInsertRefBlock) onInsertRefBlock();
-        }}
-        icon={<PlusSquareOutlined style={{ fontSize: 18 }} />}
-        title="插入引用块"
-      />
+      <Divider type="vertical" />
       {/* 撤销/重做 */}
       <ToolbarButton
         active={false}
@@ -251,6 +242,57 @@ const EditorHeaderToolbar: React.FC<EditorHeaderToolbarProps> = ({
         icon={<RedoOutlined style={{ fontSize: 18 }} />}
         title="重做"
       />
+      <Divider type="vertical" />
+      {/* 同步块相关 */}
+      {onInsertSyncBlock && (
+        <Tooltip title="插入主同步块">
+          <Button
+            icon={<PlusSquareOutlined style={{ fontSize: 18 }} />}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onInsertSyncBlock();
+            }}
+            style={{ marginRight: 4 }}
+          >
+            主块
+          </Button>
+        </Tooltip>
+      )}
+      {onInsertRefBlock && (
+        <Tooltip title="插入引用块">
+          <Button
+            icon={<PlusSquareOutlined style={{ fontSize: 18 }} />}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onInsertRefBlock();
+            }}
+          >
+            引用
+          </Button>
+        </Tooltip>
+      )}
+      <div className="flex-grow text-right">
+        {/* 保存状态icon+tooltip */}
+        <Tooltip
+          title={
+            isSaving
+              ? '正在保存...'
+              : hasUnsavedChanges
+                ? '有未保存的更改'
+                : lastSavedTime
+                  ? `已保存于 ${lastSavedTime.toLocaleTimeString()}`
+                  : '暂未保存'
+          }
+        >
+          {isSaving ? (
+            <LoadingOutlined style={{ color: '#faad14', fontSize: 18, marginLeft: 16 }} />
+          ) : hasUnsavedChanges ? (
+            <ExclamationCircleFilled style={{ color: '#ff4d4f', fontSize: 18, marginLeft: 16 }} />
+          ) : (
+            <CheckCircleFilled style={{ color: '#52c41a', fontSize: 18, marginLeft: 16 }} />
+          )}
+        </Tooltip>
+      </div>
     </div>
   );
 };

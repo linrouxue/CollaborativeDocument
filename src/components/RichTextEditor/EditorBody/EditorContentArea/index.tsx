@@ -6,6 +6,7 @@ import CommentsPanel from './CommentsPanel';
 import FloatingToolbar from './FloatingToolbar';
 import { Range } from 'slate';
 import { useState } from 'react';
+import styles from './EditorContentArea.module.css';
 
 interface EditorContentAreaProps {
   editor: any;
@@ -32,12 +33,14 @@ const EditorContentArea: React.FC<EditorContentAreaProps> = ({
 }) => {
   const [pendingCommentRange, setPendingCommentRange] = useState<Range | null>(null);
   return (
-    <div className="flex-1 flex overflow-hidden">
-      <div className="flex-1 overflow-auto" style={{ position: 'relative' }}>
+    <div className={styles.container}>
+      {/* 正文区 */}
+      <div className={styles.main}>
         <SlateEditor editor={editor} decorate={decorate} renderLeaf={renderLeaf} />
         <FloatingToolbar onComment={(range) => setPendingCommentRange(range)} />
       </div>
-      <div className="w-80">
+      {/* 评论区 */}
+      <div className={styles.comments}>
         <CommentsPanel
           threads={threads}
           currentUser={currentUser}
@@ -50,6 +53,15 @@ const EditorContentArea: React.FC<EditorContentAreaProps> = ({
           onAddThread={onAddThread}
         />
       </div>
+      <style>{`
+        @media (max-width: 1200px) {
+          .editor-main-content { max-width: 98vw !important; gap: 16px !important; }
+        }
+        @media (max-width: 900px) {
+          .editor-main-content { flex-direction: column !important; gap: 8px !important; }
+          .editor-main-content > div { width: 100% !important; min-width: 0 !important; }
+        }
+      `}</style>
     </div>
   );
 };

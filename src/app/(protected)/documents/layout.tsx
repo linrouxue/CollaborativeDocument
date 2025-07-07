@@ -33,6 +33,8 @@ import { getDocumentContent, saveDocumentContent } from '@/lib/api/editor';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import DocEditor from '@/components/RichTextEditor';
+import SummaryCard from '@/components/RichTextEditor/SummaryCard';
+import type { Descendant } from 'slate';
 
 const { Content } = AntLayout;
 
@@ -43,7 +45,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [docTree, setDocTree] = useState<any[]>([]);
 
   // 编辑器相关状态
-  const [initialContent, setInitialContent] = useState([
+  const [initialContent, setInitialContent] = useState<Descendant[]>([
     {
       type: 'paragraph' as const,
       children: [{ text: '正在加载文档内容...' }],
@@ -56,13 +58,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const [onlineUsers, setOnlineUsers] = useState(1);
   const [editorLoading, setEditorLoading] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
-
-  // 文档总结状态
-  const [summary, setSummary] = useState('');
-  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
-  const [sseConnected, setSseConnected] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   // 自动保存相关状态
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -123,9 +118,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-
-  // 固定写死的SSE和触发URL
-  const SSE_URL = 'http://119.29.229.71:8585/api/sse/connect/9/1';
 
   const params = useParams();
   const knowledgeBaseId = params.knowledgeBaseId as string;
@@ -215,24 +207,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     }
   };
 
-  // 触发文档总结生成
-  const triggerSummaryRequest = () => {
-    if (!sseConnected) {
-      setSummaryError('SSE连接未建立');
-      return;
-    }
-
-    setIsSummaryLoading(true);
-    setSummary('');
-    setSummaryError(null);
-    documentSummary(parseInt(documentId));
-  };
-
-  // 重试获取文档总结
-  const handleRetrySummary = () => {
-    triggerSummaryRequest();
-  };
-
   // 更多操作菜单
   const moreActionsMenu = {
     items: [
@@ -286,9 +260,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   }, [knowledgeBaseId, documentId]);
 
   // 初始化Yjs协同编辑（只在有documentId时）
-  //  新增全局同步块Yjs文档的状态
-  const [syncBlockMap, setSyncBlockMap] = useState<Y.Map<any> | null>(null);
-  const [syncBlockProvider, setSyncBlockProvider] = useState<WebsocketProvider | null>(null);
   useEffect(() => {
     if (!documentId) {
       // 重置编辑器状态
@@ -349,48 +320,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       message.error('初始化协同编辑器失败');
     }
   }, [knowledgeBaseId, documentId]);
-
-  // 初始化SSE连接（页面加载时自动建立）
-  useEffect(() => {
-    if (connected && documentId) {
-      try {
-        // 1. 创建EventSource连接
-        eventSourceRef.current = new EventSource(SSE_URL, {
-          withCredentials: true, // 允许跨域凭证
-        });
-
-        // 2. 处理接收到的消息
-        eventSourceRef.current.onmessage = (event) => {
-          try {
-            setSummary((prev) => prev + event.data);
-            setIsSummaryLoading(false); // 收到数据后停止加载状态
-          } catch (parseError) {
-            console.error('SSE数据解析错误:', parseError);
-          }
-        };
-
-        // 3. 错误处理
-        eventSourceRef.current.onerror = (error) => {
-          console.error('SSE连接错误:', error);
-          setSummaryError('文档总结连接异常');
-          setIsSummaryLoading(false);
-          eventSourceRef.current?.close();
-        };
-
-        setSseConnected(true); // 标记SSE已连接
-      } catch (err) {
-        console.error('SSE初始化失败:', err);
-        setSummaryError('无法建立总结连接');
-        setIsSummaryLoading(false);
-      }
-    }
-
-    // 组件卸载时关闭连接
-    return () => {
-      eventSourceRef.current?.close();
-      eventSourceRef.current = null;
-    };
-  }, [connected, documentId]);
 
   // 设置header数据
   useEffect(() => {
@@ -521,19 +450,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
     // 渲染编辑器
     return (
-      <Content style={{ margin: '16px', marginTop: '10px', height: '100%' }}>
-        <div
-          style={{
-            height: 'calc(100vh - 112px)',
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+      <Content>
+        <div>
+          <SummaryCard documentId={documentId} />
           {/* 文档编辑器区域 */}
           {connected && sharedType && provider && editorReady ? (
-            <div style={{ flex: 1, minHeight: '60%' }}>
+            <div>
               <DocEditor
                 sharedType={sharedType}
                 provider={provider}
@@ -544,7 +466,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 isSaving={isSaving}
                 hasUnsavedChanges={hasUnsavedChanges}
                 lastSavedTime={lastSavedTime}
-                syncBlockMap={syncBlockMap}
                 documentId={knowledgeBaseId}
               />
             </div>
@@ -567,83 +488,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
               </p>
             </div>
           )}
-
-          {/* 文档总结区域 */}
-          <div
-            style={{
-              borderTop: '1px solid #f0f0f0',
-              padding: '16px',
-              backgroundColor: '#fafafa',
-              maxHeight: '40%',
-              overflowY: 'auto',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '12px',
-              }}
-            >
-              <h3 style={{ margin: 0 }}>文档总结</h3>
-              <div>
-                <Button
-                  type="primary"
-                  onClick={triggerSummaryRequest}
-                  size="small"
-                  style={{ marginRight: '8px' }}
-                  disabled={isSummaryLoading || !sseConnected}
-                >
-                  {summary ? '重新生成' : '生成总结'}
-                </Button>
-                <Button
-                  size="small"
-                  icon={<CloseOutlined />}
-                  onClick={() => {
-                    setIsSummaryLoading(false);
-                    setSummary('');
-                    setSummaryError(null);
-                  }}
-                />
-              </div>
-            </div>
-
-            {summaryError ? (
-              <Alert
-                message={summaryError}
-                type="error"
-                showIcon
-                action={
-                  <Button size="small" type="primary" onClick={handleRetrySummary}>
-                    重试
-                  </Button>
-                }
-              />
-            ) : isSummaryLoading ? (
-              <div style={{ display: 'flex', alignItems: 'center', padding: '8px 0' }}>
-                <Spin size="small" style={{ marginRight: '8px' }} />
-                <span>正在生成文档总结...</span>
-              </div>
-            ) : summary ? (
-              <div
-                style={{
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: 1.6,
-                  padding: '8px',
-                  borderRadius: '4px',
-                  backgroundColor: '#fff',
-                  border: '1px solid #eee',
-                }}
-              >
-                {summary}
-              </div>
-            ) : (
-              <div style={{ color: '#999', textAlign: 'center', padding: '16px' }}>
-                {sseConnected ? '请点击上方按钮生成文档总结' : '正在建立SSE连接...'}
-              </div>
-            )}
-          </div>
         </div>
       </Content>
     );
@@ -740,26 +584,25 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           ),
         }}
       >
-        {/* 内容区域 */}
         {documentId ? (
           /* 文档页面：显示拖拽条+编辑器 */
-          <div style={{ display: 'flex', height: '100%' }}>
-            {/* 拖拽条。定位在侧边栏和内容之间 */}
-            <div
-              style={{
-                width: 4,
-                cursor: 'ew-resize',
-                background: '#e0e0e0',
-                zIndex: 999,
-                position: 'relative',
-                userSelect: 'none',
-              }}
-              onMouseDown={handleMouseDown}
-            />
-            {/* 右侧编辑器区域 */}
-            <div style={{ flex: 1, minWidth: 0, height: '100%' }}>{renderEditorContent()}</div>
-          </div>
+          // <div style={{ display: 'flex', height: '100%' }}>
+          //   {/* 拖拽条。定位在侧边栏和内容之间 */}
+          //   <div
+          //     style={{
+          //       width: 4,
+          //       cursor: 'ew-resize',
+          //       background: '#e0e0e0',
+          //       zIndex: 999,
+          //       position: 'relative',
+          //       userSelect: 'none',
+          //     }}
+          //     onMouseDown={handleMouseDown}
+          //   />
+          // {/* 右侧编辑器区域 */}
+          <div style={{ flex: 1, minWidth: 0, height: '100%' }}>{renderEditorContent()}</div>
         ) : (
+          // </div>
           /* 知识库页面：直接显示内容 */
           <div style={{ height: '100%' }}>
             <Suspense fallback={<Spin size="large" className="global-spin" />}>{children}</Suspense>
