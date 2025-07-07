@@ -15,7 +15,7 @@ model t_document {
   user_id           Int
   title             String?  @db.VarChar(200)
   cover             String?  @db.VarChar(255)
-  content           Bytes?   @db.MediumBlob
+  content           String?  @db.Text
   create_time       DateTime @db.DateTime(0)
   update_time       DateTime @db.DateTime(0)
   del_flag          Int

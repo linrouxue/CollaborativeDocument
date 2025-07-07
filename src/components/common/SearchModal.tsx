@@ -1,51 +1,47 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Modal, Input, List } from 'antd';
 import ClampText from './ClampText';
+import { getRecentDocuments } from '@/lib/api/document';
+import { RecentDocument } from '@/types/document';
 
 interface SearchModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const recentList = [
-  {
-    key: '1',
-    name: '新版需求分析',
-    knowledgeBase: "林柔雪's Document Library",
-    member: '林柔雪',
-    openTime: '4分钟前',
-  },
-  {
-    key: '2',
-    name: 'AI 工具与技术学习分享',
-    knowledgeBase: "Shuai Zhang's Document Library",
-    member: '张帅',
-    openTime: '3小时前',
-  },
-  {
-    key: '3',
-    name: '首页',
-    knowledgeBase: '测试111',
-    member: '黄浩轩',
-    openTime: '昨天 20:01',
-  },
-  {
-    key: '4',
-    name: '未命名文档',
-    knowledgeBase:
-      "林柔雪's Document Library我今天真的有点无语了.今天出门碰到了一条狗，他对我叫了几声，说我跟他是同类，我不承认，他一直哭，说我辜负了她，可是我觉得我真的非常愿望了今天出门碰到了一条狗，他对我叫了几声，说我跟他是同类，我不承认，他一直哭，说我辜负了她，可是我觉得我真的非常愿望了",
-    member: '林柔雪',
-    openTime: '6月13日',
-  },
-  // ... 可继续补充
-];
-
 const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
   const [searchText, setSearchText] = useState('');
-  const filteredList = recentList.filter(
-    (item) => item.name.includes(searchText) || item.knowledgeBase.includes(searchText)
-  );
+  const [loading, setLoading] = useState(false);
+  const [documents, setDocuments] = useState<RecentDocument[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
+
+  // 获取最近文档
+  const fetchRecentDocuments = async () => {
+    try {
+      setLoading(true);
+      const data = await getRecentDocuments();
+      setDocuments(data);
+    } catch (error) {
+      console.error('获取最近文档失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 前端搜索过滤
+  const filteredDocuments = searchText
+    ? documents.filter(
+        (item) =>
+          item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+          item.knowledgeBase.toLowerCase().includes(searchText.toLowerCase())
+      )
+    : documents;
+
+  useEffect(() => {
+    if (open) {
+      fetchRecentDocuments();
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!searchText) return;
@@ -58,7 +54,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
         (highlightEl as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'auto' });
       }
     }
-  }, [filteredList, searchText]);
+  }, [filteredDocuments, searchText]);
 
   function getContextSnippet(text: string, keyword: string, maxCharsPerLine = 45): string | null {
     if (!keyword || !text) return null;
@@ -147,8 +143,8 @@ const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
     return text.replace(/\n/g, ' ').replace(/\s+/g, ' ').replace(reg, '<mark>$1</mark>');
   }
 
-  function handleItemClick(key: string) {
-    window.location.href = `/Home/docs/${key}`;
+  function handleItemClick(key: string, knowledgeBaseId: string | number | null) {
+    window.location.href = `/documents/${knowledgeBaseId}/${key}`;
     onClose();
     setSearchText('');
   }
@@ -180,8 +176,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
       </div>
       <div ref={listRef} className="max-h-[400px] overflow-y-auto px-6 pb-6">
         <List
+          loading={loading}
           itemLayout="vertical"
-          dataSource={filteredList}
+          dataSource={filteredDocuments}
           locale={{ emptyText: searchText ? '暂无搜索内容' : '暂无最近浏览' }}
           renderItem={(item) => (
             <List.Item
@@ -189,7 +186,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
                 padding: 10,
               }}
               className="cursor-pointer rounded mb-1 bg-white shadow-sm min-h-[44px]"
-              onClick={() => handleItemClick(item.key)}
+              onClick={() => handleItemClick(item.key, item.knowledgeBaseId)}
             >
               <div
                 className="font-semibold text-[15px] leading-5 mb-0.5"

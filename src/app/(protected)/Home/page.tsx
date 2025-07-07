@@ -155,7 +155,7 @@ export default function Home() {
           alignItems: 'center',
           gap: '16px',
         }}
-        onClick={() => window.location.href = `/documents/${item.documentId}`}
+        onClick={() => window.location.href = `/documents/${item.knowledgeBaseId}/${item.documentId}`}
       >
         <div style={{ flex: 1 }}>
           <div className="font-bold text-sm">{item.name}</div>
@@ -163,7 +163,7 @@ export default function Home() {
             <div className="text-xs text-gray-500" style={{ marginTop: 2 }}>
               <CloudOutlined style={{ marginRight: 4, color: '#1890ff' }} />
               <Link
-                href={`/Home/knowledge/${item.knowledgeBaseId}`}
+                href={`/documents/${item.knowledgeBaseId}`}
                 style={{ color: '#1890ff' }}
                 onClick={e => e.stopPropagation()}
               >

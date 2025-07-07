@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { updateDocumentPermission } from '@/lib/api/documentPermission';
 import { TokenParser } from '@/utils/jwtUtil';
 import { getAccessToken } from '@/lib/api/tokenManager';
+import { getKnowledgeBaseIdByDocumentId } from '@/lib/api/document';
 // 解析字符串"permissionFlag=6+documentId=1"
 const parseCustomParams = (paramString: string) => {
   console.log(paramString);
@@ -86,10 +87,24 @@ export default function RedirectHandler() {
   };
 
   // 处理跳转逻辑
-  const handlerRedirect = (params: Record<string, string>) => {
+  const handlerRedirect = async (params: Record<string, string>) => {
     const documentId = params.documentId;
     if (documentId) {
-      router.push(`documents/${documentId}`);
+      try {
+        // 获取知识库ID
+        const knowledgeBaseId = await getKnowledgeBaseIdByDocumentId(documentId);
+
+        // 如果有知识库ID，跳转到知识库页面
+        if (knowledgeBaseId) {
+          router.push(`documents/${knowledgeBaseId}/${documentId}`);
+        } else {
+          throw new Error('获取知识库ID失败');
+        }
+      } catch (error) {
+        console.error('获取知识库ID失败:', error);
+        // 出错时直接跳转到文档页面
+        router.push(`/documents/${documentId}`);
+      }
     } else {
       router.push('/');
     }
