@@ -233,27 +233,26 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     },
   ];
 
+  const fetchDocumentTree = async () => {
+    if (!documentId) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await getKnowledgeBaseTree(knowledgeBaseId);
+      if (response.success && response.data?.tree) {
+        setDocTree(response.data.tree);
+      }
+    } catch (error) {
+      console.error('获取文档树失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDocumentTree = async () => {
-      // 只有在有documentId时才获取文档树（在文档编辑页面）
-      if (!documentId) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const response = await getKnowledgeBaseTree(knowledgeBaseId);
-        if (response.success && response.data?.tree) {
-          setDocTree(response.data.tree);
-        }
-      } catch (error) {
-        console.error('获取文档树失败:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDocumentTree();
   }, [knowledgeBaseId, documentId]);
 
@@ -349,8 +348,10 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       y={contextMenu.y}
       docId={Number(contextMenu.docId)}
       onClose={contextMenu.onClose}
+      onDocumentCreated={() => fetchDocumentTree()} // ✅ 新增：文档创建后刷新
     />
   );
+
 
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
     const isLeaf = !item.routes || item.routes.length === 0;
@@ -510,6 +511,16 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   return (
     <>
       {renderContextMenu()}
+      <div
+    onContextMenu={(e) => {
+      const target = e.target as HTMLElement;
+      const isDocNode = target.closest('.ant-pro-sider-menu');
+      if (isDocNode) return; // 已绑定文档右键
+
+      e.preventDefault();
+      contextMenu.onContextMenu(e, 0+''); // 0 代表空白区域
+    }}
+      >
       <ProLayout
         title="协同文档"
         logo={<TwitterOutlined style={{ fontSize: '24px', color: '#1890ff' }} />}
@@ -607,6 +618,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           </div>
         )}
       </ProLayout>
+      </div>
     </>
   );
 }

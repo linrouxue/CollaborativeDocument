@@ -10,9 +10,10 @@ interface ContextMenuProps {
   y: number;
   docId: number;
   onClose: () => void;
+  onDocumentCreated?: () => void; // ✅ 新增
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose }) => {
+const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose ,onDocumentCreated}) => {
   const ref = useRef<HTMLDivElement>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
@@ -29,11 +30,15 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose
 
   if (!visible && !shareModalOpen) return null;
 
-  const addDocs = (docId: number) => {
+  const addDocs = async (docId: number) => {
     console.log('新建');
-    documentAdd(docId)
-    // showAlert('新建文档成功');
+    const res = await documentAdd(docId);
+    if (res.success) {
+      console.log('新建成功', res);
+      onDocumentCreated?.(); // ✅ 通知外层刷新文档树
+    }
   };
+
   const deleteDocs = (docId: number) => {
     console.log('删除');
   };
