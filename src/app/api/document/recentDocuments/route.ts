@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
         const user = userMap.get(document.user_id);
 
         // 格式化时间
-        const openTime = formatRelativeTime(item.access_time);
+        const openTime = formatTime(item.access_time.getTime());
 
         return {
           key: String(item.document_id), // 转为字符串以符合接口
@@ -107,30 +107,35 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 格式化相对时间
-function formatRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes}分钟前`;
-  } else if (diffHours < 24) {
-    return `${diffHours}小时前`;
-  } else if (diffDays < 2) {
-    return (
-      '昨天 ' +
-      date.getHours().toString().padStart(2, '0') +
-      ':' +
-      date.getMinutes().toString().padStart(2, '0')
-    );
-  } else if (diffDays < 30) {
-    return `${diffDays}天前`;
-  } else {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${month}月${day}日`;
+function formatTime(ts: number) {
+    if (!ts) return '-';
+    // 使用 UTC 时间
+    const date = new Date(ts);
+    const now = new Date();
+  
+    // 转换为 UTC 时间进行比较
+    const isToday =
+      date.getUTCDate() === now.getUTCDate() &&
+      date.getUTCMonth() === now.getUTCMonth() &&
+      date.getUTCFullYear() === now.getUTCFullYear();
+  
+    const yesterday = new Date(now);
+    yesterday.setUTCDate(now.getUTCDate() - 1);
+    const isYesterday =
+      date.getUTCDate() === yesterday.getUTCDate() &&
+      date.getUTCMonth() === yesterday.getUTCMonth() &&
+      date.getUTCFullYear() === yesterday.getUTCFullYear();
+  
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const timeStr = `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+  
+    if (isToday) {
+      return `今天 ${timeStr}`;
+    } else if (isYesterday) {
+      return `昨天 ${timeStr}`;
+    } else if (date.getUTCFullYear() === now.getUTCFullYear()) {
+      return `${date.getUTCMonth() + 1}月${date.getUTCDate()}日 ${timeStr}`;
+    } else {
+      return `${date.getUTCFullYear()}年${date.getUTCMonth() + 1}月${date.getUTCDate()}日 ${timeStr}`;
+    }
   }
-}

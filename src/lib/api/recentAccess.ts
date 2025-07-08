@@ -38,6 +38,7 @@ export async function getRecentAccess(params?: GetRecentAccessParams) {
         pageSize: params?.pageSize
       }
     });
+    console.log('获取最近访问记录', data);
     return data;
   } catch (error) {
     console.error('获取最近访问记录失败', error);

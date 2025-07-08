@@ -9,6 +9,7 @@ interface SearchModalProps {
   onClose: () => void;
 }
 
+
 const SearchModal: React.FC<SearchModalProps> = ({ open, onClose }) => {
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
