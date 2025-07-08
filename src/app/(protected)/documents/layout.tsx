@@ -346,7 +346,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       visible={contextMenu.visible}
       x={contextMenu.x}
       y={contextMenu.y}
-      docId={Number(contextMenu.docId)}
+      docId={Number(documentId)} // ✅ 传入文档ID
       knowledgeBaseId={Number(knowledgeBaseId)} // ✅ 传入知识库ID
       onClose={contextMenu.onClose}
       onDocumentCreated={() => fetchDocumentTree()} // ✅ 新增：文档创建后刷新
