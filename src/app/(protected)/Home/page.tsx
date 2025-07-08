@@ -33,24 +33,34 @@ const WINDOW_SIZE = PAGE_SIZE * 2; // 保留前后各1页的数据
 
 function formatTime(ts: number) {
   if (!ts) return '-';
+  // 使用 UTC 时间
   const date = new Date(ts);
   const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
+
+  // 转换为 UTC 时间进行比较
+  const isToday =
+    date.getUTCDate() === now.getUTCDate() &&
+    date.getUTCMonth() === now.getUTCMonth() &&
+    date.getUTCFullYear() === now.getUTCFullYear();
+
   const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  const isYesterday = date.toDateString() === yesterday.toDateString();
+  yesterday.setUTCDate(now.getUTCDate() - 1);
+  const isYesterday =
+    date.getUTCDate() === yesterday.getUTCDate() &&
+    date.getUTCMonth() === yesterday.getUTCMonth() &&
+    date.getUTCFullYear() === yesterday.getUTCFullYear();
 
   const pad = (n: number) => n.toString().padStart(2, '0');
-  const timeStr = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const timeStr = `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 
   if (isToday) {
     return `今天 ${timeStr}`;
   } else if (isYesterday) {
     return `昨天 ${timeStr}`;
-  } else if (date.getFullYear() === now.getFullYear()) {
-    return `${date.getMonth() + 1}月${date.getDate()}日 ${timeStr}`;
+  } else if (date.getUTCFullYear() === now.getUTCFullYear()) {
+    return `${date.getUTCMonth() + 1}月${date.getUTCDate()}日 ${timeStr}`;
   } else {
-    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${timeStr}`;
+    return `${date.getUTCFullYear()}年${date.getUTCMonth() + 1}月${date.getUTCDate()}日 ${timeStr}`;
   }
 }
 
@@ -69,69 +79,75 @@ export default function Home() {
   const updateDataWindow = useCallback((startIndex: number) => {
     const windowStart = Math.max(0, Math.floor(startIndex / WINDOW_SIZE) * WINDOW_SIZE);
     const windowEnd = Math.min(allDataRef.current.length, windowStart + WINDOW_SIZE * 2);
-    
+
     const newData = allDataRef.current.slice(windowStart, windowEnd).map((item, idx) => ({
       ...item,
-      virtualIndex: windowStart + idx // 添加虚拟索引用于定位
+      virtualIndex: windowStart + idx, // 添加虚拟索引用于定位
     }));
-    
+
     setDataSource(newData);
   }, []);
 
   // 加载数据
-  const loadMoreItems = useCallback(async (startIndex: number, stopIndex: number) => {
-    if (loading) return;
-    
-    const page = Math.floor(startIndex / PAGE_SIZE) + 1;
-    
-    if (!hasMore && allDataRef.current.length > 0) return;
+  const loadMoreItems = useCallback(
+    async (startIndex: number, stopIndex: number) => {
+      if (loading) return;
 
-    try {
-      setLoading(true);
-      
-      // 同时加载多页数据
-      const promises = Array.from({ length: BATCH_PAGES }, (_, i) => 
-        getRecentAccess({ page: page + i, pageSize: PAGE_SIZE })
-      );
-      
-      const results = await Promise.all(promises);
-      
-      // 合并所有成功的结果
-      const combinedData: RecentAccessItem[] = [];
-      let hasSuccessfulResult = false;
-      
-      results.forEach(result => {
-        if (result?.success) {
-          hasSuccessfulResult = true;
-          combinedData.push(...result.data);
+      const page = Math.floor(startIndex / PAGE_SIZE) + 1;
+
+      if (!hasMore && allDataRef.current.length > 0) return;
+
+      try {
+        setLoading(true);
+
+        // 同时加载多页数据
+        const promises = Array.from({ length: BATCH_PAGES }, (_, i) =>
+          getRecentAccess({ page: page + i, pageSize: PAGE_SIZE })
+        );
+
+        const results = await Promise.all(promises);
+
+        // 合并所有成功的结果
+        const combinedData: RecentAccessItem[] = [];
+        let hasSuccessfulResult = false;
+
+        results.forEach((result) => {
+          if (result?.success) {
+            hasSuccessfulResult = true;
+            combinedData.push(...result.data);
+          }
+        });
+
+        if (hasSuccessfulResult) {
+          // 更新总数据
+          allDataRef.current = [...allDataRef.current, ...combinedData];
+          // 更新数据窗口
+          updateDataWindow(startIndex);
+
+          setTotal(results[0].total);
+          setHasMore(allDataRef.current.length < results[0].total);
+          setCurrentPage(page + BATCH_PAGES - 1);
+        } else {
+          setHasMore(false);
         }
-      });
-
-      if (hasSuccessfulResult) {
-        // 更新总数据
-        allDataRef.current = [...allDataRef.current, ...combinedData];
-        // 更新数据窗口
-        updateDataWindow(startIndex);
-        
-        setTotal(results[0].total);
-        setHasMore(allDataRef.current.length < results[0].total);
-        setCurrentPage(page + BATCH_PAGES - 1);
-      } else {
+      } catch (error) {
+        console.error('加载数据失败:', error);
+        message.error('加载数据失败');
         setHasMore(false);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('加载数据失败:', error);
-      message.error('加载数据失败');
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, currentPage, hasMore, updateDataWindow]);
+    },
+    [loading, currentPage, hasMore, updateDataWindow]
+  );
 
   // 处理滚动事件
-  const handleScroll = useCallback(({ visibleStartIndex }: { visibleStartIndex: number }) => {
-    updateDataWindow(visibleStartIndex);
-  }, [updateDataWindow]);
+  const handleScroll = useCallback(
+    ({ visibleStartIndex }: { visibleStartIndex: number }) => {
+      updateDataWindow(visibleStartIndex);
+    },
+    [updateDataWindow]
+  );
 
   // Row组件获取实际数据的索引
   const getItemData = useCallback((index: number) => {
@@ -139,96 +155,101 @@ export default function Home() {
   }, []);
 
   // 渲染行
-  const Row = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const item = getItemData(index);
-    if (!item) return null;
-    
-    return (
-      <div 
-        style={{
-          ...style,
-          display: 'flex',
-          padding: '8px',
-          height: '50px',
-          borderBottom: '1px solid #f0f0f0',
-          cursor: 'pointer',
-          alignItems: 'center',
-          gap: '16px',
-        }}
-        onClick={() => window.location.href = `/documents/${item.knowledgeBaseId}/${item.documentId}`}
-      >
-        <div style={{ flex: 1 }}>
-          <div className="font-bold text-sm">{item.name}</div>
-          {item.knowledgeBaseId && (
-            <div className="text-xs text-gray-500" style={{ marginTop: 2 }}>
-              <CloudOutlined style={{ marginRight: 4, color: '#1890ff' }} />
-              <Link
-                href={`/documents/${item.knowledgeBaseId}`}
-                style={{ color: '#1890ff' }}
-                onClick={e => e.stopPropagation()}
+  const Row = useCallback(
+    ({ index, style }: { index: number; style: React.CSSProperties }) => {
+      const item = getItemData(index);
+      if (!item) return null;
+
+      return (
+        <div
+          style={{
+            ...style,
+            display: 'flex',
+            padding: '8px',
+            height: '50px',
+            borderBottom: '1px solid #f0f0f0',
+            cursor: 'pointer',
+            alignItems: 'center',
+            gap: '16px',
+          }}
+          onClick={() =>
+            (window.location.href = `/documents/${item.knowledgeBaseId}/${item.documentId}`)
+          }
+        >
+          <div style={{ flex: 1 }}>
+            <div className="font-bold text-sm">{item.name}</div>
+            {item.knowledgeBaseId && (
+              <div className="text-xs text-gray-500" style={{ marginTop: 2 }}>
+                <CloudOutlined style={{ marginRight: 4, color: '#1890ff' }} />
+                <Link
+                  href={`/documents/${item.knowledgeBaseId}`}
+                  style={{ color: '#1890ff' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {item.knowledgeBaseName}
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div style={{ flex: 1 }}>
+            {item.members?.[0] && <MemberAvatar name={item.members[0]} />}
+          </div>
+
+          <div style={{ flex: 1, fontSize: '14px' }}>{formatTime(item.openTime)}</div>
+
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <Popconfirm
+                title="确定要删除这条记录吗？"
+                onConfirm={(e) => {
+                  e?.stopPropagation();
+                  handleDelete(item.key.toString());
+                }}
+                onCancel={(e) => e?.stopPropagation()}
+                okText="删除"
+                cancelText="取消"
               >
-                {item.knowledgeBaseName}
-              </Link>
-            </div>
-          )}
-        </div>
-        
-        <div style={{ flex: 1 }}>
-          {item.members?.[0] && <MemberAvatar name={item.members[0]} />}
-        </div>
-        
-        <div style={{ flex: 1, fontSize: '14px' }}>
-          {formatTime(item.openTime)}
-        </div>
-        
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <Popconfirm
-              title="确定要删除这条记录吗？"
-              onConfirm={(e) => {
-                e?.stopPropagation();
-                handleDelete(item.key.toString());
-              }}
-              onCancel={(e) => e?.stopPropagation()}
-              okText="删除"
-              cancelText="取消"
-            >
-              <Tooltip title="删除">
-                <Button 
-                  type="link" 
-                  icon={<DeleteOutlined />} 
-                  onClick={e => e.stopPropagation()} 
+                <Tooltip title="删除">
+                  <Button
+                    type="link"
+                    icon={<DeleteOutlined />}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </Tooltip>
+              </Popconfirm>
+
+              <Tooltip title="分享">
+                <Button
+                  type="link"
+                  icon={<ExportOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShare(item);
+                  }}
                 />
               </Tooltip>
-            </Popconfirm>
-            
-            <Tooltip title="分享">
-              <Button
-                type="link"
-                icon={<ExportOutlined />}
-                onClick={e => {
-                  e.stopPropagation();
-                  handleShare(item);
-                }}
-              />
-            </Tooltip>
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }, [getItemData]);
+      );
+    },
+    [getItemData]
+  );
 
   // 表头
   const TableHeader = () => (
-    <div style={{
-      display: 'flex',
-      padding: '8px',
-      background: '#fafafa',
-      borderBottom: '1px solid #f0f0f0',
-      fontWeight: 'bold',
-      fontSize: '14px',
-      gap: '16px',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        padding: '8px',
+        background: '#fafafa',
+        borderBottom: '1px solid #f0f0f0',
+        fontWeight: 'bold',
+        fontSize: '14px',
+        gap: '16px',
+      }}
+    >
       <div style={{ flex: 1 }}>类型</div>
       <div style={{ flex: 1 }}>所属成员</div>
       <div style={{ flex: 1 }}>打开时间</div>
@@ -236,16 +257,19 @@ export default function Home() {
     </div>
   );
 
-  const isItemLoaded = useCallback((index: number) => {
-    return !hasMore || index < allDataRef.current.length;
-  }, [hasMore]);
+  const isItemLoaded = useCallback(
+    (index: number) => {
+      return !hasMore || index < allDataRef.current.length;
+    },
+    [hasMore]
+  );
 
   const handleDelete = async (key: string) => {
     try {
       const result = await deleteRecentAccess([Number(key)]);
       if (result?.success) {
         message.success('删除成功');
-        allDataRef.current = allDataRef.current.filter(item => item.key.toString() !== key);
+        allDataRef.current = allDataRef.current.filter((item) => item.key.toString() !== key);
         updateDataWindow(Math.floor(allDataRef.current.length / WINDOW_SIZE) * WINDOW_SIZE);
       }
     } catch (error) {
@@ -266,7 +290,7 @@ export default function Home() {
       </div>
 
       <TableHeader />
-      
+
       <div style={{ height: 'calc(83vh - 120px)' }}>
         <AutoSizer>
           {({ width, height }) => (
@@ -283,7 +307,7 @@ export default function Home() {
                   itemCount={hasMore ? allDataRef.current.length + 1 : allDataRef.current.length}
                   itemSize={() => 64}
                   width={width}
-                  onItemsRendered={params => {
+                  onItemsRendered={(params) => {
                     onItemsRendered(params);
                     handleScroll({ visibleStartIndex: params.visibleStartIndex });
                   }}
@@ -305,4 +329,3 @@ export default function Home() {
     </div>
   );
 }
-
