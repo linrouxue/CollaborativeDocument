@@ -65,6 +65,20 @@ function formatTime(ts: number) {
 }
 
 export default function Home() {
+  const renderStartRef = useRef<number>(performance.now());
+  const dataLoadStartRef = useRef<number>(0);
+
+  useEffect(() => {
+    const renderEnd = performance.now();
+    console.log(
+      '%c[Home页面渲染耗时]',
+      'color:green;font-weight:bold;',
+      `${(renderEnd - renderStartRef.current).toFixed(2)} ms`
+    );
+    // 更新下一次渲染的起点
+    renderStartRef.current = performance.now();
+  });
+
   const [dataSource, setDataSource] = useState<RecentAccessItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -74,6 +88,7 @@ export default function Home() {
   const [shareRecord, setShareRecord] = useState<RecentAccessItem | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const allDataRef = useRef<RecentAccessItem[]>([]);
+  const apiBatchIdRef = useRef(0);
 
   // 更新数据窗口
   const updateDataWindow = useCallback((startIndex: number) => {
@@ -93,6 +108,15 @@ export default function Home() {
     async (startIndex: number, stopIndex: number) => {
       if (loading) return;
 
+      // 统计API请求耗时
+      const batchId = ++apiBatchIdRef.current;
+      performance.mark(`api-start-${batchId}`);
+
+      // 只在首次加载时记录
+      if (allDataRef.current.length === 0) {
+        dataLoadStartRef.current = performance.now();
+      }
+
       const page = Math.floor(startIndex / PAGE_SIZE) + 1;
 
       if (!hasMore && allDataRef.current.length > 0) return;
@@ -104,8 +128,19 @@ export default function Home() {
         const promises = Array.from({ length: BATCH_PAGES }, (_, i) =>
           getRecentAccess({ page: page + i, pageSize: PAGE_SIZE })
         );
-
+        const apiStart = performance.now();
         const results = await Promise.all(promises);
+        const apiEnd = performance.now();
+        performance.mark(`api-end-${batchId}`);
+        performance.measure(
+          `[Home] API请求耗时 batch ${batchId}`,
+          `api-start-${batchId}`,
+          `api-end-${batchId}`
+        );
+        console.log(
+          `%c[Home] API请求耗时 batch ${batchId}: ${(apiEnd - apiStart).toFixed(2)} ms`,
+          'color:blue'
+        );
 
         // 合并所有成功的结果
         const combinedData: RecentAccessItem[] = [];
@@ -119,6 +154,8 @@ export default function Home() {
         });
 
         if (hasSuccessfulResult) {
+          // 统计渲染耗时
+          performance.mark(`render-start-${batchId}`);
           // 更新总数据
           allDataRef.current = [...allDataRef.current, ...combinedData];
           // 更新数据窗口
@@ -140,6 +177,49 @@ export default function Home() {
     },
     [loading, currentPage, hasMore, updateDataWindow]
   );
+
+  // 监听 dataSource 变化，统计本批次渲染耗时
+  useEffect(() => {
+    const batchId = apiBatchIdRef.current;
+    if (dataSource.length > 0) {
+      // 只有在 mark 存在时才 measure
+      const startMark = `render-start-${batchId}`;
+      const endMark = `render-end-${batchId}`;
+      if (
+        performance.getEntriesByName(startMark, 'mark').length &&
+        performance.getEntriesByName(endMark, 'mark').length
+      ) {
+        performance.measure(`[Home] 渲染耗时 batch ${batchId}`, startMark, endMark);
+        const entries = performance.getEntriesByName(`[Home] 渲染耗时 batch ${batchId}`);
+        if (entries.length) {
+          console.log(
+            `%c[Home] 渲染耗时 batch ${batchId}: ${entries[0].duration.toFixed(2)} ms`,
+            'color:green'
+          );
+        }
+        // 清理 marks 和 measures
+        performance.clearMarks(`api-start-${batchId}`);
+        performance.clearMarks(`api-end-${batchId}`);
+        performance.clearMarks(startMark);
+        performance.clearMarks(endMark);
+        performance.clearMeasures(`[Home] API请求耗时 batch ${batchId}`);
+        performance.clearMeasures(`[Home] 渲染耗时 batch ${batchId}`);
+      }
+    }
+  }, [dataSource]);
+
+  useEffect(() => {
+    if (dataLoadStartRef.current && dataSource.length > 0) {
+      const end = performance.now();
+      console.log(
+        '%c[Home数据加载+渲染耗时]',
+        'color:blue;font-weight:bold;',
+        `${(end - dataLoadStartRef.current).toFixed(2)} ms`
+      );
+      // 只统计一次
+      dataLoadStartRef.current = 0;
+    }
+  }, [dataSource]);
 
   // 处理滚动事件
   const handleScroll = useCallback(
