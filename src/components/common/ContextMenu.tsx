@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-import { documentAdd } from '@/lib/api/documents';
+import { documentAdd, documentDel } from '@/lib/api/documents';
 import ShareDocument from '@/components/documentShare/share';
 // import { showAlert } from '@/lib/utils/alert';
 
@@ -42,8 +42,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId,knowledg
     }
   };
 
-  const deleteDocs = (docId: number) => {
-    console.log('删除');
+  const deleteDocs =async (docId: number) => {
+   const res=await documentDel(docId)
+       if (res.success) {
+      console.log('删除成功', res);
+      onDocumentCreated?.(); // ✅ 通知外层刷新文档树
+    }
+    console.log('删除docId:', docId);
   };
   const shareDocs = (docId: number) => {
     console.log('分享');

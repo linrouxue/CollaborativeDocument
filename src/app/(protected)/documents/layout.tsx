@@ -341,17 +341,19 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     }));
   };
 
-  const renderContextMenu = () => (
+  const renderContextMenu = () => {
+    console.log("6666666666666:",contextMenu.docId)
+    return (
     <ContextMenu
       visible={contextMenu.visible}
       x={contextMenu.x}
       y={contextMenu.y}
-      docId={Number(documentId)} // ✅ 传入文档ID
+      docId={Number(contextMenu.docId)}
       knowledgeBaseId={Number(knowledgeBaseId)} // ✅ 传入知识库ID
       onClose={contextMenu.onClose}
       onDocumentCreated={() => fetchDocumentTree()} // ✅ 新增：文档创建后刷新
     />
-  );
+  )};
 
 
   const renderMenuItem = (item: any, dom: React.ReactNode) => {
@@ -588,10 +590,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           <div
             onContextMenu={(e) => {
               const target = e.target as HTMLElement;
-              const clickedMenuItem = target.closest('.ant-pro-menu-item, .ant-menu-submenu');
+              const clickedMenuItem = target.closest('.ant-menu-item, .ant-menu-submenu');
               if (!clickedMenuItem) {
+                // 空白区域
                 e.preventDefault();
-                contextMenu.onContextMenu(e, 0+''); // -1 表示空白区域
+                contextMenu.onContextMenu(e, '0');
               }
             }}
             style={{ height: '100%' }}
@@ -599,6 +602,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             {defaultDom}
           </div>
         )}
+
       >
         {documentId ? (
           /* 文档页面：显示拖拽条+编辑器 */

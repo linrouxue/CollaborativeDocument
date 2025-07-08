@@ -143,3 +143,16 @@ export const documentAdd = async (documentId: number,knowledgeBaseId:number): Pr
     throw error;
   }
 };
+
+export const documentDel = async (documentId: number): Promise<any> => {
+  try {
+
+    const res = await javaAxiosInstance.delete(`/api/document/delete/${documentId}`);
+    console.log(res)
+    // console.log('获取知识库文档树:', res.data);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
