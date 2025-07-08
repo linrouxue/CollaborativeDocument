@@ -37,8 +37,6 @@ import BlockSelector from './BlockSelector';
 import SyncBlockListener from './SyncBlockListener';
 import { useSyncBlockManager } from './useSyncBlockManager';
 
-import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
-
 type CustomElement =
   | { type: 'paragraph'; children: CustomText[] }
   | { type: 'sync-block'; syncBlockId: string; children: CustomText[] };
@@ -304,7 +302,7 @@ function RichEditable({
     (props: { leaf: any; attributes: any; children: React.ReactNode }) => {
       if (externalRenderLeaf) return externalRenderLeaf(props);
       let children = props.children;
-      
+
       // 先应用基础样式（加粗、斜体、下划线）
       if (props.leaf.bold) {
         children = <strong>{children}</strong>;
@@ -315,7 +313,7 @@ function RichEditable({
       if (props.leaf.underline) {
         children = <u>{children}</u>;
       }
-      
+
       // 评论高亮
       if (props.leaf && props.leaf.threadId) {
         children = <span style={{ backgroundColor: 'rgba(255,229,100,0.6)' }}>{children}</span>;
