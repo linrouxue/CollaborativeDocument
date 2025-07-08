@@ -40,7 +40,7 @@ const EditorContentArea: React.FC<EditorContentAreaProps> = ({
         <FloatingToolbar onComment={(range) => setPendingCommentRange(range)} />
       </div>
       {/* 评论区 */}
-      <div className={styles.comments}>
+      <div className={styles.comments} style={{ width: 350 }}>
         <CommentsPanel
           threads={threads}
           currentUser={currentUser}
