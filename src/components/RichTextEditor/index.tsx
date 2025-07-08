@@ -75,6 +75,8 @@ interface RichTextEditorProps {
   hasUnsavedChanges?: boolean;
   lastSavedTime?: Date | null;
   documentId?: string; // 当前文档ID
+  title?: string;
+  onTitleChange?: (title: string) => void;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
@@ -88,6 +90,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   hasUnsavedChanges,
   lastSavedTime,
   documentId,
+  title,
+  onTitleChange,
 }) => {
   const { user } = useAuth();
 
@@ -219,15 +223,20 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // 连接编辑器
   useEffect(() => {
     YjsEditor.connect(editor);
-    // 只在 Yjs 文档为空时插入初始值
-    if (sharedType.toString().length === 0 && initialContent) {
-      Transforms.insertNodes(editor, initialContent, { at: [0] });
-    }
     return () => YjsEditor.disconnect(editor);
-  }, [editor, sharedType, initialContent]);
+  }, [editor, sharedType]);
 
   return (
     <div className="rounded-lg bg-white p-4 min-h-[400px] w-full">
+      {/* 文档标题输入框 */}
+      <input
+        type="text"
+        value={title || ''}
+        onChange={(e) => onTitleChange && onTitleChange(e.target.value)}
+        placeholder="请输入文档标题"
+        className="text-[28px] font-bold border-none outline-none w-full mb-4 bg-transparent p-0 text-[#222]"
+        maxLength={60}
+      />
       <Slate editor={editor} initialValue={value} onChange={handleChange}>
         <EditorHeaderToolbar
           onInsertSyncBlock={handleInsertSyncBlock}

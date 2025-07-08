@@ -122,16 +122,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       path: '/documents/0',
       name: '文档库',
       icon: <FileOutlined />,
-      // routes: [
-      //   {
-      //     path: '/documents/doc1',
-      //     name: '文件1',
-      //   },
-      //   {
-      //     path: '/documents/doc2',
-      //     name: '文件2',
-      //   },
-      // ],
     },
   ];
 

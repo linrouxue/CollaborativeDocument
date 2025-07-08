@@ -1,5 +1,5 @@
 'use client';
-import React, { Suspense, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { ProLayout } from '@ant-design/pro-components';
 import {
   LogoutOutlined,
@@ -50,6 +50,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       children: [{ text: '正在加载文档内容...' }],
     },
   ]);
+  const [title, setTitle] = useState(''); // 仅用于渲染，由 yTitle 驱动
+  const [yTitle, setYTitle] = useState<Y.Text | null>(null);
   const [editorReady, setEditorReady] = useState(false);
   const [connected, setConnected] = useState(false);
   const [sharedType, setSharedType] = useState<Y.XmlText | null>(null);
@@ -136,6 +138,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       if (response.success && response.content) {
         console.log('Document content loaded successfully:', JSON.stringify(response.content));
         setInitialContent(response.content);
+        if (response.title) {
+          setTitle(response.title);
+        }
       } else {
         console.warn('Failed to load document content:', response.error);
         // 使用默认内容
@@ -161,13 +166,17 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     }
   };
 
-  // 保存文档内容
-  const saveDocument = async (content: any) => {
+  // 保存文档内容，支持传入最新 title
+  const saveDocument = async (content: any, currentTitle?: string) => {
     if (!documentId || isSaving) return;
 
     setIsSaving(true);
     try {
-      const result = await saveDocumentContent(parseInt(documentId), content);
+      const result = await saveDocumentContent(
+        parseInt(documentId),
+        content,
+        currentTitle ?? title
+      );
       if (result.success) {
         setHasUnsavedChanges(false);
         setLastSavedTime(new Date());
@@ -185,24 +194,33 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   };
 
   // 监听编辑器内容变化并触发自动保存
-  const handleContentChange = (content: any) => {
+  const lastTitleRef = useRef(title);
+  const handleContentChange = (content: any, customTitle?: string) => {
     const contentString = JSON.stringify(content);
-
-    // 检查内容是否真的发生了变化
-    if (contentString !== lastContentRef.current) {
+    // 检查内容或标题是否真的发生了变化
+    if (contentString !== lastContentRef.current || title !== lastTitleRef.current) {
       lastContentRef.current = contentString;
+      lastTitleRef.current = title;
       setHasUnsavedChanges(true);
-
       // 清除之前的定时器
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-
       // 设置新的定时器，3秒后保存
       saveTimeoutRef.current = setTimeout(() => {
-        saveDocument(content);
+        saveDocument(content, customTitle ?? title);
       }, 3000);
     }
+  };
+  // 标题变更时也触发内容自动保存逻辑，并局部刷新菜单树（只 patch 当前节点 title）
+  const handleTitleChange = (newTitle: string) => {
+    if (yTitle) {
+      yTitle.delete(0, yTitle.length);
+      yTitle.insert(0, newTitle);
+    } else {
+      console.log('yTitle 不可用');
+    }
+    handleContentChange(initialContent, newTitle); // 传入最新 title
   };
 
   // 更多操作菜单
@@ -266,6 +284,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       setEditorReady(false);
       setEditorLoading(false);
       setEditorError(null);
+      setYTitle(null);
       return;
     }
 
@@ -276,6 +295,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     try {
       const yDoc = new Y.Doc();
       const yXmlText = yDoc.get('slate', Y.XmlText);
+      const yTitleText = yDoc.getText('title'); // 新增 Y.Text 用于标题
       const yProvider = new WebsocketProvider(
         'ws://localhost:1234',
         `${knowledgeBaseId}-${documentId}`,
@@ -305,6 +325,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
       setSharedType(yXmlText);
       setProvider(yProvider);
+      setYTitle(yTitleText); // 设置 yTitle
 
       return () => {
         awareness.off('change', updateOnlineUsers);
@@ -317,6 +338,42 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       message.error('初始化协同编辑器失败');
     }
   }, [knowledgeBaseId, documentId]);
+
+  // 监听 yTitle 协同变化，自动 setTitle 并 patch 菜单树
+  useEffect(() => {
+    if (!yTitle) {
+      console.log('yTitle 未初始化');
+      return;
+    }
+    const updateTitle = () => {
+      const newTitle = yTitle.toString();
+      setTitle(newTitle);
+      setDocTree((prev) => patchTreeTitle(prev, documentId, newTitle));
+    };
+    yTitle.observe(updateTitle);
+    // 初始化时同步一次
+    updateTitle();
+    return () => yTitle.unobserve(updateTitle);
+  }, [yTitle, documentId]);
+
+  // 优化 patchTreeTitle：只返回变动节点的新对象，未变节点直接返回原对象
+  const patchTreeTitle = (tree: any[], docId: string | number, newTitle: string): any[] => {
+    let changed = false;
+    const newTree = tree.map((node) => {
+      if (String(node.documentId) === String(docId)) {
+        changed = true;
+        return { ...node, title: newTitle };
+      } else if (node.children && node.children.length > 0) {
+        const newChildren = patchTreeTitle(node.children, docId, newTitle);
+        if (newChildren !== node.children) {
+          changed = true;
+          return { ...node, children: newChildren };
+        }
+      }
+      return node;
+    });
+    return changed ? newTree : tree;
+  };
 
   // 设置header数据
   useEffect(() => {
@@ -469,6 +526,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 hasUnsavedChanges={hasUnsavedChanges}
                 lastSavedTime={lastSavedTime}
                 documentId={knowledgeBaseId}
+                title={title}
+                onTitleChange={handleTitleChange}
               />
             </div>
           ) : (
@@ -494,6 +553,14 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       </Content>
     );
   };
+
+  // 确保docTree变化时ProLayout菜单刷新
+  const menuRoute = useMemo(
+    () => ({
+      routes: documentId ? convertDocTreeToMenu(docTree) : [],
+    }),
+    [docTree, documentId]
+  );
 
   if (loading && documentId) {
     return (
@@ -535,12 +602,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         fixSiderbar={!!documentId}
         contentWidth="Fluid"
         siderWidth={documentId ? siderWidth : 0} // 只有在文档页面才显示侧边栏
-        route={{
-          routes: documentId ? convertDocTreeToMenu(docTree) : [],
-        }}
-        menu={{
-          request: async () => (documentId ? convertDocTreeToMenu(docTree) : []),
-        }}
+        route={menuRoute}
         menuProps={{
           selectedKeys: [pathname],
           openKeys: openKeys,

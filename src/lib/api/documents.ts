@@ -107,7 +107,8 @@ export const getDocumentContentById = async (documentId: number): Promise<any> =
 
 export const saveDocumentContentById = async (
   documentId: number,
-  content: string
+  content: string,
+  title?: string
 ): Promise<any> => {
   try {
     const res = await javaAxiosInstance.put(
@@ -115,7 +116,7 @@ export const saveDocumentContentById = async (
       {
         documentId: documentId,
         content: content,
-        title: '',
+        title: title || '',
         cover: '',
       },
       {
