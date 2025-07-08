@@ -218,13 +218,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       }
     };
     initGlobalManager();
-  }, []);
-
-  // 连接编辑器
+  }, []); // 连接编辑器
+  const hasInsertedInitial = useRef(false);
   useEffect(() => {
-    YjsEditor.connect(editor);
+    YjsEditor.connect(editor); // 只在 Yjs 文档为空时插入初始值
+    if (sharedType.toString().length === 0 && initialContent && !hasInsertedInitial.current) {
+      Transforms.insertNodes(editor, initialContent, { at: [0] });
+      hasInsertedInitial.current = true;
+    }
     return () => YjsEditor.disconnect(editor);
-  }, [editor, sharedType]);
+  }, [editor, sharedType, initialContent]);
 
   return (
     <div className="rounded-lg bg-white p-4 min-h-[400px] w-full">
