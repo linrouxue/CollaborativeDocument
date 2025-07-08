@@ -173,7 +173,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       setValue(newValue);
 
       console.log('新的newValue:', newValue);
-    // 👉 获取 Yjs 的完整状态（二进制）
+      // 👉 获取 Yjs 的完整状态（二进制）
       // const ydocUpdate = Y.encodeStateAsUpdate(sharedType.doc);
       // const yjsBase64 = Buffer.from(ydocUpdate).toString('base64');
       // 通知父组件
@@ -287,11 +287,20 @@ function RichEditable({
   setValue: (v: Descendant[]) => void;
 }) {
   // 评论相关 hooks
-  const { yThreadsMap, addThread, replyToThread, updateComment, deleteThread } =
+  const { yThreadsMap, addThread, replyToThread, updateComment, deleteThread, getDecorations } =
     useThreadedComments(editor, ydoc, userName);
 
-  // 默认 decorate
-  const decorate = externalDecorate || useDecorateRemoteCursors();
+  // 默认 decorate 合并 remote + comment
+  const remoteDecorate = useDecorateRemoteCursors();
+  const commentDecorate = getDecorations;
+
+  const decorate = useCallback(
+    (entry: Parameters<typeof remoteDecorate>[0]) => {
+      const ranges = [...remoteDecorate(entry), ...commentDecorate(entry)];
+      return ranges;
+    },
+    [remoteDecorate, commentDecorate]
+  );
 
   // 合并 renderLeaf，支持外部传入和内部高亮/评论/协同光标
   const renderLeaf = React.useCallback(
@@ -304,9 +313,7 @@ function RichEditable({
       }
       // 选区高亮
       if (props.leaf && props.leaf.highlight) {
-        children = (
-          <span style={{ backgroundColor: '#ffe58f' }}>{children}</span>
-        );
+        children = <span style={{ backgroundColor: '#ffe58f' }}>{children}</span>;
       }
       // 协同光标高亮
       if (props.leaf) {
@@ -399,7 +406,6 @@ function RichEditable({
         initialValue={value}
         onChange={(val) => setValue(assignHeadingIds(val))}
       >
-       
         <EditorBody
           editor={editor}
           decorate={decorate}
@@ -412,7 +418,6 @@ function RichEditable({
           onDelete={deleteThread}
           onAddThread={addThread}
         />
-        
       </Slate>
     </div>
   );

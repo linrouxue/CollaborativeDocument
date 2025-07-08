@@ -142,14 +142,11 @@ const CommentsPanel: React.FC<CommentsPanelProps> = ({
         {!threads || (threads.length === 0 && <p className="text-gray-500 italic">暂无评论</p>)}
         {threads.map(([threadId, thread]) => (
           <div key={threadId} className="p-2 bg-white rounded shadow-sm mb-4">
-            <div className="font-bold mb-1 truncate" title={thread.comments[0]?.content}>
-              📌 {thread.comments[0]?.author}：{thread.comments[0]?.content}
-            </div>
             {thread.comments.map((c, idx) => (
               <div key={c.id} className={idx > 0 ? 'ml-3' : ''}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm font-semibold">👤 {c.author}：</span>
+                    <span className="text-sm font-semibold"> {c.author}：</span>
                     {editingCommentId === c.id ? (
                       <>
                         <input

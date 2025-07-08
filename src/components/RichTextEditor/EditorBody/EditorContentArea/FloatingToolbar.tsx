@@ -27,23 +27,11 @@ const FloatingToolbar: React.FC<FloatingToolbarProps> = ({ onComment }) => {
       console.log('handler触发');
       window.requestAnimationFrame(() => {
         const selection = editor.selection;
-        if (!editor.selection || Range.isCollapsed(editor.selection)) {
-          return false
-        }
-        if (
-          !selection ||
-          !ReactEditor.isFocused(editor) ||
-          Range.isCollapsed(selection) ||
-          Editor.string(editor, selection) === ''
-        ) {
-          // {
-          //   !selection ||
-          //   !ReactEditor.isFocused(editor) ||
-          //   Range.isCollapsed(selection) ||
-          //   Editor.string(editor, selection) === ''
-          console.log('悬浮toolbar不显示');
-          console.log('editor.selection:', editor.selection);
-          console.log('editor.selection:', Editor.string(editor, selection as Range));
+
+        if (!selection || Range.isCollapsed(selection) || Editor.string(editor, selection) === '') {
+          // console.log('悬浮toolbar不显示');
+          // console.log('editor.selection:', editor.selection);
+          // console.log('editor.selection:', Editor.string(editor, selection as Range));
           setShow(false);
           return;
         }
