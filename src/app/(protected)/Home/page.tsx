@@ -173,11 +173,13 @@ export default function Home() {
             gap: '16px',
           }}
           onClick={() =>
-            (window.location.href = `/documents/${item.knowledgeBaseId}/${item.documentId}`)
+            (window.location.href = `/documents/${item.knowledgeBaseId ?? 0}/${item.documentId}`)
           }
         >
           <div style={{ flex: 1 }}>
-            <div className="font-bold text-sm">{item.name}</div>
+            <div className="font-bold text-sm">
+              {!item.name || item.name === '' ? '未命名文档' : item.name}
+            </div>
             {item.knowledgeBaseId && (
               <div className="text-xs text-gray-500" style={{ marginTop: 2 }}>
                 <CloudOutlined style={{ marginRight: 4, color: '#1890ff' }} />
