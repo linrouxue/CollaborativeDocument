@@ -37,6 +37,8 @@ import BlockSelector from './BlockSelector';
 import SyncBlockListener from './SyncBlockListener';
 import { useSyncBlockManager } from './useSyncBlockManager';
 
+import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
+
 type CustomElement =
   | { type: 'paragraph'; children: CustomText[] }
   | { type: 'sync-block'; syncBlockId: string; children: CustomText[] };
@@ -46,6 +48,7 @@ type CustomText = {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
+  commentIds?: string[];
 };
 
 declare module 'slate' {
@@ -170,6 +173,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     (newValue: Descendant[]) => {
       setValue(newValue);
 
+      console.log('新的newValue:', newValue);
+      // 👉 获取 Yjs 的完整状态（二进制）
+      // const ydocUpdate = Y.encodeStateAsUpdate(sharedType.doc);
+      // const yjsBase64 = Buffer.from(ydocUpdate).toString('base64');
       // 通知父组件
       if (onContentChange) {
         onContentChange(newValue);
@@ -277,14 +284,23 @@ function RichEditable({
   setValue: (v: Descendant[]) => void;
 }) {
   // 评论相关 hooks
-  const { yThreadsMap, addThread, replyToThread, updateComment, deleteThread } =
+  const { yThreadsMap, addThread, replyToThread, updateComment, deleteThread, getDecorations } =
     useThreadedComments(editor, ydoc, userName);
 
-  // 默认 decorate
-  const decorate = externalDecorate || useDecorateRemoteCursors();
+  // 默认 decorate 合并 remote + comment
+  const remoteDecorate = useDecorateRemoteCursors();
+  const commentDecorate = getDecorations;
 
-  // 默认 renderLeaf
-  const renderLeaf = useCallback(
+  const decorate = useCallback(
+    (entry: Parameters<typeof remoteDecorate>[0]) => {
+      const ranges = [...remoteDecorate(entry), ...commentDecorate(entry)];
+      return ranges;
+    },
+    [remoteDecorate, commentDecorate]
+  );
+
+  // 合并 renderLeaf，支持外部传入和内部高亮/评论/协同光标
+  const renderLeaf = React.useCallback(
     (props: { leaf: any; attributes: any; children: React.ReactNode }) => {
       if (externalRenderLeaf) return externalRenderLeaf(props);
       let children = props.children;
@@ -301,67 +317,67 @@ function RichEditable({
       }
       
       // 评论高亮
-      if (props.leaf.threadId) {
+      if (props.leaf && props.leaf.threadId) {
         children = <span style={{ backgroundColor: 'rgba(255,229,100,0.6)' }}>{children}</span>;
       }
-      
+      // 选区高亮
+      if (props.leaf && props.leaf.highlight) {
+        children = <span style={{ backgroundColor: '#ffe58f' }}>{children}</span>;
+      }
       // 协同光标高亮
-      getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
-        if (cursor.data) {
-          children = (
-            <span style={{ backgroundColor: addAlpha(cursor.data.color as string, 0.5) }}>
-              {children}
-            </span>
-          );
-        }
-      });
-      
-      getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
-        if (caret.data) {
-          children = (
-            <span style={{ position: 'relative' }}>
-              <span
-                contentEditable={false}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  bottom: 0,
-                  left: -1,
-                  width: 2,
-                  backgroundColor: caret.data.color as string,
-                  animation: 'blink 1s step-end infinite',
-                }}
-              />
-              <span
-                contentEditable={false}
-                style={{
-                  position: 'absolute',
-                  left: -1,
-                  top: 0,
-                  fontSize: '0.75rem',
-                  color: '#fff',
-                  backgroundColor: caret.data.color as string,
-                  borderRadius: 4,
-                  padding: '2px 6px',
-                  transform: 'translateY(-100%)',
-                  zIndex: 10,
-                  opacity: 0,
-                  transition: 'opacity 0.2s',
-                  pointerEvents: 'none',
-                  whiteSpace: 'nowrap',
-                  writingMode: 'horizontal-tb',
-                  textOrientation: 'mixed',
-                }}
-                className="caret-name"
-              >
-                {caret.data.name as string}
+      if (props.leaf) {
+        getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
+          if (cursor.data) {
+            children = (
+              <span style={{ backgroundColor: addAlpha(cursor.data.color as string, 0.5) }}>
+                {children}
               </span>
-              {children}
-            </span>
-          );
-        }
-      });
-      
+            );
+          }
+        });
+        getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
+          if (caret.data) {
+            children = (
+              <span style={{ position: 'relative' }}>
+                <span
+                  contentEditable={false}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: -1,
+                    width: 2,
+                    backgroundColor: caret.data.color as string,
+                    animation: 'blink 1s step-end infinite',
+                  }}
+                />
+                <span
+                  contentEditable={false}
+                  style={{
+                    position: 'absolute',
+                    left: -1,
+                    top: 0,
+                    fontSize: '0.75rem',
+                    color: '#fff',
+                    backgroundColor: caret.data.color as string,
+                    borderRadius: 4,
+                    padding: '0 4px',
+                    transform: 'translateY(-100%)',
+                    zIndex: 10,
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    pointerEvents: 'none',
+                  }}
+                  className="caret-name"
+                >
+                  {caret.data.name as string}
+                </span>
+                {children}
+              </span>
+            );
+          }
+        });
+      }
       return <span {...props.attributes}>{children}</span>;
     },
     [externalRenderLeaf]

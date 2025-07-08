@@ -28,5 +28,35 @@
   },
   "[html]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "sqltools.connections": [
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "previewLimit": 50,
+      "server": "119.29.229.71:3306",
+      "port": 3306,
+      "driver": "MySQL",
+      "name": "root",
+      "database": "feishu_docx",
+      "username": "root",
+      "password": "feishu666"
+    },
+    {
+      "mysqlOptions": {
+        "authProtocol": "default",
+        "enableSsl": "Disabled"
+      },
+      "previewLimit": 50,
+      "server": "119.29.229.71",
+      "port": 3306,
+      "driver": "MySQL",
+      "password": "feishu66",
+      "username": "root",
+      "database": "feishu_docx",
+      "name": "feiDoc"
+    }
+  ]
 }
