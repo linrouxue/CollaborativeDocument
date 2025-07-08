@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       return {
         key: item.id,
         documentId: item.document_id,
-        knowledgeBaseId: document.knowledge_base_id,
+        knowledgeBaseId: document.knowledge_base_id == 0 ? null : document.knowledge_base_id,
         knowledgeBaseName: kb?.name ?? '',
         name: document.title,
         members: [user?.username ?? ''],
