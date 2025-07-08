@@ -6,7 +6,6 @@ import { RenderLeafProps, RenderElementProps, ReactEditor } from 'slate-react';
 import { Editor, Transforms, Node, Range } from 'slate';
 import { globalBlockManager } from '@/lib/yjsGlobalBlocks';
 import SyncBlockElement from './SyncBlockElement';
-import FloatingToolbar from './FloatingToolbar';
 
 interface SlateEditorProps {
   editor: Editor;
@@ -187,8 +186,12 @@ const SlateEditor = ({ editor, decorate, renderLeaf }: SlateEditorProps) => {
     [focusedSyncBlockId, setFocusedSyncBlockId, editor]
   );
 
-  // 行内样式渲染：加粗、斜体、下划线
-  const renderLeafWithMarks = useCallback((props: RenderLeafProps) => {
+  // 使用外部传入的 renderLeaf，如果没有则使用默认的样式渲染
+  const combinedRenderLeaf = useCallback((props: RenderLeafProps) => {
+    if (renderLeaf) {
+      return renderLeaf(props);
+    }
+    // 默认的样式渲染（如果没有外部传入的 renderLeaf）
     let { children, leaf, attributes } = props;
     if (leaf.bold) {
       children = <strong>{children}</strong>;
@@ -200,14 +203,14 @@ const SlateEditor = ({ editor, decorate, renderLeaf }: SlateEditorProps) => {
       children = <u>{children}</u>;
     }
     return <span {...attributes}>{children}</span>;
-  }, []);
+  }, [renderLeaf]);
 
   return (
     <Editable
       decorate={decorate}
-      renderLeaf={renderLeafWithMarks}
+      renderLeaf={combinedRenderLeaf}
       renderElement={renderElement}
-      className="p-4 min-h-[400px] focus:outline-none"
+      className="min-h-[400px] focus:outline-none"
       placeholder="开始输入内容..."
       onKeyDown={handleSyncBlockKeyDown(editor)}
       onSelect={handleSyncBlockSelect(editor, setFocusedSyncBlockId)}

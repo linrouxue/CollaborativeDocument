@@ -164,7 +164,7 @@ const EditorSidebar: React.FC<EditorSidebarProps> = ({
   };
 
   return (
-    <div className={'transition-all duration-300 overflow-auto w-64 relative'}>
+    <div className={'transition-all duration-300 overflow-auto w-50 relative'}>
       {/* 顶部栏始终渲染 */}
       <div className="h-12 flex items-center relative">
         <span className="font-semibold text-gray-700 ml-4">{collapsed ? '' : '目录大纲'}</span>

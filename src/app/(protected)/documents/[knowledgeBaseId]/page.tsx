@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Layout, Tree, Card, Spin, Empty, Button } from 'antd';
 import { FileOutlined, FolderOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { getKnowledgeBaseTree } from '@/lib/api/documents';
+import styles from '../document.module.css';
 
 const { Content } = Layout;
 
@@ -96,32 +97,18 @@ export default function KnowledgeBasePage() {
 
   if (loading) {
     return (
-      <Layout style={{ minHeight: '100vh' }}>
-        <Content
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            background: '#f0f2f5',
-          }}
-        >
+      <div className={styles.fullPage}>
+        <Content className={styles.centeredContent}>
           <Spin size="large" tip="正在加载文档树..." />
         </Content>
-      </Layout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Layout style={{ minHeight: '100vh' }}>
-        <Content
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            background: '#f0f2f5',
-          }}
-        >
+      <div className={styles.fullPage}>
+        <Content className={styles.centeredContent}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '18px', marginBottom: '12px', color: '#ff4d4f' }}>{error}</div>
             <Button type="primary" onClick={() => window.location.reload()}>
@@ -129,33 +116,25 @@ export default function KnowledgeBasePage() {
             </Button>
           </div>
         </Content>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <div className={styles.fullPage}>
       <Content style={{ padding: '24px', background: '#f0f2f5' }}>
         <div style={{ marginBottom: '16px' }}>
           <Button
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={handleBackToHome}
-            style={{ marginBottom: '8px' }}
+            className={styles.backButton}
           >
             返回首页
           </Button>
-          <h1 style={{ margin: 0, fontSize: '24px' }}>知识库文档 (ID: {knowledgeBaseId})</h1>
+          <h1 className={styles.mainTitle}>知识库文档 (ID: {knowledgeBaseId})</h1>
         </div>
-
-        <Card
-          title="文档树"
-          style={{
-            maxWidth: 800,
-            margin: '0 auto',
-            minHeight: 400,
-          }}
-        >
+        <Card title="文档树" className={styles.mainCard}>
           {docTree.length > 0 ? (
             <Tree
               showIcon
@@ -169,6 +148,6 @@ export default function KnowledgeBasePage() {
           )}
         </Card>
       </Content>
-    </Layout>
+    </div>
   );
 }
