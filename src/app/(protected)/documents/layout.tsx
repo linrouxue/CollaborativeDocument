@@ -347,6 +347,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       x={contextMenu.x}
       y={contextMenu.y}
       docId={Number(contextMenu.docId)}
+      knowledgeBaseId={Number(knowledgeBaseId)} // ✅ 传入知识库ID
       onClose={contextMenu.onClose}
       onDocumentCreated={() => fetchDocumentTree()} // ✅ 新增：文档创建后刷新
     />
@@ -511,16 +512,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   return (
     <>
       {renderContextMenu()}
-      <div
-    onContextMenu={(e) => {
-      const target = e.target as HTMLElement;
-      const isDocNode = target.closest('.ant-pro-sider-menu');
-      if (isDocNode) return; // 已绑定文档右键
 
-      e.preventDefault();
-      contextMenu.onContextMenu(e, 0+''); // 0 代表空白区域
-    }}
-      >
       <ProLayout
         title="协同文档"
         logo={<TwitterOutlined style={{ fontSize: '24px', color: '#1890ff' }} />}
@@ -592,6 +584,21 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             </Dropdown>
           ),
         }}
+        menuContentRender={(props, defaultDom) => (
+          <div
+            onContextMenu={(e) => {
+              const target = e.target as HTMLElement;
+              const clickedMenuItem = target.closest('.ant-pro-menu-item, .ant-menu-submenu');
+              if (!clickedMenuItem) {
+                e.preventDefault();
+                contextMenu.onContextMenu(e, 0+''); // -1 表示空白区域
+              }
+            }}
+            style={{ height: '100%' }}
+          >
+            {defaultDom}
+          </div>
+        )}
       >
         {documentId ? (
           /* 文档页面：显示拖拽条+编辑器 */
@@ -618,7 +625,6 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
           </div>
         )}
       </ProLayout>
-      </div>
     </>
   );
 }

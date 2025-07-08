@@ -128,11 +128,13 @@ export const saveDocumentContentById = async (
   }
 };
 
-export const documentAdd = async (documentId: number): Promise<any> => {
+export const documentAdd = async (documentId: number,knowledgeBaseId:number): Promise<any> => {
   try {
     const obj = {
       parentId: documentId,
+      knowledgeBaseId: knowledgeBaseId
     };
+    console.log('添加文档参数:', obj);
     const res = await javaAxiosInstance.post(`/api/document/add`, obj);
     // console.log(res)
     // console.log('获取知识库文档树:', res.data);

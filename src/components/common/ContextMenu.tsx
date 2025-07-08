@@ -9,11 +9,12 @@ interface ContextMenuProps {
   x: number;
   y: number;
   docId: number;
+  knowledgeBaseId: number; // ✅ 新增知识库ID
   onClose: () => void;
   onDocumentCreated?: () => void; // ✅ 新增
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose ,onDocumentCreated}) => {
+const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId,knowledgeBaseId, onClose ,onDocumentCreated}) => {
   const ref = useRef<HTMLDivElement>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
@@ -30,9 +31,11 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose
 
   if (!visible && !shareModalOpen) return null;
 
-  const addDocs = async (docId: number) => {
+  const addDocs = async (docId: number,knowledgeBaseId: number) => {
     console.log('新建');
-    const res = await documentAdd(docId);
+    console.log('docId:', docId);
+    console.log('knowledgeBaseId:', knowledgeBaseId);
+    const res = await documentAdd(docId,knowledgeBaseId);
     if (res.success) {
       console.log('新建成功', res);
       onDocumentCreated?.(); // ✅ 通知外层刷新文档树
@@ -47,11 +50,18 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ visible, x, y, docId, onClose
     setShareModalOpen(true);
     onClose(); // 关闭右键菜单
   };
+  // const items = [
+  //   { label: '新建文档', onClick: () => addDocs(docId) },
+  //   { label: '删除文档', onClick: () => deleteDocs(docId) },
+  //   { label: '分享文档', onClick: () => shareDocs(docId) },
+  // ].filter(Boolean) as { label: string; onClick: () => void }[];
   const items = [
-    { label: '新建文档', onClick: () => addDocs(docId) },
-    { label: '删除文档', onClick: () => deleteDocs(docId) },
-    { label: '分享文档', onClick: () => shareDocs(docId) },
-  ].filter(Boolean) as { label: string; onClick: () => void }[];
+    { label: '新建文档', onClick: () => addDocs(docId,knowledgeBaseId) },
+    ...(docId !== -1 ? [
+      { label: '删除文档', onClick: () => deleteDocs(docId) },
+      { label: '分享文档', onClick: () => shareDocs(docId) },
+    ] : [])
+  ];
 
   return (
     <>
