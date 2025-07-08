@@ -285,13 +285,26 @@ function RichEditable({
 
   // 默认 renderLeaf
   const renderLeaf = useCallback(
-    (props: { element: any; attributes: any; children: React.ReactNode }) => {
+    (props: { leaf: any; attributes: any; children: React.ReactNode }) => {
       if (externalRenderLeaf) return externalRenderLeaf(props);
       let children = props.children;
+      
+      // 先应用基础样式（加粗、斜体、下划线）
+      if (props.leaf.bold) {
+        children = <strong>{children}</strong>;
+      }
+      if (props.leaf.italic) {
+        children = <em>{children}</em>;
+      }
+      if (props.leaf.underline) {
+        children = <u>{children}</u>;
+      }
+      
       // 评论高亮
       if (props.leaf.threadId) {
         children = <span style={{ backgroundColor: 'rgba(255,229,100,0.6)' }}>{children}</span>;
       }
+      
       // 协同光标高亮
       getRemoteCursorsOnLeaf(props.leaf).forEach((cursor) => {
         if (cursor.data) {
@@ -302,6 +315,7 @@ function RichEditable({
           );
         }
       });
+      
       getRemoteCaretsOnLeaf(props.leaf).forEach((caret) => {
         if (caret.data) {
           children = (
@@ -328,12 +342,15 @@ function RichEditable({
                   color: '#fff',
                   backgroundColor: caret.data.color as string,
                   borderRadius: 4,
-                  padding: '0 4px',
+                  padding: '2px 6px',
                   transform: 'translateY(-100%)',
                   zIndex: 10,
                   opacity: 0,
                   transition: 'opacity 0.2s',
                   pointerEvents: 'none',
+                  whiteSpace: 'nowrap',
+                  writingMode: 'horizontal-tb',
+                  textOrientation: 'mixed',
                 }}
                 className="caret-name"
               >
@@ -344,6 +361,7 @@ function RichEditable({
           );
         }
       });
+      
       return <span {...props.attributes}>{children}</span>;
     },
     [externalRenderLeaf]
