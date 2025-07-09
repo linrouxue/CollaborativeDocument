@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState,useReducer } from 'react';
 import { Button, Spin, Alert } from 'antd';
 import { FileOutlined, CloseOutlined, DownOutlined } from '@ant-design/icons';
 import styles from './SummaryCard.module.css';
 import { documentSummary } from '@/lib/api/documents';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface SummaryCardProps {
   documentId: number | string;
@@ -17,6 +19,8 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ documentId, user }) => {
   const [summaryCollapsed, setSummaryCollapsed] = useState(false);
   const [sseConnected, setSseConnected] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const [canTriggerSummary, setCanTriggerSummary] = useState(true);
+
 
   // 统一转换docIdNum，保证全组件可用
   const docIdNum = typeof documentId === 'string' ? Number(documentId) : documentId;
@@ -32,13 +36,19 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ documentId, user }) => {
       eventSourceRef.current = new EventSource(SSE_URL, { withCredentials: true });
       eventSourceRef.current.onmessage = (event) => {
         try {
-          setSummary((prev) => prev + event.data);
-          setIsSummaryLoading(false); // 收到数据后停止加载状态
+          if (event.data === '[DONE]') {
+            setIsSummaryLoading(false);
+            setCanTriggerSummary(true);
+            return;
+          }
+          setSummary((prev) => prev + event.data); // 流式追加
+          console.log('SSE数据:', event.data);
         } catch (parseError) {
-          // eslint-disable-next-line no-console
           console.error('SSE数据解析错误:', parseError);
         }
       };
+
+
       eventSourceRef.current.onerror = (error) => {
         // eslint-disable-next-line no-console
         console.error('SSE连接错误:', error);
@@ -63,15 +73,17 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ documentId, user }) => {
   }, [docIdNum]);
 
   // 触发文档总结生成
-  const triggerSummaryRequest = () => {
+  const triggerSummaryRequest =async () => {
     if (!sseConnected) {
       setSummaryError('SSE连接未建立');
       return;
     }
     setIsSummaryLoading(true);
+    setCanTriggerSummary(false); // 点击后暂时禁止再次触发
     setSummary('');
     setSummaryError(null);
-    documentSummary(docIdNum);
+     documentSummary(docIdNum);
+
   };
 
   // 重试获取文档总结
@@ -91,7 +103,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ documentId, user }) => {
                 type="primary"
                 size="small"
                 onClick={triggerSummaryRequest}
-                disabled={isSummaryLoading || !sseConnected}
+                disabled={!canTriggerSummary || !sseConnected}
                 style={{
                   background: 'linear-gradient(90deg, #1890ff 0%, #6ec6ff 100%)',
                   border: 'none',
@@ -143,15 +155,26 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ documentId, user }) => {
               }
               style={{ marginBottom: 8 }}
             />
-          ) : isSummaryLoading ? (
-            <div style={{ textAlign: 'center', width: '100%' }}>
-              <Spin size="large" style={{ marginBottom: 12 }} />
-              <div style={{ color: '#888', fontSize: 15, marginTop: 8 }}>
-                AI正在为你生成文档摘要，请稍候…
+              ) : summary ? (
+              <div
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  width: '100%',
+                  maxHeight: '300px', // 限制最大高度
+                  // overflowY: 'auto',  // 启用垂直滚动
+                  paddingRight: '8px', // 为滚动条预留空间
+                }}
+              >
+                {summary}
               </div>
-            </div>
-          ) : summary ? (
-            <div style={{ width: '100%', animation: 'fadein 0.5s' }}>{summary}</div>
+
+            ) : isSummaryLoading ? (
+              <div style={{ textAlign: 'center', width: '100%' }}>
+                <Spin size="large" style={{ marginBottom: 12 }} />
+                <div style={{ color: '#888', fontSize: 15, marginTop: 8 }}>
+                  AI正在为你生成文档摘要，请稍候…
+                </div>
+              </div>
           ) : (
             <div style={{ color: '#bbb', textAlign: 'center', fontSize: 15, width: '100%' }}>
               {sseConnected

@@ -81,9 +81,9 @@ export const getKnowledgeBaseTree = async (knowledgeBaseId: string): Promise<any
   }
 };
 
-export const documentSummary = async (documentId: number): Promise<any> => {
+export const documentSummary =  (documentId: number): Promise<any> => {
   try {
-    const res = await javaAxiosInstance.get(`/api/chat`, {
+     javaAxiosInstance.get(`/api/chat`, {
       params: { documentId: documentId },
     });
     // console.log(res)

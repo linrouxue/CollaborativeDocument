@@ -32,7 +32,7 @@
   padding-right: 8px;
 }
 
-.summaryContent {
+/* .summaryContent {
   overflow: hidden;
   transition:
     max-height 0.3s ease,
@@ -43,6 +43,11 @@
   color: #222;
   line-height: 1.7;
   margin-top: 2px;
+} */
+.summaryContent {
+  max-height: 300px; /* 控制最大显示高度 */
+  overflow-y: auto;  /* 允许垂直滚动 */
+  padding-right: 8px;
 }
 
 .summaryContentCollapsed {
